@@ -17,3 +17,8 @@ wc -l out.bim
 # 1407537 out.bim
 gzip out.bim
 
+################################
+
+# script for plotting allele frequencies in cases vs controls
+# here we provide name of BED data in DMPI server, but analysis will work with other BED files as long as case/control status is given in FAM pheno column as 2/1 values.
+Rscript af-case-ctrl.R /dmpi/analysis/Rasheed/ssns_gwas/merge_tgp/combine
