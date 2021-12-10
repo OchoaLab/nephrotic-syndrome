@@ -1,0 +1,10 @@
+# some formulas relating column values that appear in gnomad data (AF, AC, AN, nhomalt) and unobserved values (particularly no, which is like "nhomref"?)
+
+AF = AC/AN
+AN = 2 * (n0 + n1 + n2)
+AC = n1 + 2*n2
+nhomalt = n2
+n1 = AC - 2 * nhomalt
+n0 = AN/2 - n1 - n2
+n0 = AN/2 - (AC-2*n2) - n2
+n0 = AN/2 - AC + nhomalt
