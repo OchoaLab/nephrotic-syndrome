@@ -1,0 +1,137 @@
+---
+title: "GMMAT"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(GMMAT)
+library(SeqArray)
+library(qqman)
+.libPaths("/datacommons/ochoalab/tiffany_data")
+#library(BEDMatrix)
+library(genio)
+```
+
+#phenotypes and covariates
+```{r}
+phenodf <- read.table("/datacommons/ochoalab/ssns_gwas/phenotype_filtered.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE) 
+
+pheno_ = phenodf %>% mutate(Phenotype = ifelse(Phenotype == "Control", 0, 1)) 
+```
+
+read grm previously created
+```{r}
+obj_grm <- read_grm( '/datacommons/ochoalab/tiffany_data/NS_data/ssns_gwas' )
+
+# the kinship matrix
+kinship <- obj_grm$kinship 
+# the pair sample sizes matrix
+M <- obj_grm$M
+# the fam and ID tibble
+fam <- obj_grm$fam
+# 
+# head(as.matrix(kinship))
+# 
+# library(BEDMatrix)
+# X <- BEDMatrix("/datacommons/ochoalab/tiffany_data/DATASOURCE/datasource/ssns_gwas_maf")
+# X <- as.matrix(X)
+# 
+# tmp_mat = X %>% as.data.frame() %>% tibble::rownames_to_column("ID") %>% mutate(ID = gsub("\\_.*", "", ID))
+# 
+# #ns_bed = read_plink("/datacommons/ochoalab/tiffany_data/DATASOURCE/datasource/ssns_gwas_maf")
+# #dim(ns_bed$X)
+# 
+# #geno_df = t(ns_bed$X) %>% as.data.frame() %>% tibble::rownames_to_column("ID")
+# mat_merge = merge(tmp_mat, pheno_, by = "ID")
+# 
+# loci_name = colnames(tmp_mat)[-1]
+# loci_name[1:10] 
+# 
+# paste(loci_name[1:10], collapse=" + ")
+# 
+# paste0(sprintf("'%s'", loci_name[1:10]), collapse = " + ")
+```
+
+```{r}
+# loci_name[1:10] 
+# 
+# model_form = as.formula(paste("Phenotype", paste0(sprintf("'%s'", loci_name), collapse = " + "), sep=" ~ "))
+```
+
+```{r}
+#pheno_ %>% filter(ID == "19891275")
+
+ns_model = glmmkin(Phenotype ~ Sex + Group, data = pheno_, kins = kinship, id = "ID",
+                   family = binomial(link = "logit"))
+```
+
+genotype file
+```{r}
+# setwd(("/datacommons/ochoalab/tiffany_data/DATASOURCE/datasource/"))
+# gds = SeqArray::seqBED2GDS(bed.fn = "/datacommons/ochoalab/tiffany_data/DATASOURCE/datasource/ssns_gwas_maf.bed", fam.fn = "ssns_gwas_maf.fam", bim.fn = "ssns_gwas_maf.bim", out.gdsfn = "ssns_gwas_maf_GDS")
+#geno.file <- system.file("extdata", "geno.txt", package = "GMMAT")
+```
+
+```{r}
+ns.geno.file <- strsplit("/datacommons/ochoalab/tiffany_data/DATASOURCE/datasource/ssns_gwas_maf.bed", ".bed", fixed = TRUE)[[1]]
+glmm.score(ns_model, infile = ns.geno.file, outfile =
+         "/hpc/home/tt207/glmm.score.bed.testoutfile.txt")
+```
+
+```{r}
+gmmat_out <- read.table("/hpc/home/tt207/glmm.score.bed.testoutfile.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+hist(gmmat_out$PVAL, col = "white")
+```
+```{r}
+results = gmmat_out %>% select(SNP, CHR, BP = POS, P = PVAL) %>% drop_na(P)
+qq(results$P)
+```
+```{r}
+tib_manplot = gmmat_out %>% select(SNP = id, CHR = chr, BP = pos, P = pval) %>% mutate(CHR = as.numeric(CHR))
+manhattan(results, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GMMAT")
+
+manhattan(subset(tib_manplot, CHR ==6), annotatePval = 1.08246e-07, annotateTop = FALSE, main = "Ligera_f", xlim = c(32400000, 
+    32750000))
+```
+
+```{r}
+summarystat = read.csv("/datacommons/ochoalab/tiffany_data/NS_data/summarystat.csv")
+```
+
+```{r}
+gmmat = gmmat_out %>% arrange(SNP) %>% select(chr = CHR, SNP, -cM, -N, pos = POS, ref = A1, alt = A2, AF, SCORE_gmmat = SCORE, VAR_gmmat = VAR, gmmat_P = PVAL)
+data_merge = merge(summarystat, gmmat, by = c("chr", "SNP", "pos", "ref", "alt")) %>% select(-X)
+```
+```{r}
+write.csv(data_merge, "/datacommons/ochoalab/tiffany_data/NS_data/summarystat.csv")
+```
+
+```{r}
+plot(data_merge$gcta_P, data_merge$ligera_f_P)
+data_merge_sig = data_merge %>% filter(ligera_f_P < 1.08246e-07 | gcta_P < 1.08246e-07 | gmmat_P < 1.08246e-07) 
+plot(log(data_merge_sig$gmmat_P), log(data_merge_sig$ligera_f_P))
+```
+
+```{r}
+data_merge_long = data_merge_sig %>% select(SNP, maf, ligera_f_P, gcta_P, gmmat_P) %>% gather(method_P, value, ligera_f_P:gmmat_P)
+```
+
+```{r}
+library(ggplot2)
+ggplot(data_merge_long, aes(x=SNP, y=value, color=as.factor(method_P))) +
+  geom_point()
+```
+
+```{r}
+gcta_out <- read.table("/datacommons/ochoalab/tiffany_data/NS_data/ssns_gwas_maf_gcta.mlma", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+gcta_results = gcta_out %>% select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
+
+ligera_f <- read.table("/datacommons/ochoalab/tiffany_data/NS_data/ligera_f_NS.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+tib_manplot = ligera_f %>% select(SNP = id, CHR = chr, BP = pos, P = pval) %>% mutate(CHR = as.numeric(CHR))
+comb_df = combine(gcta_results, tib_manplot, results, names = c('gcta', 'ligera_f', 'gmmat'))
+
+write.csv(comb_df, file = "/datacommons/ochoalab/tiffany_data/NS_data/combine_mandata.csv")
+```
+
