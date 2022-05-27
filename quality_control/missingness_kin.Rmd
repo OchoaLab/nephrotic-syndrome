@@ -110,8 +110,10 @@ subset_df = check_demo[-id_to_remove,]
 list_remove = unique(c(demo_remove, subset_df$to_remove))
 # write output txt file
 fileConn<-file("duplicate_remove.txt")
-writeLines(c(list_remove), fileConn)
+writeLines(paste0(list_remove, " ", list_remove), fileConn)
 close(fileConn)
+
+
 ```
 
 
