@@ -34,13 +34,32 @@ Use demographic data to further filter
 ```{r}
 phenotype1 = read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", 
                col_names  = TRUE)
+phenotype1_2 = read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", 
+               col_names  = TRUE, sheet = 2)
 phenotype1 = phenotype1 %>% select(AcquisitionNumber = `Acquisition Number`, Sex, RACE, AGE = `AGE DIAGNOSIS`, DIAGNOSIS)
+phenotype1_2 = phenotype1_2 %>% select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, DIAGNOSIS = Diagnosis, AGE = `Age at Diagnosis`)
 
+# check for overlap ID's
+intersect(phenotype1$AcquisitionNumber, phenotype1_2$AcquisitionNumber)
+# remove repeated rows (info overlap, manually checked)
+phenotype1 = phenotype1 %>% 
+  filter(AcquisitionNumber != "19891275" & 
+           AcquisitionNumber != "19891281" & 
+           AcquisitionNumber !=  "A2008755" &
+           AcquisitionNumber != "A1024006" & 
+           AcquisitionNumber != "A1004719" &
+           AcquisitionNumber != "A1004697" &
+           AcquisitionNumber != "A1002258")
+
+# combine phenotype data
+phenotype1_ = rbind(phenotype1, phenotype1_2)
+
+# load other excel sheet
 phenotype2 = read_xlsx("PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx", 
                col_names  = TRUE)
 
 # check for overlap ID's
-intersect(phenotype1$`Acquisition Number`, phenotype2$`Acquisition Number`)
+intersect(phenotype1_$AcquisitionNumber, phenotype2$`Acquisition Number`)
 
 # remove repeated rows (information overlap from both phenotype files)
 phenotype2 = phenotype2 %>% 
@@ -48,26 +67,37 @@ phenotype2 = phenotype2 %>%
   select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, AGE = `Age at Diagnosis`, DIAGNOSIS = Diagnosis)
 
 # combine phenotype data
-phenotype_df = rbind(phenotype1, phenotype2) 
+phenotype_df = rbind(phenotype1_, phenotype2)
+
+# create duplicate
+phenotype_df$AcquisitionNumber = paste0(phenotype_df$AcquisitionNumber, "d")
+# combine
+phenotype_df = rbind(phenotype1_, phenotype2, phenotype_df)
 ```
+```{r}
+intentional_dup = unique(c(dplyr::filter(least_miss, grepl("d",ID1)) %>% pull(ID1), dplyr::filter(least_miss, grepl("d",ID2)) %>% pull(ID2)))
+```
+
+
 
 Add demographic data to missingness/duplicate dataframe
 ```{r}
 merge3 = merge(least_miss, phenotype_df, by.x = "ID1", by.y = "AcquisitionNumber", all.x = TRUE) %>% 
   rename(Sex_1 = Sex, RACE_1 = RACE, AGE_1 = AGE, DIAGNOSIS_1 = DIAGNOSIS) 
 merge4 = merge(merge3, phenotype_df, by.x = "ID2", by.y = "AcquisitionNumber", all.x = TRUE) %>% 
-  rename(Sex_2 = Sex, RACE_2 = RACE, AGE_2 = AGE, DIAGNOSIS_2 = DIAGNOSIS) 
+  rename(Sex_2 = Sex, RACE_2 = RACE, AGE_2 = AGE, DIAGNOSIS_2 = DIAGNOSIS) %>% select(ID1, ID2, everything())
+
 
 check_demo = merge4 %>% mutate(check_sex = ifelse(Sex_1 == Sex_2, TRUE, FALSE),
                                check_race = ifelse(RACE_1 == RACE_2, TRUE, FALSE),
-                               check_age = ifelse(AGE_1 == AGE_2, TRUE, FALSE),
+                               #check_age = ifelse(AGE_1 == AGE_2, TRUE, FALSE),
                                check_diag = ifelse(DIAGNOSIS_1 == DIAGNOSIS_2, TRUE, FALSE))
 
 # if NA in any of the check columns, then demographic data is incomplete for at least one of the individual
 # if FALSE in any of the check columns, then demographic data between duplicates does not match
 ## get row indices of FALSE entries
 id_to_remove = unique(c(which(!check_demo$check_sex), which(!check_demo$check_race), 
-                     which(!check_demo$check_age), which(!check_demo$check_diag)))
+                     which(!check_demo$check_diag)))
 ## subset - ID's to remove:
 remove = check_demo[id_to_remove,]
 demo_remove = c(remove$ID2, remove$ID1)

@@ -1,0 +1,149 @@
+---
+title: "maf"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(BEDMatrix)
+library(genio)
+library(simtrait)
+```
+
+Extract list of id's for ssns control and 1000G data separated by ancestry. 
+```{r}
+merge_pheno_ <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/merge_pheno_race_sex.txt", sep = " ", 
+                          stringsAsFactors=FALSE, quote = "", header = TRUE)
+
+controls = merge_pheno_ %>% filter(Phenotype == 0)
+```
+
+SSNS control:
+```{r}
+# write output txt file
+ssns_control = controls %>% filter(grepl("_", famid)) #%>% pull(famid)
+
+#unique(ssns_control$Group)
+
+ssns_control_w = ssns_control %>% filter(Group == "White") %>% pull(famid) 
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_white.txt")
+writeLines(paste0(0, " ", ssns_control_w), fileConn)
+close(fileConn)
+
+ssns_control_b = ssns_control %>% filter(Group == "Black") %>% pull(famid) 
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_black.txt")
+writeLines(paste0(0, " ", ssns_control_b), fileConn)
+close(fileConn)
+
+ssns_control_h = ssns_control %>% filter(Group == "Hispanic") %>% pull(famid) 
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_hispanic.txt")
+writeLines(paste0(0, " ", ssns_control_h), fileConn)
+close(fileConn)
+
+ssns_control_a = ssns_control %>% filter(Group == "Asian") %>% pull(famid) 
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_asian.txt")
+writeLines(paste0(0, " ", ssns_control_a), fileConn)
+close(fileConn)
+  
+# fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_id.txt")
+# writeLines(paste0(0, " ", ssns_control), fileConn)
+# close(fileConn)
+```
+
+```{r}
+name <- '/datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp'
+fam <- read_fam( name )
+fam %>% filter(id == "E0238984_E0238984")
+
+```
+
+TGP control: 
+```{r}
+tgp_control = controls %>% filter(!grepl("_", famid)) 
+tgp_white = tgp_control %>% filter(Group == "White") %>% pull(famid)
+tgp_hispanic = tgp_control %>% filter(Group == "Hispanic") %>% pull(famid)
+tgp_black = tgp_control %>% filter(Group == "Black") %>% pull(famid)
+tgp_asian = tgp_control %>% filter(Group == "Asian") %>% pull(famid)
+
+# get famid from tgp
+name <- '/datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp'
+fam_ssnstgp <- read_fam( name ) 
+
+# write txt file
+white_fam = subset(fam_ssnstgp, id %in% tgp_white) 
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_white_id.txt")
+writeLines(paste0(white_fam$fam, " ", white_fam$id), fileConn)
+close(fileConn)
+
+hispanic_fam = subset(fam_ssnstgp, id %in% tgp_hispanic) 
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_hispanic_id.txt")
+writeLines(paste0(hispanic_fam$fam, " ", hispanic_fam$id), fileConn)
+close(fileConn)
+
+black_fam = subset(fam_ssnstgp, id %in% tgp_black) 
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_black_id.txt")
+writeLines(paste0(black_fam$fam, " ", black_fam$id), fileConn)
+close(fileConn)
+
+asian_fam = subset(fam_ssnstgp, id %in% tgp_asian) 
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_asian_id.txt")
+writeLines(paste0(asian_fam$fam, " ", asian_fam$id), fileConn)
+close(fileConn)
+```
+
+Run plink script:
+
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp --keep ssns_control_black.txt --freq --out ssns_control_black
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp --keep ssns_control_white.txt --freq --out ssns_control_white
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp --keep ssns_control_hispanic.txt --freq --out ssns_control_hispanic
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp --keep ssns_control_asian.txt --freq --out ssns_control_asian
+
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp --keep tgp_asian_id.txt --freq --out tgp_asian
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp --keep tgp_white_id.txt --freq --out tgp_white
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp --keep tgp_black_id.txt --freq --out tgp_black
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp --keep tgp_hispanic_id.txt --freq --out tgp_hispanic
+
+
+Read plink output files:
+SSNS controls:
+```{r}
+afreq_ssns_b <- read.table("/Users/tiffanytu/Documents/Duke.grad/2022spring/lab/preprocessing/ssns_control_black.afreq", sep = "\t")
+colnames(afreq_ssns_b) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_w <- read.table("/Users/tiffanytu/Documents/Duke.grad/2022spring/lab/preprocessing/ssns_control_white.afreq", sep = "\t")
+colnames(afreq_ssns_w) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_h <- read.table("/Users/tiffanytu/Documents/Duke.grad/2022spring/lab/preprocessing/ssns_control_hispanic.afreq", sep = "\t")
+colnames(afreq_ssns_h) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_a <- read.table("/Users/tiffanytu/Documents/Duke.grad/2022spring/lab/preprocessing/ssns_control_asian.afreq", sep = "\t")
+colnames(afreq_ssns_a) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+```
+
+TGP
+```{r}
+afreq_asian <- read.table("/Users/tiffanytu/Documents/Duke.grad/2022spring/lab/preprocessing/tgp_asian.afreq", sep = "\t")
+colnames(afreq_asian) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_white <- read.table("/Users/tiffanytu/Documents/Duke.grad/2022spring/lab/preprocessing/tgp_white.afreq", sep = "\t")
+colnames(afreq_white) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_black <- read.table("/Users/tiffanytu/Documents/Duke.grad/2022spring/lab/preprocessing/tgp_black.afreq", sep = "\t")
+colnames(afreq_black) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_hispanic <- read.table("/Users/tiffanytu/Documents/Duke.grad/2022spring/lab/preprocessing/tgp_hispanic.afreq", sep = "\t")
+colnames(afreq_hispanic) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+```
+
+```{r}
+plot(afreq_ssns_a$ALT_FREQS, afreq_asian$ALT_FREQS, xlab="ssns_control_asians N = 221", ylab="tgp_asians N = 993", main = "Group: Asian", pch='.')
+
+plot(afreq_ssns_w$ALT_FREQS, afreq_white$ALT_FREQS, xlab="ssns_control_white N = 122", ylab="tgp_white N = 499",  main = "Group: White", pch='.')
+
+plot(afreq_ssns_b$ALT_FREQS, afreq_black$ALT_FREQS, xlab="ssns_control_black N = 124", ylab="tgp_black N = 656",  main = "Group: Black", pch='.')
+
+plot(afreq_ssns_h$ALT_FREQS, afreq_hispanic$ALT_FREQS, xlab="ssns_control_hispanic N = 2", ylab="tgp_hispanic N = 347", main = "Group: Hispanic (overlap snps: 10535665)", pch='.')
+```
+
