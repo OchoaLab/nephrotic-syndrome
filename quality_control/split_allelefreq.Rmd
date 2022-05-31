@@ -147,3 +147,4 @@ plot(afreq_ssns_b$ALT_FREQS, afreq_black$ALT_FREQS, xlab="ssns_control_black N =
 plot(afreq_ssns_h$ALT_FREQS, afreq_hispanic$ALT_FREQS, xlab="ssns_control_hispanic N = 2", ylab="tgp_hispanic N = 347", main = "Group: Hispanic (overlap snps: 10535665)", pch='.')
 ```
 
+HWE analysis

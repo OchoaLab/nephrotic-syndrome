@@ -1,0 +1,45 @@
+---
+title: "association_analysis"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(tidyverse)
+library(dplyr)
+#library(BEDMatrix)
+.libPaths("/datacommons/ochoalab/tiffany_data")
+library(ligera)
+library(genio)
+```
+
+# create new phenotype file (for gcta and ligera)
+- first run scripts in phenotype_excel_merge.Rmd file to get "phenotype_df" data object loaded
+```{r}
+phenotype_df
+```
+
+```{r}
+name <- '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_gwas_maf'
+fam_ssns <- read_fam( name ) 
+# check phenotype_df contains all individuals we need
+length(intersect(phenotype_df$AcquisitionNumber, fam_ssns$id))
+
+# note: A1019848 is duplicated due to age
+#test = filter(phenotype_df, AcquisitionNumber %in% fam_ssns$id) %>% distinct()
+#which(duplicated(test$AcquisitionNumber))
+#test[540,]
+test %>% filter(AcquisitionNumber == "A1019848")
+which(test$AcquisitionNumber == "A1019848")
+
+
+pheno = test[-540,] %>% arrange(AcquisitionNumber) %>% mutate(Phenotype = ifelse(DIAGNOSIS == "Control", 1, 2))
+```
+
+
+```{r}
+pheno_fam = cbind(fam_ssns, pheno$Phenotype) %>% dplyr::select(fam, id, Phenotype = `pheno$Phenotype`)
+write.table(pheno_fam,"/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/pheno_file.txt", sep=" ",col.names = FALSE, row.names = FALSE, quote = FALSE)
+```
+

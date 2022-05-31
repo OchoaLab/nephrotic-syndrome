@@ -1,0 +1,145 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(BEDMatrix)
+library(genio)
+```
+
+Extract list of id's for ssns control and 1000G data separated by ancestry. 
+```{r}
+merge_pheno_ <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/merge_pheno_race_sex.txt", sep = " ", 
+                          stringsAsFactors=FALSE, quote = "", header = TRUE)
+
+controls = merge_pheno_ %>% filter(Phenotype == 0)
+```
+```{r}
+name <- '/datacommons/ochoalab/ssns_gwas/imputation/merge/ssns_tgp'
+fam <- read_fam( name )
+```
+
+
+SSNS control + TGP
+```{r}
+white_id = controls %>% filter(Group == "White") %>% pull(famid)
+white_sub = subset(fam, id %in% white_id)
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_white_id.txt")
+writeLines(paste0(white_sub$fam, " ", white_sub$id), fileConn)
+close(fileConn)
+
+hispanic_id = controls %>% filter(Group == "Hispanic") %>% pull(famid)
+hispanic_sub = subset(fam, id %in% hispanic_id)
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_hispanic_id.txt")
+writeLines(paste0(hispanic_sub$fam, " ", hispanic_sub$id), fileConn)
+close(fileConn)
+
+black_id = controls %>% filter(Group == "Black") %>% pull(famid)
+black_sub = subset(fam, id %in% black_id)
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_black_id.txt")
+writeLines(paste0(black_sub$fam, " ", black_sub$id), fileConn)
+close(fileConn)
+
+asian_id = controls %>% filter(Group == "Asian") %>% pull(famid)
+asian_sub = subset(fam, id %in% asian_id) %>% filter(fam == 0 | fam =='PJL' | fam =='GIH' | fam =='ITU' | fam =='STU' | fam =='BEB')
+#SAS = c('PJL', 'GIH', 'ITU', 'STU', 'BEB')
+fileConn<-file("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_asian_id.txt")
+writeLines(paste0(asian_sub$fam, " ", asian_sub$id), fileConn)
+close(fileConn)
+```
+
+
+Read plink output files:
+SSNS controls:
+```{r}
+hardy_w <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_white.hardy", sep = "\t")
+#colnames(hardy_w) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+hardy_b <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_black.hardy", sep = "\t")
+#colnames(hardy_b) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+hardy_a <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_asian.hardy", sep = "\t")
+#colnames(hardy_a) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+```
+
+```{r}
+filter_a = hardy_a %>% filter(V10 < 1e-4) %>% dplyr::select(V1, V2, V3, V4, V10)
+colnames(filter_a) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
+filter_w = hardy_w %>% filter(V10 < 1e-4) %>% dplyr::select(V1, V2, V3, V4, V10)
+colnames(filter_w) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
+filter_b = hardy_b %>% filter(V10 < 1e-4) %>% dplyr::select(V1, V2, V3, V4, V10)
+colnames(filter_b) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
+```
+
+
+Read plink output files:
+SSNS controls:
+```{r}
+afreq_ssns_b <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_black.afreq", sep = "\t")
+colnames(afreq_ssns_b) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_w <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_white.afreq", sep = "\t")
+colnames(afreq_ssns_w) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_a <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_asian.afreq", sep = "\t")
+colnames(afreq_ssns_a) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+```
+
+TGP
+```{r}
+tgp_asian <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_asian.afreq", sep = "\t")
+colnames(tgp_asian) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+tgp_white <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_white.afreq", sep = "\t")
+colnames(tgp_white) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+tgp_black <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_black.afreq", sep = "\t")
+colnames(tgp_black) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+```
+
+```{r}
+afreq_A = cbind(afreq_ssns_a, tgp_asian$ALT_FREQS)
+afreq_B = cbind(afreq_ssns_b, tgp_black$ALT_FREQS)
+afreq_W = cbind(afreq_ssns_w, tgp_white$ALT_FREQS)
+
+
+```
+
+
+```{r}
+alpha <- ifelse(black_plot$annotate, 0.9, 0.1)
+size <- ifelse(black_plot$annotate, 0.5, 0.1)
+ggplot(black_plot, aes(x=ALT_FREQS, y=`tgp_black.ALT_FREQS`, color = factor(annotate))) +
+    geom_point(size = size, alpha=alpha) +
+  scale_colour_manual(values = c("0" = "gray", "1" = "red")) +
+  theme(legend.position="none") +
+  xlab("ssns_control_black") + ylab("tgp_black") + ggtitle("Group: Black")
+
+
+```
+
+```{r}
+white_plot = read.csv("white_hwe_plot.csv")
+alpha <- ifelse(white_plot$annotate, 0.9, 0.1)
+size <- ifelse(white_plot$annotate, 0.5, 0.1)
+ggplot(white_plot, aes(x=ALT_FREQS, y=`tgp_white.ALT_FREQS`, color = factor(annotate))) +
+    geom_point(size = size, alpha=alpha) +
+  scale_colour_manual(values = c("0" = "gray", "1" = "red")) +
+  theme(legend.position="none") +
+  xlab("ssns_control_white") + ylab("tgp_white") + ggtitle("Group: White")
+```
+
+```{r}
+asian_plot = read.csv("asian_hwe_plot.csv")
+alpha <- ifelse(asian_plot$annotate, 0.9, 0.1)
+size <- ifelse(asian_plot$annotate, 0.5, 0.1)
+ggplot(asian_plot, aes(x=ALT_FREQS, y=`tgp_asian.ALT_FREQS`, color = factor(annotate))) +
+    geom_point(size = size, alpha=alpha) +
+  scale_colour_manual(values = c("0" = "gray", "1" = "red")) +
+  theme(legend.position="none") +
+  xlab("ssns_control_asian") + ylab("tgp_asian") + ggtitle("Group: Asian")
+```
