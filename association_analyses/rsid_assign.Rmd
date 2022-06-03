@@ -1,0 +1,102 @@
+---
+title: "Untitled"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("biomaRt")
+library(tidyverse)
+```
+
+The first part of this script downloads standard rsid's with the biomaRt R package
+```{r}
+#grch38
+snp_mart <- useEnsembl(biomart = "snp", dataset="hsapiens_snp")
+#listAttributes(snp_mart)
+#ensembl78 = useEnsembl(biomart="snp")
+#listDatasets(ensembl78)[31:35,]
+#searchDatasets(biomart="ensembl", pattern = "hsapiens")
+```
+
+Load gwas results and extract chr + position information in correct format for biomaRt.      
+The follow code is done semi-manually, you can easily get a server overload/blocked warning message if you attempt too many downloads in each iteration.      
+The results are combine and saved into a csv file for easy access in the future.    
+```{r}
+data =  read.table("gcta_sumstat.txt", sep = "\t", header = TRUE)
+sumstat = data %>% dplyr::select(CHR, chr_start = BP, chr_end = BP) %>% 
+  filter(CHR == 6 & chr_start > 32400000 & chr_end <  32750000)  %>% head(100)
+position_gcta <- apply(sumstat, 1, paste, collapse = ":")
+
+file = getBM(attributes = c('refsnp_id', 'chr_name', 'chrom_start', 'chrom_end', 'allele'),
+      filters = c('chromosomal_region'), 
+      values = position_gcta, 
+      mart = snp_mart)  
+
+sumstat = data %>% select(CHR, chr_start = BP, chr_end = BP) %>% 
+  filter(CHR == 6 & chr_start > 32400000 & chr_end <  32750000) 
+position_gcta <- apply(sumstat, 1, paste, collapse = ":")
+
+file2 = getBM(attributes = c('refsnp_id', 'chr_name', 'chrom_start', 'chrom_end', 'allele'),
+      filters = c('chromosomal_region'), 
+      values = position_gcta[101:190], 
+      mart = snp_mart)  
+```
+
+```{r}
+split_pos = split(position_gcta, ceiling(seq_along(position_gcta)/90))
+split_pos[1:4]
+```
+
+```{r}
+output = c()
+for (i in split_pos[1:4]){
+  convert = getBM(attributes = c('refsnp_id', 'chr_name', 'chrom_start', 'chrom_end', 'allele'),
+              filters = c('chromosomal_region'), 
+              values = i, 
+              mart = snp_mart)  
+  output = rbind(output, convert)
+}
+
+output2 = c()
+for (i in split_pos[5:17]){
+  convert = getBM(attributes = c('refsnp_id', 'chr_name', 'chrom_start', 'chrom_end', 'allele'),
+              filters = c('chromosomal_region'), 
+              values = i, 
+              mart = snp_mart)  
+  output2 = rbind(output2, convert)
+}
+  
+```
+
+```{r}
+rsid_out = rbind(output, output2)
+write.csv(rsid_out, "rsid32400000_32750000.csv")
+```
+
+Convert GWAS output to standard rsid
+- the script below uses the reference file (rsid32400000_32750000.csv)
+- reference file (rsid32400000_32750000.csv) is generated with the code chunks above using biomaRt R package. 
+```{r}
+# load reference file and gwas summary stats
+rsid_out = read.csv("rsid32400000_32750000.csv")
+rsid_out_filter =  rsid_out %>% filter(chrom_start == chrom_end) %>% dplyr::select(refsnp_id, CHR = chr_name, BP = chrom_start, allele)
+
+data =  read.table("gcta_maf_new.mlma", sep = "\t", header = TRUE) %>% rename(CHR = Chr, BP = bp)
+```
+
+Merge and write Files:
+```{r}
+# merge standard rsid with GWAS output
+# write as txt file for LocusZoom upload
+
+merge_rsid_data = merge(rsid_out_filter, data, by = c("CHR", "BP"), all = TRUE)
+# the standard ref/alt allele comes in one single column, split into 2
+merge_rsid_data_split = separate(data = merge_rsid_data, col = allele, into = c("allele1", "allele2"), sep = "\\/")
+write.table(merge_rsid_data_split, "merge_rsid_gcta_all_new.txt", sep="\t",row.names=FALSE, quote = FALSE)
+
+# extract top significant snps and output in csv file
+top_snps = merge_rsid_data_split %>% arrange(p) %>% filter(p < 5e-8) %>% dplyr::select(CHR, BP, refsnp_id, SNP, p, A1, A2)
+write_csv(top_snps, "top_snps_gcta_maf_new.csv")
+```
+
