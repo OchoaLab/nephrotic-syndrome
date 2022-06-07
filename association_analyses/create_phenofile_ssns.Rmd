@@ -14,6 +14,7 @@ library(ligera)
 library(genio)
 ```
 
+
 # create new phenotype file (for gcta and ligera)
 - first run scripts in phenotype_excel_merge.Rmd file to get "phenotype_df" data object loaded
 ```{r}
@@ -47,54 +48,5 @@ table(pheno_fam$Phenotype, pheno_maf$DIAGNOSIS)
 
 ```{r}
 write.table(pheno_fam,"/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/pheno_file_new.txt", sep=" ",col.names = FALSE, row.names = FALSE, quote = FALSE)
-```
-
-```{r}
-# remove_id = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/pheno_old_id.txt") %>% pull(V1)
-# test %>% filter(!V1 %in% remove_id) %>%
-#   group_by(V3) %>%
-#   count(V3)
-# 
-# name <- '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/ssns_oldbatch'
-# fam_old <- read_fam( name ) 
-# 
-# # test - pheno file
-# test %>% filter(!V1 %in% fam_old$fam) %>%
-#   group_by(V3) %>%
-#   count(V3)
-# 
-# pheno %>% filter(!AcquisitionNumber %in% fam_old$fam) %>%
-#   group_by(Phenotype) %>%
-#   count(Phenotype)
-# 
-# # excel merge
-# pheno_maf %>% filter(!AcquisitionNumber %in% fam_old$fam) %>%
-#   group_by(DIAGNOSIS) %>%
-#   count(DIAGNOSIS)
-```
-
-
-
-By race (White, Black, Asian)
-```{r}
-pheno_w = pheno %>% filter(RACE == "White")
-fam_ssns_w = filter(fam_ssns, id %in% pheno_w$AcquisitionNumber)
-pheno_fam_w = cbind(fam_ssns_w, pheno_w$Phenotype) %>% dplyr::select(fam, id, Phenotype = `pheno_w$Phenotype`)
-write.table(pheno_fam_w,"/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/pheno_w.txt", sep=" ",col.names = FALSE, row.names = FALSE, quote = FALSE)
-
-pheno_b = pheno %>% filter(RACE == "Black")
-fam_ssns_b = filter(fam_ssns, id %in% pheno_b$AcquisitionNumber)
-pheno_fam_b = cbind(fam_ssns_b, pheno_b$Phenotype) %>% dplyr::select(fam, id, Phenotype = `pheno_b$Phenotype`)
-write.table(pheno_fam_b,"/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/pheno_b.txt", sep=" ",col.names = FALSE, row.names = FALSE, quote = FALSE)
-
-pheno_a = pheno %>% filter(RACE == "Asian")
-fam_ssns_a = filter(fam_ssns, id %in% pheno_a$AcquisitionNumber)
-pheno_fam_a = cbind(fam_ssns_a, pheno_a$Phenotype) %>% dplyr::select(fam, id, Phenotype = `pheno_a$Phenotype`)
-write.table(pheno_fam_a,"/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/pheno_a.txt", sep=" ",col.names = FALSE, row.names = FALSE, quote = FALSE)
-```
-
-South Asian
-```{r}
-pheno_a
 ```
 

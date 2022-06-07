@@ -6,8 +6,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(BEDMatrix)
-library(genio)
+#library(BEDMatrix)
+#library(genio)
 ```
 
 Extract list of id's for ssns control and 1000G data separated by ancestry. 
@@ -55,23 +55,23 @@ close(fileConn)
 Read plink output files:
 SSNS controls:
 ```{r}
-hardy_w <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_white.hardy", sep = "\t")
+hardy_w <- read.table("control_white.hardy", sep = "\t")
 #colnames(hardy_w) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-hardy_b <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_black.hardy", sep = "\t")
+hardy_b <- read.table("control_black.hardy", sep = "\t")
 #colnames(hardy_b) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-hardy_a <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_asian.hardy", sep = "\t")
+hardy_a <- read.table("control_asian.hardy", sep = "\t")
 #colnames(hardy_a) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
 ```
 
 ```{r}
-filter_a = hardy_a %>% filter(V10 < 1e-4) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_a = hardy_a %>% filter(V10 < 1e-8) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_a) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
-filter_w = hardy_w %>% filter(V10 < 1e-4) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_w = hardy_w %>% filter(V10 < 1e-8) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_w) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
-filter_b = hardy_b %>% filter(V10 < 1e-4) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_b = hardy_b %>% filter(V10 < 1e-8) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_b) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
 ```
 
@@ -79,54 +79,61 @@ colnames(filter_b) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
 Read plink output files:
 SSNS controls:
 ```{r}
-afreq_ssns_b <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_black.afreq", sep = "\t")
+afreq_ssns_b <- read.table("ssns_control_black.afreq", sep = "\t")
 colnames(afreq_ssns_b) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-afreq_ssns_w <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_white.afreq", sep = "\t")
+afreq_ssns_w <- read.table("ssns_control_white.afreq", sep = "\t")
 colnames(afreq_ssns_w) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-afreq_ssns_a <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_asian.afreq", sep = "\t")
+afreq_ssns_a <- read.table("ssns_control_asian.afreq", sep = "\t")
 colnames(afreq_ssns_a) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 ```
 
 TGP
 ```{r}
-tgp_asian <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_asian.afreq", sep = "\t")
+tgp_asian <- read.table("tgp_asian.afreq", sep = "\t")
 colnames(tgp_asian) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-tgp_white <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_white.afreq", sep = "\t")
+tgp_white <- read.table("tgp_white.afreq", sep = "\t")
 colnames(tgp_white) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-tgp_black <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_black.afreq", sep = "\t")
+tgp_black <- read.table("tgp_black.afreq", sep = "\t")
 colnames(tgp_black) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
-```
 
-```{r}
 afreq_A = cbind(afreq_ssns_a, tgp_asian$ALT_FREQS)
 afreq_B = cbind(afreq_ssns_b, tgp_black$ALT_FREQS)
 afreq_W = cbind(afreq_ssns_w, tgp_white$ALT_FREQS)
+```
 
+```{r}
+a_plot = merge(afreq_A, filter_a, by = c("CHROM", "ID", "REF", "ALT"), all.x = TRUE) %>% 
+  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1)) %>% arrange(annotate)
+a_plot %>% count(annotate)
 
+b_plot = merge(afreq_B, filter_b, by = c("CHROM", "ID", "REF", "ALT"), all.x = TRUE) %>% 
+  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1)) %>% arrange(annotate)
+b_plot %>% count(annotate)
+
+w_plot = merge(afreq_W, filter_w, by = c("CHROM", "ID", "REF", "ALT"), all.x = TRUE) %>% 
+  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1)) %>% arrange(annotate)
+w_plot %>% count(annotate)
 ```
 
 
 ```{r}
-alpha <- ifelse(black_plot$annotate, 0.9, 0.1)
-size <- ifelse(black_plot$annotate, 0.5, 0.1)
-ggplot(black_plot, aes(x=ALT_FREQS, y=`tgp_black.ALT_FREQS`, color = factor(annotate))) +
+alpha <- ifelse(b_plot$annotate, 0.9, 0.1)
+size <- ifelse(b_plot$annotate, 0.5, 0.1)
+ggplot(b_plot, aes(x=ALT_FREQS, y=`tgp_black$ALT_FREQS`, color = factor(annotate))) +
     geom_point(size = size, alpha=alpha) +
   scale_colour_manual(values = c("0" = "gray", "1" = "red")) +
   theme(legend.position="none") +
   xlab("ssns_control_black") + ylab("tgp_black") + ggtitle("Group: Black")
-
-
 ```
 
 ```{r}
-white_plot = read.csv("white_hwe_plot.csv")
-alpha <- ifelse(white_plot$annotate, 0.9, 0.1)
-size <- ifelse(white_plot$annotate, 0.5, 0.1)
-ggplot(white_plot, aes(x=ALT_FREQS, y=`tgp_white.ALT_FREQS`, color = factor(annotate))) +
+alpha <- ifelse(w_plot$annotate, 0.9, 0.1)
+size <- ifelse(w_plot$annotate, 0.5, 0.1)
+ggplot(w_plot, aes(x=ALT_FREQS, y=`tgp_white$ALT_FREQS`, color = factor(annotate))) +
     geom_point(size = size, alpha=alpha) +
   scale_colour_manual(values = c("0" = "gray", "1" = "red")) +
   theme(legend.position="none") +
@@ -134,10 +141,9 @@ ggplot(white_plot, aes(x=ALT_FREQS, y=`tgp_white.ALT_FREQS`, color = factor(anno
 ```
 
 ```{r}
-asian_plot = read.csv("asian_hwe_plot.csv")
-alpha <- ifelse(asian_plot$annotate, 0.9, 0.1)
-size <- ifelse(asian_plot$annotate, 0.5, 0.1)
-ggplot(asian_plot, aes(x=ALT_FREQS, y=`tgp_asian.ALT_FREQS`, color = factor(annotate))) +
+alpha <- ifelse(a_plot$annotate, 0.9, 0.1)
+size <- ifelse(a_plot$annotate, 0.5, 0.1)
+ggplot(a_plot, aes(x=ALT_FREQS, y=`tgp_asian$ALT_FREQS`, color = factor(annotate))) +
     geom_point(size = size, alpha=alpha) +
   scale_colour_manual(values = c("0" = "gray", "1" = "red")) +
   theme(legend.position="none") +

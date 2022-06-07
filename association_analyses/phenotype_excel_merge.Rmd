@@ -1,0 +1,71 @@
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(genio)
+```
+
+Use demographic data to further filter
+```{r}
+phenotype1 = read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", 
+               col_names  = TRUE)
+phenotype1_2 = read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", 
+               col_names  = TRUE, sheet = 2)
+phenotype1 = phenotype1 %>% select(AcquisitionNumber = `Acquisition Number`, Sex, RACE, AGE = `AGE DIAGNOSIS`, DIAGNOSIS)
+phenotype1_2 = phenotype1_2 %>% select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, DIAGNOSIS = Diagnosis, AGE = `Age at Diagnosis`)
+
+# check for overlap ID's
+intersect(phenotype1$AcquisitionNumber, phenotype1_2$AcquisitionNumber)
+# remove repeated rows (info overlap, manually checked)
+phenotype1 = phenotype1 %>% 
+  filter(AcquisitionNumber != "19891275" & 
+           AcquisitionNumber != "19891281" & 
+           AcquisitionNumber !=  "A2008755" &
+           AcquisitionNumber != "A1024006" & 
+           AcquisitionNumber != "A1004719" &
+           AcquisitionNumber != "A1004697" &
+           AcquisitionNumber != "A1002258")
+
+# combine phenotype data
+phenotype1_ = rbind(phenotype1, phenotype1_2)
+
+# load other excel sheet
+phenotype2 = read_xlsx("PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx", 
+               col_names  = TRUE)
+
+# check for overlap ID's
+intersect(phenotype1_$AcquisitionNumber, phenotype2$`Acquisition Number`)
+
+# remove repeated rows (information overlap from both phenotype files)
+phenotype2 = phenotype2 %>% 
+  filter(`Acquisition Number` != "19960560" & `Acquisition Number` != "19960561") %>% 
+  select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, AGE = `Age at Diagnosis`, DIAGNOSIS = Diagnosis)
+
+# combine phenotype data
+phenotype_df = rbind(phenotype1_, phenotype2) %>% distinct(AcquisitionNumber, .keep_all = TRUE)
+
+#phenotype_df %>% filter(stringr::str_ends(AcquisitionNumber, 'd'))
+
+
+# create duplicate
+#phenotype_df$AcquisitionNumber = paste0(phenotype_df$AcquisitionNumber, "d")
+# combine
+#phenotype_df = rbind(phenotype1_, phenotype2, phenotype_df)
+```
+
+```{r}
+name <- '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.all.b38.n2656/nephrotic.syndrome.gwas.all.b38.n2656.R2.fam'
+fam_r2_ns <- read_fam( name ) 
+# extract intentional duplicate id's
+dup_id = fam_r2_ns %>% filter(stringr::str_ends(fam, 'd')) %>% mutate(id_ = sub("d$", "", id) ) %>% pull(id_)
+pheno_dup = filter(phenotype_df, AcquisitionNumber %in% dup_id) %>% mutate(AcquisitionNumber = paste0(AcquisitionNumber, "d"))
+phenotype_df = rbind(phenotype_df, pheno_dup)
+```
+
+
+```{r}
+write_csv(phenotype_df, "/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/pheno_excelmerge.csv")
+read_csv("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/pheno_excelmerge.csv")
+```
+

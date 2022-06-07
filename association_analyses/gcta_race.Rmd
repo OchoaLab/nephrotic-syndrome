@@ -1,0 +1,66 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(qqman)
+```
+
+- split data by race
+- extract id's by race from phenotype file (sex, age, race, diagnosis), then merge with phenotype file that contains coded case/control for GCTA.   
+```{r}
+phenotype = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/pheno_file_new.txt")
+colnames(phenotype) = c("famid", "id", "phenotype")
+
+pheno = read_csv("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/pheno_excelmerge.csv")
+name <- '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_gwas_maf'
+fam_ssns <- read_fam( name ) 
+```
+
+```{r}
+pheno_w = pheno %>% filter(RACE == "White")
+fam_ssns_w = filter(fam_ssns, id %in% pheno_w$AcquisitionNumber)
+pheno_fam_w = merge(fam_ssns_w, phenotype, by = "id") %>% dplyr::select(fam, id, phenotype)
+write.table(pheno_fam_w,"/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/pheno_w.txt", sep=" ",col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+pheno_b = pheno %>% filter(RACE == "Black")
+fam_ssns_b = filter(fam_ssns, id %in% pheno_b$AcquisitionNumber)
+pheno_fam_b = merge(fam_ssns_b, phenotype, by = "id") %>% dplyr::select(fam, id, phenotype)
+write.table(pheno_fam_b,"/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/pheno_b.txt", sep=" ",col.names = FALSE, row.names = FALSE, quote = FALSE)
+
+pheno_a = pheno %>% filter(RACE == "Asian")
+fam_ssns_a = filter(fam_ssns, id %in% pheno_a$AcquisitionNumber)
+pheno_fam_a = merge(fam_ssns_a, phenotype, by = "id") %>% dplyr::select(fam, id, phenotype)
+write.table(pheno_fam_a,"/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/pheno_a.txt", sep=" ",col.names = FALSE, row.names = FALSE, quote = FALSE)
+```
+
+## GCTA
+### make grm
+gcta --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/ssns_maf_asian --autosome --make-grm --out /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/ssns_maf_asian
+
+gcta --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/ssns_maf_black --autosome --make-grm --out /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/ssns_maf_black
+
+gcta --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/ssns_maf_white --autosome --make-grm --out /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/race/ssns_maf_white
+
+
+### after grm created, run gcta_NS.q script in folder. 
+
+```{r}
+gcta_w <- read.table("gcta_maf_white.mlma", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+hist(gcta_w$p)
+results_w = gcta_w %>% select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
+qq(results_w$P, main = "GCTA Group:White")
+manhattan(results_w, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA Group:White")
+
+gcta_b <- read.table("gcta_maf_black.mlma", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+hist(gcta_b$p)
+results_b = gcta_b %>% select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
+qq(results_b$P, main = "GCTA Group:Black")
+manhattan(results_b, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA Group:Black")
+
+gcta_a <- read.table("gcta_maf_asian.mlma", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+hist(gcta_a$p)
+results_a = gcta_a %>% select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
+qq(results_a$P, main = "GCTA Group:Asian")
+manhattan(results_a, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA Group: Asian")
+```
+
