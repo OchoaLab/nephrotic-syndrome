@@ -6,6 +6,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(qqman)
 #library(BEDMatrix)
 #library(genio)
 ```
@@ -67,11 +68,11 @@ hardy_a <- read.table("control_asian.hardy", sep = "\t")
 ```
 
 ```{r}
-filter_a = hardy_a %>% filter(V10 < 1e-8) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_a = hardy_a %>% filter(V10 < 1e-1) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_a) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
-filter_w = hardy_w %>% filter(V10 < 1e-8) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_w = hardy_w %>% filter(V10 < 1e-1) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_w) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
-filter_b = hardy_b %>% filter(V10 < 1e-8) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_b = hardy_b %>% filter(V10 < 1e-1) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_b) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
 ```
 
@@ -105,6 +106,7 @@ afreq_B = cbind(afreq_ssns_b, tgp_black$ALT_FREQS)
 afreq_W = cbind(afreq_ssns_w, tgp_white$ALT_FREQS)
 ```
 
+## Create df for plotting allele frequencies. Order points so that gray points are plotted first/underneath red points
 ```{r}
 a_plot = merge(afreq_A, filter_a, by = c("CHROM", "ID", "REF", "ALT"), all.x = TRUE) %>% 
   mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1)) %>% arrange(annotate)
@@ -118,7 +120,6 @@ w_plot = merge(afreq_W, filter_w, by = c("CHROM", "ID", "REF", "ALT"), all.x = T
   mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1)) %>% arrange(annotate)
 w_plot %>% count(annotate)
 ```
-
 
 ```{r}
 alpha <- ifelse(b_plot$annotate, 0.9, 0.1)
@@ -149,3 +150,24 @@ ggplot(a_plot, aes(x=ALT_FREQS, y=`tgp_asian$ALT_FREQS`, color = factor(annotate
   theme(legend.position="none") +
   xlab("ssns_control_asian") + ylab("tgp_asian") + ggtitle("Group: Asian")
 ```
+
+## Combine hwe significant loci across ancestry and flag on manhattan plot
+```{r}
+# load gcta data for manhattan plot
+gcta_out <- read.table("ssns_tgp_gcta.mlma", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+# combine sig hwe across ancestry
+hwe_annotate = rbind(filter_a, filter_b, filter_w) %>% dplyr::select(Chr = CHROM, SNP = ID, A2 = REF, A1 = ALT) %>% mutate(hwe = 1)
+```
+
+```{r}
+results = gcta_out %>% dplyr::select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
+manhattan(results, annotatePval = 1.08246e-07, annotateTop = FALSE, highlight = hwe_annotate$SNP, main = "GCTA: hwe< 1e-2")
+
+```
+
+```{r}
+XY <- merge(gcta_out,hwe_annotate, by = c("Chr", "SNP", "A1", "A2"), all.x = TRUE) %>% mutate(hwe = ifelse(is.na(hwe) == TRUE, 0, 1)) %>% filter(hwe == 0) %>% dplyr::select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
+
+manhattan(XY, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA: hwe< 1e-1", ylim = c(0, 40))
+```
+
