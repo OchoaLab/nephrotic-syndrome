@@ -64,3 +64,30 @@ qq(results_a$P, main = "GCTA Group:Asian")
 manhattan(results_a, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA Group: Asian")
 ```
 
+### convert rsid for locuszoom
+```{r}
+rsid_out = read.csv("rsid32400000_32750000.csv")
+rsid_out_filter =  rsid_out %>% filter(chrom_start == chrom_end) %>% dplyr::select(refsnp_id, CHR = chr_name, BP = chrom_start, allele)
+
+results_w = gcta_w %>% rename(CHR = Chr, BP = bp)
+merge_rsid_data_W = merge(rsid_out_filter, results_w, by = c("CHR", "BP"), all = TRUE)
+# the standard ref/alt allele comes in one single column, split into 2
+merge_rsid_data_split_W = separate(data = merge_rsid_data_W, col = allele, into = c("allele1", "allele2"), sep = "\\/")
+write.table(merge_rsid_data_split_W, "rsid_gcta_maf_white.txt", sep="\t",row.names=FALSE, quote = FALSE)
+
+
+results_b = gcta_b %>% rename(CHR = Chr, BP = bp)
+merge_rsid_data_B = merge(rsid_out_filter, results_b, by = c("CHR", "BP"), all = TRUE)
+# the standard ref/alt allele comes in one single column, split into 2
+merge_rsid_data_split_B = separate(data = merge_rsid_data_B, col = allele, into = c("allele1", "allele2"), sep = "\\/")
+write.table(merge_rsid_data_split_B, "rsid_gcta_maf_black.txt", sep="\t",row.names=FALSE, quote = FALSE)
+
+results_a = gcta_a %>% rename(CHR = Chr, BP = bp)
+merge_rsid_data_A = merge(rsid_out_filter, results_a, by = c("CHR", "BP"), all = TRUE)
+# the standard ref/alt allele comes in one single column, split into 2
+merge_rsid_data_split_A = separate(data = merge_rsid_data_A, col = allele, into = c("allele1", "allele2"), sep = "\\/")
+write.table(merge_rsid_data_split_A, "rsid_gcta_maf_asian.txt", sep="\t",row.names=FALSE, quote = FALSE)
+```
+
+
+

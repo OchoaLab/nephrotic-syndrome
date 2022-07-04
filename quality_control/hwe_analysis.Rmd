@@ -1,14 +1,10 @@
----
-title: "Untitled"
-output: html_document
----
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(BEDMatrix)
+library(genio)
 library(qqman)
-#library(BEDMatrix)
-#library(genio)
 ```
 
 Extract list of id's for ssns control and 1000G data separated by ancestry. 
@@ -56,23 +52,23 @@ close(fileConn)
 Read plink output files:
 SSNS controls:
 ```{r}
-hardy_w <- read.table("control_white.hardy", sep = "\t")
+hardy_w <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_white.hardy", sep = "\t")
 #colnames(hardy_w) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-hardy_b <- read.table("control_black.hardy", sep = "\t")
+hardy_b <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_black.hardy", sep = "\t")
 #colnames(hardy_b) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-hardy_a <- read.table("control_asian.hardy", sep = "\t")
+hardy_a <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/control_asian.hardy", sep = "\t")
 #colnames(hardy_a) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
 ```
 
 ```{r}
-filter_a = hardy_a %>% filter(V10 < 1e-1) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_a = hardy_a %>% filter(V10 < 1e-5) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_a) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
-filter_w = hardy_w %>% filter(V10 < 1e-1) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_w = hardy_w %>% filter(V10 < 1e-5) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_w) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
-filter_b = hardy_b %>% filter(V10 < 1e-1) %>% dplyr::select(V1, V2, V3, V4, V10)
+filter_b = hardy_b %>% filter(V10 < 1e-5) %>% dplyr::select(V1, V2, V3, V4, V10)
 colnames(filter_b) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
 ```
 
@@ -80,46 +76,43 @@ colnames(filter_b) = c("CHROM", "ID", "REF", "ALT", "P-VAL")
 Read plink output files:
 SSNS controls:
 ```{r}
-afreq_ssns_b <- read.table("ssns_control_black.afreq", sep = "\t")
+afreq_ssns_b <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_black.afreq", sep = "\t")
 colnames(afreq_ssns_b) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-afreq_ssns_w <- read.table("ssns_control_white.afreq", sep = "\t")
+afreq_ssns_w <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_white.afreq", sep = "\t")
 colnames(afreq_ssns_w) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-afreq_ssns_a <- read.table("ssns_control_asian.afreq", sep = "\t")
+afreq_ssns_a <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/ssns_control_asian.afreq", sep = "\t")
 colnames(afreq_ssns_a) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 ```
 
 TGP
 ```{r}
-tgp_asian <- read.table("tgp_asian.afreq", sep = "\t")
+tgp_asian <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_asian.afreq", sep = "\t")
 colnames(tgp_asian) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-tgp_white <- read.table("tgp_white.afreq", sep = "\t")
+tgp_white <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_white.afreq", sep = "\t")
 colnames(tgp_white) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 
-tgp_black <- read.table("tgp_black.afreq", sep = "\t")
+tgp_black <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/tgp_black.afreq", sep = "\t")
 colnames(tgp_black) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+```
 
+```{r}
 afreq_A = cbind(afreq_ssns_a, tgp_asian$ALT_FREQS)
 afreq_B = cbind(afreq_ssns_b, tgp_black$ALT_FREQS)
 afreq_W = cbind(afreq_ssns_w, tgp_white$ALT_FREQS)
-```
 
-## Create df for plotting allele frequencies. Order points so that gray points are plotted first/underneath red points
-```{r}
 a_plot = merge(afreq_A, filter_a, by = c("CHROM", "ID", "REF", "ALT"), all.x = TRUE) %>% 
-  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1)) %>% arrange(annotate)
-a_plot %>% count(annotate)
+  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1))
 
 b_plot = merge(afreq_B, filter_b, by = c("CHROM", "ID", "REF", "ALT"), all.x = TRUE) %>% 
-  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1)) %>% arrange(annotate)
-b_plot %>% count(annotate)
+  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1))
 
 w_plot = merge(afreq_W, filter_w, by = c("CHROM", "ID", "REF", "ALT"), all.x = TRUE) %>% 
-  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1)) %>% arrange(annotate)
-w_plot %>% count(annotate)
+  mutate(annotate = ifelse(is.na(`P-VAL`) == TRUE, 0, 1))
 ```
+
 
 ```{r}
 alpha <- ifelse(b_plot$annotate, 0.9, 0.1)
@@ -129,9 +122,12 @@ ggplot(b_plot, aes(x=ALT_FREQS, y=`tgp_black$ALT_FREQS`, color = factor(annotate
   scale_colour_manual(values = c("0" = "gray", "1" = "red")) +
   theme(legend.position="none") +
   xlab("ssns_control_black") + ylab("tgp_black") + ggtitle("Group: Black")
+
+
 ```
 
 ```{r}
+#white_plot = read.csv("white_hwe_plot.csv")
 alpha <- ifelse(w_plot$annotate, 0.9, 0.1)
 size <- ifelse(w_plot$annotate, 0.5, 0.1)
 ggplot(w_plot, aes(x=ALT_FREQS, y=`tgp_white$ALT_FREQS`, color = factor(annotate))) +
@@ -142,6 +138,7 @@ ggplot(w_plot, aes(x=ALT_FREQS, y=`tgp_white$ALT_FREQS`, color = factor(annotate
 ```
 
 ```{r}
+#asian_plot = read.csv("asian_hwe_plot.csv")
 alpha <- ifelse(a_plot$annotate, 0.9, 0.1)
 size <- ifelse(a_plot$annotate, 0.5, 0.1)
 ggplot(a_plot, aes(x=ALT_FREQS, y=`tgp_asian$ALT_FREQS`, color = factor(annotate))) +
@@ -151,23 +148,81 @@ ggplot(a_plot, aes(x=ALT_FREQS, y=`tgp_asian$ALT_FREQS`, color = factor(annotate
   xlab("ssns_control_asian") + ylab("tgp_asian") + ggtitle("Group: Asian")
 ```
 
-## Combine hwe significant loci across ancestry and flag on manhattan plot
+## compare allele frequency difference between ssns and tgp (compare absolute difference)
 ```{r}
-# load gcta data for manhattan plot
-gcta_out <- read.table("ssns_tgp_gcta.mlma", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
-# combine sig hwe across ancestry
-hwe_annotate = rbind(filter_a, filter_b, filter_w) %>% dplyr::select(Chr = CHROM, SNP = ID, A2 = REF, A1 = ALT) %>% mutate(hwe = 1)
+afreq_A_filter = afreq_A %>% mutate(abs_diff = abs(ALT_FREQS - `tgp_asian$ALT_FREQS`)) %>% filter(abs_diff < 1)
 ```
 
 ```{r}
-results = gcta_out %>% dplyr::select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
-manhattan(results, annotatePval = 1.08246e-07, annotateTop = FALSE, highlight = hwe_annotate$SNP, main = "GCTA: hwe< 1e-2")
-
+ggplot(afreq_A_filter, aes(x=ALT_FREQS, y=`tgp_asian$ALT_FREQS`)) +
+    geom_point() +
+  #scale_colour_manual(values = c("0" = "gray", "1" = "red")) +
+  theme(legend.position="none") +
+  xlab("ssns_control_black") + ylab("tgp_black") + ggtitle("Group: Black")
 ```
 
-```{r}
-XY <- merge(gcta_out,hwe_annotate, by = c("Chr", "SNP", "A1", "A2"), all.x = TRUE) %>% mutate(hwe = ifelse(is.na(hwe) == TRUE, 0, 1)) %>% filter(hwe == 0) %>% dplyr::select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
 
-manhattan(XY, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA: hwe< 1e-1", ylim = c(0, 40))
+```{r}
+pchisq_out_black = readRDS("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/pchisq_out_black.rds")
+plot(pchisq_out_black)
+pchisq_out_black_vec = pchisq_out_black %>% as.vector()
+pchisq_out_black_vec[1:10]
+
+sum(pchisq_out_black_vec<0.1)
+```
+
+## calculate absolute difference between allele frequencies and flag on manhattan plot
+```{r}
+gcta_out <- read.table("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/ssns_tgp_gcta.mlma", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+afreq_A_filter = afreq_A %>%  rename(tgp_freq = `tgp_asian$ALT_FREQS`) 
+afreq_B_filter = afreq_B %>% rename(tgp_freq = `tgp_black$ALT_FREQS`)
+afreq_W_filter = afreq_W %>% rename(tgp_freq = `tgp_white$ALT_FREQS`)
+# combine across ancestry
+dist_annotate = rbind(afreq_A_filter, afreq_B_filter, afreq_W_filter) %>% 
+  mutate(abs_diff = abs(ALT_FREQS - tgp_freq)) %>% filter(abs_diff > 0.1) %>% 
+  dplyr::select(Chr = CHROM, SNP = ID, A2 = REF, A1 = ALT) %>% mutate(dist = 1) %>% distinct(SNP, .keep_all = TRUE)
+
+# combine across ancestry
+XY <- merge(gcta_out, dist_annotate, by = c("Chr", "SNP", "A1", "A2"), all= TRUE) 
+XY_ = XY %>% 
+  mutate(dist = ifelse(is.na(dist) == TRUE, 0, 1)) %>% 
+  filter(dist == 0) %>% dplyr::select(SNP, CHR = Chr, BP = bp, P = p) %>% drop_na(P)
+
+manhattan(XY_, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA: abs_diff < 0.1")
+```
+
+## calculate p-val and flag on manhattan plot (Ancestry specific test:)
+### likelihood ratio test
+
+```{r}
+pchisq_black = readRDS("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/chisq_lr_black.rds")
+qq(pchisq_black, main = "pchisq p-val QQ plot - Black")
+hist(pchisq_black, main = "pchisq p-val - Black")
+pval_annotate_b = cbind(afreq_B_filter, pchisq_black) %>% 
+  dplyr::select(Chr = CHROM, SNP = ID, A2 = REF, A1 = ALT, pchisq_black) %>% mutate(pval = 1)
+XY_b <- merge(gcta_out, pval_annotate_b, by = c("Chr", "SNP", "A1", "A2"), all= TRUE) 
+XY_b_ = XY_b %>% rename(CHR = Chr, BP = bp, P = p) %>% filter(pchisq_out_black < 0.7) 
+manhattan(XY_b_, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA (Black): pchisq<0.7")
+
+#asian
+pchisq_asian = readRDS("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/chisq_lr_asian.rds")
+qq(pchisq_asian, main = "pchisq p-val QQ plot - Asian")
+hist(pchisq_asian, main = "pchisq p-val - Asian")
+pval_annotate_a = cbind(afreq_A_filter, pchisq_asian) %>% 
+  dplyr::select(Chr = CHROM, SNP = ID, A2 = REF, A1 = ALT, pchisq_out_asian) %>% mutate(pval = 1)
+XY_a <- merge(gcta_out, pval_annotate_a, by = c("Chr", "SNP", "A1", "A2"), all= TRUE) 
+min(unique(XY_a$pchisq_out_asian))
+XY_a_ = XY_a %>% rename(CHR = Chr, BP = bp, P = p) %>% filter(pchisq_out_asian < 0.8) 
+manhattan(XY_a_, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA (Asian): pchisq < 0.8")
+
+#white
+pchisq_white = readRDS("/datacommons/ochoalab/tiffany_data/DATA_NS_MERGE/datasubset/chisq_lr_white.rds")
+qq(pchisq_white, main = "pchisq p-val QQ plot - White")
+hist(pchisq_white, main = "pchisq p-val - White")
+pval_annotate_w = cbind(afreq_W_filter, pchisq_white) %>% 
+  dplyr::select(Chr = CHROM, SNP = ID, A2 = REF, A1 = ALT, pchisq_out_white) %>% mutate(pval = 1)
+XY_w <- merge(gcta_out, pval_annotate_w, by = c("Chr", "SNP", "A1", "A2"), all= TRUE) 
+XY_w_ = XY_w %>% rename(CHR = Chr, BP = bp, P = p) #%>% filter(pchisq_out_white < 0.4) 
+manhattan(XY_w_, annotatePval = 1.08246e-07, annotateTop = FALSE, main = "GCTA (White)")
 ```
 
