@@ -164,7 +164,7 @@ n1 = ssns_b$OBS_CT
 x2 = tgp_b$alt_allele_count
 n2 = tgp_b$OBS_CT
 # p-values for ssns p data
-output_b = likelihoodratio(x1, n1, x2, n2)
+output_b = likelihoodratio(x1, n1, x2, n2, 1)
 
 # compute input variables for ssns 1-p data
 ssns_bf = afreq_ssns_b_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
@@ -179,7 +179,7 @@ n1 = ssns_bf$OBS_CT
 x2 = tgp_bf$alt_allele_count
 n2 = tgp_bf$OBS_CT
 # p-values for ssns 1-p data
-output_b_1_p = likelihoodratio(x1, n1, x2, n2)
+output_b_1_p = likelihoodratio(x1, n1, x2, n2, 1)
 
 output_b_snp = cbind(tgp_bf$ID, tgp_bf$ALT_FREQS, ssns_bf$ALT_FREQS ,output_b_1_p, output_b) %>% 
   as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
@@ -214,7 +214,7 @@ n1 = ssns_a$OBS_CT
 x2 = tgp_a$alt_allele_count
 n2 = tgp_a$OBS_CT
 # p-values for ssns p data
-output_a = likelihoodratio(x1, n1, x2, n2)
+output_a = likelihoodratio(x1, n1, x2, n2, 1)
 
 # compute input variables for ssns 1-p data
 ssns_af = afreq_ssns_a_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
@@ -229,7 +229,7 @@ n1 = ssns_af$OBS_CT
 x2 = tgp_af$alt_allele_count
 n2 = tgp_af$OBS_CT
 # p-values for ssns 1-p data
-output_a_1_p = likelihoodratio(x1, n1, x2, n2)
+output_a_1_p = likelihoodratio(x1, n1, x2, n2, 1)
 
 output_a_snp = cbind(tgp_af$ID, tgp_af$ALT_FREQS, ssns_af$ALT_FREQS ,output_a_1_p, output_a) %>% 
   as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
@@ -265,7 +265,7 @@ n1 = ssns_w$OBS_CT
 x2 = tgp_w$alt_allele_count
 n2 = tgp_w$OBS_CT
 # p-values for ssns p data
-output_w = likelihoodratio(x1, n1, x2, n2)
+output_w = likelihoodratio(x1, n1, x2, n2, 1)
 
 # compute input variables for ssns 1-p data
 ssns_wf = afreq_ssns_w_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
@@ -280,7 +280,7 @@ n1 = ssns_wf$OBS_CT
 x2 = tgp_wf$alt_allele_count
 n2 = tgp_wf$OBS_CT
 # p-values for ssns 1-p data
-output_w_1_p = likelihoodratio(x1, n1, x2, n2)
+output_w_1_p = likelihoodratio(x1, n1, x2, n2, 1)
 
 output_w_snp = cbind(tgp_wf$ID, tgp_wf$ALT_FREQS, ssns_wf$ALT_FREQS ,output_w_1_p, output_w) %>% 
   as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
@@ -323,7 +323,7 @@ n1 = ssns_b$OBS_CT
 x2 = tgp_b$alt_allele_count
 n2 = tgp_b$OBS_CT
 # p-values for ssns p data
-output_b = likelihoodratio(x1, n1, x2, n2)
+output_b = likelihoodratio(x1, n1, x2, n2, 1)
 
 ## define variables
 ssns_a = afreq_ssns_a_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
@@ -342,7 +342,7 @@ n1 = ssns_a$OBS_CT
 x2 = tgp_a$alt_allele_count
 n2 = tgp_a$OBS_CT
 # p-values for ssns p data
-output_a = likelihoodratio(x1, n1, x2, n2)
+output_a = likelihoodratio(x1, n1, x2, n2, 1)
 
 ssns_w = afreq_ssns_w_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
 tgp_w = tgp_white_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
@@ -360,7 +360,7 @@ n1 = ssns_w$OBS_CT
 x2 = tgp_w$alt_allele_count
 n2 = tgp_w$OBS_CT
 # p-values for ssns p data
-output_w = likelihoodratio(x1, n1, x2, n2)
+output_w = likelihoodratio(x1, n1, x2, n2, 1)
 
 snp_b = cbind(tgp_b$ID, output_b) %>% as.data.frame() %>% filter(as.numeric(output_b) < 1e-6) 
 snp_a = cbind(tgp_a$ID, output_a) %>% as.data.frame() %>% filter(as.numeric(output_a) < 1e-6) 
@@ -457,6 +457,185 @@ afreq_ssns_a = afreq_ssns_a %>% select(ID, ssns_altfreq = ALT_FREQS)
 tgp_asian = tgp_asian %>% select(ID, tgp_altfreq = ALT_FREQS)
 tgp_white = tgp_white %>% select(ID, tgp_altfreq = ALT_FREQS)
 tgp_black  = tgp_black %>% select(ID, tgp_altfreq = ALT_FREQS)
+
+merge_AF_B = merge(afreq_ssns_b, tgp_black, by = "ID") %>% mutate(category = ifelse(ID %in% final_flipID, "flip", ifelse(ID %in% combine_removeID, "remove", ifelse(ID %in% notsig_all, "not_sig_all", "keep")))) 
+merge_AF_B$category <- factor(merge_AF_B$category, levels = c("keep", "flip", "remove", "not_sig_all"))
+ggplot(merge_AF_B %>% arrange(category), aes(x=as.numeric(ssns_altfreq), y=as.numeric(tgp_altfreq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('ssns+tgp merged allele freq: Black ancestry') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow"))
+
+merge_AF_A = merge(afreq_ssns_a, tgp_asian, by = "ID") %>% mutate(category = ifelse(ID %in% final_flipID, "flip", ifelse(ID %in% combine_removeID, "remove",  ifelse(ID %in% notsig_all, "not_sig_all", "keep"))))
+merge_AF_A$category <- factor(merge_AF_A$category, levels = c("keep", "flip", "remove", "not_sig_all"))
+ggplot(merge_AF_A %>% arrange(category), aes(x=as.numeric(ssns_altfreq), y=as.numeric(tgp_altfreq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('ssns+tgp merged allele freq: South Asian ancestry') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow"))
+
+merge_AF_W = merge(afreq_ssns_w, tgp_white, by = "ID") %>% mutate(category = ifelse(ID %in% final_flipID, "flip", ifelse(ID %in% combine_removeID, "remove",  ifelse(ID %in% notsig_all, "not_sig_all", "keep"))))
+merge_AF_W$category <- factor(merge_AF_W$category, levels = c("keep", "flip", "remove", "not_sig_all"))
+ggplot(merge_AF_W %>% arrange(category), aes(x=as.numeric(ssns_altfreq), y=as.numeric(tgp_altfreq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('ssns+tgp merged allele freq: White ancestry') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow"))
+table(merge_AF_A$category)
+```
+
+
+# AF test for all ancestry combined
+```{r}
+ssns_b = afreq_ssns_b %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_b = tgp_black %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_a = afreq_ssns_a %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_a = tgp_asian %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_w = afreq_ssns_w %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_w = tgp_white %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+
+# define function input
+x1 = ssns_b$alt_allele_count
+n1 = ssns_b$OBS_CT 
+x2 = tgp_b$alt_allele_count 
+n2 = tgp_b$OBS_CT 
+x3 = ssns_a$alt_allele_count
+n3 = ssns_a$OBS_CT
+x4 = tgp_a$alt_allele_count
+n4 = tgp_a$OBS_CT
+x5 = ssns_w$alt_allele_count
+n5 = ssns_w$OBS_CT
+x6 = tgp_w$alt_allele_count
+n6 = tgp_w$OBS_CT
+
+output_p = likelihoodratio_3(x1, n1, x2, n2, x3, n3, x4, n4, x5, n5, x6, n6)
+# p-values for ssns p data
+#output_all = likelihoodratio(x1, n1, x2, n2, 3)
+hist(output_p, breaks = 50, main = "p-vals likelihood ratio test (all ancestry)")
+qq(output_p, main = "QQ-plot for all ancestry")
+```
+
+
+## ref == comp(alt)
+```{r}
+## define variables (P data)
+ssns_b = afreq_ssns_b_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_b = tgp_black_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_a = afreq_ssns_a_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_a = tgp_asian_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_w = afreq_ssns_w_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_w = tgp_white_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+
+# define function input
+x1 = ssns_b$alt_allele_count
+n1 = ssns_b$OBS_CT 
+x2 = tgp_b$alt_allele_count 
+n2 = tgp_b$OBS_CT 
+x3 = ssns_a$alt_allele_count
+n3 = ssns_a$OBS_CT
+x4 = tgp_a$alt_allele_count
+n4 = tgp_a$OBS_CT
+x5 = ssns_w$alt_allele_count
+n5 = ssns_w$OBS_CT
+x6 = tgp_w$alt_allele_count
+n6 = tgp_w$OBS_CT
+
+output_comp_p = likelihoodratio_3(x1, n1, x2, n2, x3, n3, x4, n4, x5, n5, x6, n6)
+
+# compute input variables for ssns (1-p data)
+ssns_bf = afreq_ssns_b_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
+tgp_bf = tgp_black_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_af = afreq_ssns_a_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
+tgp_af = tgp_asian_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_wf = afreq_ssns_w_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
+tgp_wf = tgp_white_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+
+# subset SNPs in original P version
+tgp_bf = tgp_bf %>% filter(ID %in% tgp_b$ID)
+ssns_bf = ssns_bf %>% filter(ID %in% ssns_b$ID)
+tgp_af = tgp_af %>% filter(ID %in% tgp_a$ID)
+ssns_af = ssns_af %>% filter(ID %in% ssns_a$ID)
+tgp_wf = tgp_wf %>% filter(ID %in% tgp_w$ID)
+ssns_wf = ssns_wf %>% filter(ID %in% ssns_w$ID)
+
+# define function input
+x1 = ssns_bf$alt_allele_count
+n1 = ssns_bf$OBS_CT 
+x2 = tgp_bf$alt_allele_count 
+n2 = tgp_bf$OBS_CT 
+x3 = ssns_af$alt_allele_count
+n3 = ssns_af$OBS_CT
+x4 = tgp_af$alt_allele_count
+n4 = tgp_af$OBS_CT
+x5 = ssns_wf$alt_allele_count
+n5 = ssns_wf$OBS_CT
+x6 = tgp_wf$alt_allele_count
+n6 = tgp_wf$OBS_CT
+
+output_comp_1_p = likelihoodratio_3(x1, n1, x2, n2, x3, n3, x4, n4, x5, n5, x6, n6)
+
+output_all_snp = cbind(tgp_bf$ID, tgp_bf$ALT_FREQS, ssns_bf$ALT_FREQS ,output_comp_1_p, output_comp_p) %>% 
+  as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
+  mutate(remove = as.factor(ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) < 1e-10, 1, 0)),
+         flip = as.factor(ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) > 1e-10, 1, 0)),
+         both_notsig = as.factor(ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10, 1, 0)),
+         category = ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) < 1e-10, "remove",
+                           ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) > 1e-10, "flip",
+                                  ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10, "both_notsig", "unchange")))) 
+output_all_snp$category <- factor(output_all_snp$category, levels = c("unchange", "flip", "remove", "both_notsig"))
+table(output_all_snp$category)
+ggplot(output_all_snp, aes(x=as.numeric(ssns_alt_freq), y=as.numeric(tgp_alt_freq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('(ref == comp(alt)) likelihood ratio test; all ancestry; cutoff 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP")
+```
+
+## Gather 'remove' list  (priority over flip)
+```{r}
+# removal from ref != comp(alt)
+afreq_ssns_b_ = afreq_ssns_b[which(afreq_ssns_b$REF != comp(afreq_ssns_b$ALT)),]
+tgp_black_ = tgp_black[which(afreq_ssns_b$REF != comp(afreq_ssns_b$ALT)),]
+afreq_ssns_w_ = afreq_ssns_w[which(afreq_ssns_w$REF != comp(afreq_ssns_w$ALT)),]
+tgp_white_ = tgp_white[which(afreq_ssns_w$REF != comp(afreq_ssns_w$ALT)),]
+afreq_ssns_a_ = afreq_ssns_a[which(afreq_ssns_a$REF != comp(afreq_ssns_a$ALT)),]
+tgp_asian_ = tgp_asian[which(afreq_ssns_a$REF != comp(afreq_ssns_a$ALT)),]
+
+## Black ancestry
+ssns_b = afreq_ssns_b_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_b = tgp_black_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_a = afreq_ssns_a_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_a = tgp_asian_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_w = afreq_ssns_w_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_w = tgp_white_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+
+# define function input
+x1 = ssns_b$alt_allele_count
+n1 = ssns_b$OBS_CT 
+x2 = tgp_b$alt_allele_count 
+n2 = tgp_b$OBS_CT 
+x3 = ssns_a$alt_allele_count
+n3 = ssns_a$OBS_CT
+x4 = tgp_a$alt_allele_count
+n4 = tgp_a$OBS_CT
+x5 = ssns_w$alt_allele_count
+n5 = ssns_w$OBS_CT
+x6 = tgp_w$alt_allele_count
+n6 = tgp_w$OBS_CT
+
+# p-values for ssns p data
+output_ref = likelihoodratio_3(x1, n1, x2, n2, x3, n3, x4, n4, x5, n5, x6, n6)
+remove_snp = cbind(tgp_b$ID, output_ref) %>% as.data.frame() %>% filter(as.numeric(output_ref) < 1e-10) %>% pull(V1)
+
+# removal from ref == comp(alt)
+remove_snpID = output_all_snp %>% filter(remove == 1) %>% pull(ID)
+combine_removeID = unique(c(remove_snp, remove_snpID))
+```
+
+## plot original AF plots with identified remove and flip snps
+```{r}
+afreq_ssns_b = afreq_ssns_b %>% select(ID, ssns_altfreq = ALT_FREQS)
+afreq_ssns_w = afreq_ssns_w %>% select(ID, ssns_altfreq = ALT_FREQS)
+afreq_ssns_a = afreq_ssns_a %>% select(ID, ssns_altfreq = ALT_FREQS)
+tgp_asian = tgp_asian %>% select(ID, tgp_altfreq = ALT_FREQS)
+tgp_white = tgp_white %>% select(ID, tgp_altfreq = ALT_FREQS)
+tgp_black  = tgp_black %>% select(ID, tgp_altfreq = ALT_FREQS)
+
+# flip list and notsig list
+final_flipID = output_all_snp %>% filter(flip == 1) %>% pull(ID)
+notsig_all = output_all_snp %>% filter(both_notsig == 1) %>% pull(ID)
 
 merge_AF_B = merge(afreq_ssns_b, tgp_black, by = "ID") %>% mutate(category = ifelse(ID %in% final_flipID, "flip", ifelse(ID %in% combine_removeID, "remove", ifelse(ID %in% notsig_all, "not_sig_all", "keep")))) 
 merge_AF_B$category <- factor(merge_AF_B$category, levels = c("keep", "flip", "remove", "not_sig_all"))
