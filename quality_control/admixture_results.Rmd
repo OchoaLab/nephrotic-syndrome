@@ -1,0 +1,94 @@
+---
+title: "admixture_results"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(genio)
+#devtools::install_github('StoreyLab/popkin')
+library(popkin)
+```
+
+```{r}
+name <- '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_gwas_maf'
+fam <- read_fam( name )
+
+pheno_ <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/pheno_file_new.txt", sep = " ", 
+                          stringsAsFactors=FALSE, quote = "")
+colnames(pheno_) = c("famid", "id", "pheno")
+
+pheno_complete = read.csv("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/pheno_excelmerge.csv")
+pheno_race = pheno_complete %>% filter(AcquisitionNumber %in% pheno_$id) 
+pheno_race = pheno_race[match(fam$fam, pheno_race$AcquisitionNumber),]
+```
+
+```{r fig.width=15, fig.height=4}
+admix_outQ <- read_table("ssns_gwas_maf.5.Q", col_names = FALSE) 
+names(admix_outQ) <- 1:5
+
+admix_race = cbind(admix_outQ, pheno_race$AcquisitionNumber, pheno_race$RACE) %>% 
+  mutate( `pheno_race$RACE` = as.factor(`pheno_race$RACE`))
+
+admix_race$`pheno_race$RACE` <- factor(admix_race$`pheno_race$RACE`, levels = c("Black", "White", "Asian", "Hispanic", "Mixed",
+                                                                                                          "Other", "Unknown"))
+admix_arrange = admix_race %>% arrange(`pheno_race$RACE`) %>% mutate(`pheno_race$RACE` = as.character(`pheno_race$RACE`))
+
+```
+
+```{r fig.width=20, fig.height=4}
+Q_mat = as.matrix(admix_arrange[,1:5])
+Q <- Q_mat[ , admix_order_cols( Q_mat ) ]
+plot_admix( admix_arrange[,1:5], labs = admix_arrange$`pheno_race$RACE`)
+
+```
+
+```{r fig.width=20, fig.height=4}
+# remove outliers for admixture plot
+subset = admix_arrange %>% filter((`1` > 0.8 & `pheno_race$RACE` == "Asian")| 
+                           (`3` > 0.8 & `pheno_race$RACE` == "Black")| 
+                           (`5` > 0.8 & `pheno_race$RACE` == "White")|
+                           (`pheno_race$RACE` == "Hispanic")|
+                           (`pheno_race$RACE` == "Mixed")|
+                           (`pheno_race$RACE` == "Other")|
+                           (`pheno_race$RACE` == "Unknown")) 
+plot_admix( subset[,1:5], labs = subset$`pheno_race$RACE`)
+```
+### PCA analysis
+```{r}
+pca <- read_table2("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/pca/PCA10.eigenvec")
+
+# identify outliers for PCA labels/coloring
+admix_outlier = admix_arrange %>% dplyr::mutate(RACE = ifelse((`1` < 0.8 & `pheno_race$RACE` == "Asian"), "Asian_outlier",
+                                        ifelse((`3` < 0.8 & `pheno_race$RACE` == "Black"), "Black_outlier",
+                                               ifelse( (`5` < 0.8 & `pheno_race$RACE` == "White"), "White_outlier", `pheno_race$RACE`))))
+table(admix_outlier$RACE)
+```
+
+```{r}
+pca_admix = merge(admix_outlier, pca, by.x = "pheno_race$AcquisitionNumber", by.y = "#FID", all = TRUE) 
+pca_admix %>% filter(RACE == "Black")
+ggplot(pca_admix, aes(x = PC2, y = PC3, color = RACE)) +
+  geom_point() + ggtitle("ssns_maf_outliers") #+
+  #scale_colour_manual(values = c("Asian_outlier" = "red", "Black_outlier" = "green", "White_outlier" = "blue"))
+```
+
+### write outliers into files and calculate allele frequency
+```{r}
+asian_sub = admix_outlier %>% filter(RACE == "Asian")
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/ssns_maf_sa.txt")
+writeLines(paste0(asian_sub$`pheno_race$AcquisitionNumber`, " ", asian_sub$`pheno_race$AcquisitionNumber`), fileConn)
+close(fileConn)
+
+black_sub = admix_outlier %>% filter(RACE == "Black")
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/outlier_removal/ssns_maf_black.txt")
+writeLines(paste0(asian_sub$`pheno_race$AcquisitionNumber`, " ", asian_sub$`pheno_race$AcquisitionNumber`), fileConn)
+close(fileConn)
+
+white_sub = admix_outlier %>% filter(RACE == "White")
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/outlier_removal/ssns_maf_white.txt")
+writeLines(paste0(asian_sub$`pheno_race$AcquisitionNumber`, " ", asian_sub$`pheno_race$AcquisitionNumber`), fileConn)
+close(fileConn)
+```
+

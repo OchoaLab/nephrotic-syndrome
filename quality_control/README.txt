@@ -1,8 +1,8 @@
-README file for May 2022 analysis
+May 2022 (QC, filtering)
 
-* remove bristol samples, create new bim/bed/fam files
-  -> plink2 --bfile ../nephrotic.syndrome.gwas.all.b38.n2656/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove bristol_remove.txt --out ssns_remove_B --make-bed
-  -> creates ssns_remove_B.bed/bim/fam
+* remove bristol samples, create new bim/bed/fam files (remove_B.q)
+-> plink2 --bfile ../nephrotic.syndrome.gwas.all.b38.n2656/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove bristol_remove.txt --out ssns_remove_B --make-bed
+-> creates ssns_remove_B.bed/bim/fam 
 
 1. create 'duplicate_related.king.cutoff.out.id (step1.q)
   -> plink2 --bfile ../nephrotic.syndrome.gwas.all.b38.n2656/nephrotic.syndrome.gwas.all.b38.n2656.R2 --king-table-filter 0.354 --make-king-table --out duplicated_related
@@ -18,6 +18,29 @@ README file for May 2022 analysis
 
 4. remove individuals from duplicate_remove.txt and run various filtering steps
   -> run 'step3.q'
+  -> output: bim/bed/bam files for 'ssns_gwas_maf'
 
-5. imputation step
-  -> run 'ste4.q' in imputation folder
+June 2022 (merge SSNS + TGP) 
+
+5. prepare TGP data
+  -> tgp_flip.q
+  -> tgp_flip_rm.q
+  -> tgp_subset.q (output: 'TGP-subset')
+
+6. prepare SSNS data
+  -> recode ssns (recode_ssns.q) -> input: 'ssns_gwas_maf'; output: 'ssns_gwas_maf_recode'
+  -> depup ssns (remove duplicate ID's from ssns) -> output: 'ssns_gwas_maf_dedup'
+
+7. merge (merge_ssns_maf_tgp.q)
+  -> input: 'ssns_gwas_maf_dedup' + 'TGP-subset', output: 'ssns_tgp_merge'
+
+July/August 2022 (PCA/admixture analysis to identify outliers, allele frequency test)
+
+* Identifying outliers: extract south asian individual id's/remove highly admixed individuals for AF test with TGP
+  
+* AF tests (likelihoodratiotest_function.R and merge_analysis_AF.Rmd)
+  -> identify flip/remove SNPs for SSNS. Split with TGP, flip, merge with TGP, remove. (rm_flip_step.q) 
+
+September 2022 (Imputation on TopMed server)
+  -> split (remove TGP), create vcf
+  -> split by chromosome
