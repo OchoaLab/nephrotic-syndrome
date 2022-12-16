@@ -1,0 +1,65 @@
+---
+title: "gmmat_plots"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(qqman)
+```
+
+```{r}
+#setwd('/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/gcta/')
+ancestry_w <- read.table("glmm.score.bed.ancestry_white.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ancestry_w_rm6 = ancestry_w  %>% filter(CHR != 6)
+
+hist(ancestry_w$PVAL, main= "Histogram of GMMAT p-values", xlab = "p")
+hist(ancestry_w_rm6$PVAL, main= "Histogram of GMMAT p-values", xlab = "p")
+
+
+results_w = ancestry_w %>% select(SNP, CHR, BP = POS, P = PVAL) %>% drop_na(P)
+qq(results_sa$P)
+
+results_rm6_w = ancestry_w_rm6 %>% select(SNP, CHR, BP = POS, P = PVAL) %>% drop_na(P)
+qq(results_rm6_w$P)
+
+manhattan(results_w,  annotateTop = FALSE, main = "NS + TGP: European with sex covar")
+```
+
+
+```{r}
+#setwd('/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/gcta/')
+ancestry_sa <- read.table("glmm.score.bed.ancestry_sa.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ancestry_sa_rm6 = ancestry_w  %>% filter(CHR != 6)
+
+hist(ancestry_sa$PVAL, main= "Histogram of GMMAT p-values", xlab = "p")
+hist(ancestry_sa_rm6$PVAL, main= "Histogram of GMMAT p-values", xlab = "p")
+
+
+results_sa = ancestry_sa %>% select(SNP, CHR, BP = POS, P = PVAL) %>% drop_na(P)
+qq(results_sa$P)
+
+results_rm6_sa = ancestry_sa_rm6 %>% select(SNP, CHR, BP = POS, P = PVAL) %>% drop_na(P)
+qq(results_rm6_sa$P)
+
+manhattan(results_sa,  annotateTop = FALSE, main = "NS + TGP: South Asian with sex covar")
+```
+
+```{r}
+#setwd('/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/gcta/')
+ancestry_b <- read.table("glmm.score.bed.ancestry_blackPC.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ancestry_b_rm6 = ancestry_b  %>% filter(CHR != 6)
+
+hist(ancestry_b$PVAL, main= "Histogram of GMMAT p-values", xlab = "p")
+hist(ancestry_b_rm6$PVAL, main= "Histogram of GMMAT p-values", xlab = "p")
+
+
+results_b = ancestry_b %>% select(SNP, CHR, BP = POS, P = PVAL) %>% drop_na(P)
+qq(results_b$P)
+
+results_rm6_b = ancestry_b_rm6 %>% select(SNP, CHR, BP = POS, P = PVAL) %>% drop_na(P)
+qq(results_rm6_b$P)
+
+manhattan(results_b,  annotateTop = FALSE, main = "NS + TGP: African with sex + PCs covar")
+```
