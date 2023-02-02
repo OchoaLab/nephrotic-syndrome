@@ -1,0 +1,66 @@
+---
+title: "annotate"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+gmmat_out <- read.table("glmm.score.bed.all_ssns_ctr_PC_20.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+
+gmmat_out_sig = gmmat_out %>% filter(PVAL < 1e-5) %>% mutate(PVAL = as.numeric(PVAL)) %>% 
+  mutate(type = "Chromosome", Strand = 1) %>% 
+  select(type, Id = CHR, Position = POS, Allele1 = A1, Allele2 = A2, Strand)
+write.table(gmmat_out_sig, "sig_ssns_control.txt", row.names=FALSE, quote=FALSE, col.names=FALSE)
+```
+
+```{r}
+SNPnexus_out <- read.table("SNPnexus_near_gens_ssnscontrol.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE) %>% mutate(Chromosome = str_replace(Chromosome, "chr", ""))
+gmmat_out_sig_trans = gmmat_out %>% filter(PVAL < 1e-5) 
+```
+
+# get rsid
+```{r}
+gmmat_out_sig = gmmat_out %>% filter(PVAL < 1e-5) %>% arrange(PVAL) %>% select(SNP)
+write.table(gmmat_out_sig, "sig_ssns_control_SNP.txt", row.names=FALSE, quote=FALSE, col.names=FALSE)
+```
+
+```{r}
+name <- 'gmmat_ssns_control_suggestivesig'
+bim <- read_bim( name )
+bim %>% group_by(id) %>% filter(n()>1)
+bim = bim %>% mutate(id = paste0(chr, ":", pos))
+
+data = read_plink(name)
+X = data$X
+X[1:5, 1:5]
+rownames(X) <- bim$id
+write_plink( "gmmat_ssns_control_suggestivesig_recode", X, bim, data$fam )
+```
+
+```{r}
+rsid_vcf <- read.table("gmmat_ssns_control_suggestivesig_recode_rsid.vcf.gz", sep = "\t", stringsAsFactors=FALSE, quote = "", header = FALSE)
+rsid_vcf_sub = rsid_vcf[,1:3] %>% rename(Chromosome = V1, Position = V2, rsid = V3)
+
+merge_SNPnexus = merge(SNPnexus_out, gmmat_out_sig_trans, by.x = c("Chromosome", "Position"), by.y = c("CHR", "POS"), all.y = TRUE) %>% select(-SNP, -cM)
+which(is.na(merge_SNPnexus$PVAL))
+
+merge_rsid = merge(merge_SNPnexus, rsid_vcf_sub, by = c("Chromosome", "Position"), all.x = TRUE) %>% 
+  select(Chromosome, Position, rsid, everything()) %>% select(-Variation.ID) %>% mutate(Chromosome = as.numeric(Chromosome)) %>% arrange(Chromosome)
+merge_rsid[which(is.na(merge_rsid$Overlapped.Gene)),]
+
+merge_rsid[40,]
+merge_rsid %>%
+  filter(!str_detect(rsid, "rs"))
+write.table(merge_rsid, "ssnsVScontrol_suggestivesig_rsid.txt", row.names=FALSE, quote=FALSE, col.names=TRUE, sep = "\t")
+
+length(unique(merge_rsid$rsid))
+merge_rsid[which(duplicated(merge_rsid$rsid)),]
+
+merge_rsid %>% filter(rsid == "rs139290628")
+```
+
