@@ -1,0 +1,69 @@
+% twitter/etc fonts, mostly for title page only
+\usepackage{fontawesome}
+\usepackage{emoji}
+
+% import shared Fst symbols
+\usepackage[ noT, color ]{kinshipsymbols}
+% extra symbols
+\DeclareMathOperator{\tr}{tr}
+
+% for nice autmatic tables (from external files)
+\usepackage{booktabs,csvsimple}
+
+% tikz shared setup
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,shapes,arrows,positioning}
+
+% what does this do?
+\setbeamertemplate{footline}[frame number]{}
+
+% for better underlining
+%\usepackage[ normalem ]{ulem} % provides \uline{}
+\usepackage{soul} % provides \ul{}
+
+% to make a table that behaves!
+% NOTE: array package also makes table columns appear (i.e. by column rather than by row with \pause)
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+
+% % title background?
+% \setbeamertemplate{title page}{
+% \usebackgroundtemplate{\includegraphics[trim={0.15in 0.25in 0 0.15in},clip,height=\paperheight]{../storey/fst/simulations/ho16ep/map-inbr.pdf}}
+% My TITLE!
+% }
+
+%   title background?
+%   \usepackage{titling}
+%   \pretitle
+%   \titlegraphic{ \usebackgroundtemplate{\includegraphics[trim={0.15in 0.25in 0 0.15in},clip,height=\paperheight]{../storey/fst/simulations/ho16ep/map-inbr.pdf}} }
+%   \usebackgroundtemplate{\includegraphics[trim={0.15in 0.25in 0 0.15in},clip,height=\paperheight]{../storey/fst/simulations/ho16ep/map-inbr.pdf}} 
+%   \titlegraphic{ \includegraphics[width=0.3\paperwidth]{../storey/fst/simulations/ho16ep/map-inbr.pdf} }
+
+\newcommand{\logoSoftware}[3][south west]{
+  % the generic version
+  \begin{tikzpicture}[ remember picture, overlay ]
+    \node[ anchor = #1 ] at (current page.#1) {
+      \includegraphics[ width = 1cm ]{#2}
+      \scriptsize\url{#3}
+    };
+  \end{tikzpicture}
+}
+
+\newcommand{\logoPopkin}[1][south west]{
+  \logoSoftware[#1]{../popkin/man/figures/logo.png}{https://github.com/StoreyLab/popkin}
+}
+
+\newcommand{\logoBnpsd}[1][south west]{
+  \logoSoftware[#1]{../bnpsd/man/figures/logo.png}{https://github.com/StoreyLab/bnpsd}
+}
+
+\newcommand{\logoSimtrait}[1][south west]{
+  \logoSoftware[#1]{../simtrait/man/figures/logo.png}{https://github.com/OchoaLab/simtrait}
+}
+
+\newcommand{\logoGenio}[1][south west]{
+  \logoSoftware[#1]{../genio/man/figures/logo.png}{https://github.com/OchoaLab/genio}
+}
