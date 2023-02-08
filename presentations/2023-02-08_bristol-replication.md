@@ -51,9 +51,9 @@ Total $n=$ 590 individuals without filters (age filter further reduces counts).
 
 | Diagnosis       | Count |    % |
 |-----------------|------:|-----:|
-| SSNS            |   368 | 62.4 |
-| SRNS            |   151 | 25.6 |
-| NS unclassified |    71 | 12.0 |
+| SSNS            |   350 | 59.3 |
+| SRNS            |   172 | 29.2 |
+| NS unclassified |    68 | 11.5 |
 
 ::::
 :::: column
@@ -78,11 +78,11 @@ SSNS only
 
 | Race/Ethnicity | Count |    % |
 |----------------|------:|-----:|
-| White          |   241 | 65.5 |
-| Asian          |    57 | 15.5 |
-| Unknown        |    50 | 13.6 |
-| Black          |     7 |  1.9 |
-| Mixed          |    13 |  3.5 |
+| White          |   229 | 65.4 |
+| Asian          |    57 | 16.3 |
+| Unknown        |    44 | 12.6 |
+| Black          |     7 |  2.0 |
+| Mixed          |    13 |  3.7 |
 
 
 ::::
@@ -92,11 +92,11 @@ SRNS only
 
 | Race/Ethnicity | Count |    % |
 |----------------|------:|-----:|
-| White          |   108 | 71.5 |
-| Asian          |    17 | 11.3 |
-| Unknown        |    17 | 11.3 |
-| Black          |     8 |  5.3 |
-| Mixed          |     1 |  0.7 |
+| White          |   122 | 70.9 |
+| Asian          |    23 | 13.4 |
+| Unknown        |    18 | 10.5 |
+| Black          |     8 |  4.7 |
+| Mixed          |     1 |  0.6 |
 
 ::::
 :::
@@ -104,44 +104,44 @@ SRNS only
 # Age distribution
 
 \centering
-\includegraphics[height=0.75\textheight]{../replication-ukbb/age.pdf}
+\includegraphics[height=0.75\textheight]{../replication-bristol/age.pdf}
 
 - 47 individuals missing age
-- 265 individuals (44.9%) have age < 18
+- 294 individuals (49.8%) have age < 22
 
-# Bristol demographics, age < 18 only
+# Bristol demographics, age < 22 only
 
-Total $n=$ 265 individuals
+Total $n=$ 294 individuals
 
 ::: columns
 :::: column
 
 | Sex    | Count |    % |
 |--------|------:|-----:|
-| Male   |   158 | 59.6 |
-| Female |   107 | 40.4 |
+| Male   |   178 | 60.5 |
+| Female |   116 | 39.5 |
 
 | Diagnosis       | Count |    % |
 |-----------------|------:|-----:|
-| SSNS            |   182 | 68.7 |
-| SRNS            |    78 | 29.4 |
-| NS unclassified |     5 |  1.9 |
+| SSNS            |   191 | 65.0 |
+| SRNS            |    96 | 32.7 |
+| NS unclassified |     7 |  2.4 |
 
 ::::
 :::: column
 
 | Race/Ethnicity | Count |    % |
 |----------------|------:|-----:|
-| White          |   154 | 58.1 |
-| Asian          |    49 | 18.5 |
-| Unknown        |    42 | 15.8 |
-| Black          |    11 |  4.2 |
-| Mixed          |     9 |  3.4 |
+| White          |   174 | 58.8 |
+| Asian          |    56 | 19.0 |
+| Unknown        |    44 | 15.0 |
+| Black          |    11 |  3.7 |
+| Mixed          |    10 |  3.4 |
 
 ::::
 :::
 
-# Bristol diagnosis subtypes, age < 18 only
+# Bristol diagnosis subtypes, age < 22 only
 
 ::: columns
 :::: column
@@ -150,11 +150,11 @@ SSNS only
 
 | Race/Ethnicity | Count |    % |
 |----------------|------:|-----:|
-| White          |   103 | 56.6 |
-| Asian          |    34 | 18.7 |
-| Unknown        |    29 | 15.9 |
-| Black          |     7 |  3.8 |
-| Mixed          |     9 |  4.9 |
+| White          |   110 | 57.6 |
+| Asian          |    40 | 20.9 |
+| Unknown        |    25 | 13.1 |
+| Black          |     7 |  3.7 |
+| Mixed          |     9 |  4.7 |
 
 ::::
 :::: column
@@ -163,11 +163,11 @@ SRNS only
 
 | Race/Ethnicity | Count |    % |
 |----------------|------:|-----:|
-| White          |    48 | 61.5 |
-| Asian          |    14 | 17.9 |
-| Unknown        |    12 | 15.4 |
-| Black          |     4 |  5.1 |
-| Mixed          |     0 |  0.0 |
+| White          |    59 | 61.5 |
+| Asian          |    18 | 18.8 |
+| Unknown        |    14 | 14.6 |
+| Black          |     4 |  4.2 |
+| Mixed          |     1 |  1.0 |
 
 ::::
 :::

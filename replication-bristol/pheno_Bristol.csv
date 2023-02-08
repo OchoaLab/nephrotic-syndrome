@@ -1,6 +1,6 @@
 AcquisitionNumber	Sex	RACE	AGE	DIAGNOSIS
 B10003	female	Unknown	7	SSNS
-B10013	male	White	39	NS UNCLASSIFIED
+B10013	male	White	39	SRNS
 B1002	male	Unknown	0	SRNS
 B10021	male	White	0	SRNS
 B10065	female	White	61	SSNS
@@ -15,16 +15,16 @@ B10265	male	White	4	SSNS
 B10282	male	White	29	SRNS
 B10283	male	White	68	SSNS
 B1030	female	Asian	10	SRNS
-B10379	male	White	null	NS UNCLASSIFIED
+B10379	male	White	null	SRNS
 B10384	female	White	68	SSNS
 B10406	male	White	42	NS UNCLASSIFIED
 B10417	male	Asian	0	SRNS
 B10438	male	White	61	NS UNCLASSIFIED
 B10534	male	Asian	21	SSNS
 B10556	male	White	11	SSNS
-B10581	male	White	1	SSNS
+B10581	male	White	1	SRNS
 B10618	male	Asian	63	SRNS
-B10663	female	Asian	null	NS UNCLASSIFIED
+B10663	female	Asian	null	SRNS
 B1068	male	White	26	SRNS
 B10718	female	White	41	SRNS
 B10784	male	White	17	SSNS
@@ -50,7 +50,7 @@ B11323	female	White	null	SRNS
 B11333	female	White	0	SRNS
 B11371	male	White	23	SSNS
 B11468	female	Unknown	42	SSNS
-B11825	male	White	16	SSNS
+B11825	male	White	16	SRNS
 B11843	male	White	null	NS UNCLASSIFIED
 B11891	female	White	60	NS UNCLASSIFIED
 B1191	female	White	3	SRNS
@@ -100,7 +100,7 @@ B13246	female	Asian	27	SSNS
 B13300	male	White	null	NS UNCLASSIFIED
 B1332	female	White	5	SRNS
 B13375	male	White	10	SSNS
-B13449	male	White	52	SSNS
+B13449	male	White	52	SRNS
 B13455	female	Black	4	SRNS
 B13553	female	White	77	NS UNCLASSIFIED
 B13594	male	White	55	SSNS
@@ -162,7 +162,7 @@ B17890	female	White	44	SSNS
 B17954	male	Asian	29	SSNS
 B18085	male	White	77	SSNS
 B1810	male	Asian	0	SRNS
-B18124	female	White	40	SSNS
+B18124	female	White	40	SRNS
 B18255	female	Asian	3	SSNS
 B1844	male	White	0	NS UNCLASSIFIED
 B18618	male	White	5	SRNS
@@ -229,7 +229,7 @@ B22195	male	White	25	SSNS
 B22271	female	White	60	NS UNCLASSIFIED
 B22278	female	White	1	SSNS
 B22317	male	White	61	SSNS
-B22458	male	White	35	SSNS
+B22458	male	White	35	SRNS
 B22468	male	White	null	SRNS
 B22518	female	White	70	SSNS
 B22594	female	White	74	SSNS
@@ -299,17 +299,17 @@ B3020	female	Unknown	1	SRNS
 B30245	male	Unknown	35	SSNS
 B30531	male	Mixed	6	SSNS
 B308	female	White	3	SRNS
-B3128	male	Unknown	4	SSNS
+B3128	male	Unknown	4	SRNS
 B321	female	White	5	SRNS
 B3210	male	Unknown	1	SRNS
 B3211	male	White	2	SSNS
-B3232	female	White	51	SSNS
+B3232	female	White	51	SRNS
 B3242	female	White	13	SRNS
 B3262	male	White	6	SSNS
 B3281	male	White	4	SSNS
 B3286	male	White	7	SSNS
 B3337	female	White	46	SSNS
-B3375	male	Unknown	7	SSNS
+B3375	male	Unknown	7	SRNS
 B3385	male	White	38	SSNS
 B3388	female	White	26	SSNS
 B343	female	Unknown	6	SRNS
@@ -339,12 +339,12 @@ B3889	male	Asian	10	SSNS
 B3913	female	White	28	SSNS
 B3947	female	Unknown	19	SSNS
 B3988	male	White	0	SSNS
-B3989	female	White	0	SSNS
+B3989	female	White	0	SRNS
 B4015	female	White	0	SSNS
 B4016	male	White	40	SSNS
 B4017	male	White	20	SSNS
 B4022	female	White	5	SSNS
-B4031	female	Unknown	0	SSNS
+B4031	female	Unknown	0	SRNS
 B405	female	Black	0	SRNS
 B4073	female	White	3	SSNS
 B4130	female	White	55	SRNS
@@ -375,7 +375,7 @@ B5319	female	Unknown	1	SSNS
 B5333	female	White	46	SRNS
 B5367	female	White	null	NS UNCLASSIFIED
 B5381	female	Unknown	3	SSNS
-B5382	female	Unknown	0	SSNS
+B5382	female	Unknown	0	SRNS
 B5386	male	Unknown	3	SRNS
 B5408	male	Asian	17	SSNS
 B5409	male	White	1	SSNS
@@ -384,7 +384,7 @@ B5442	male	White	3	SSNS
 B5443	male	Mixed	1	SSNS
 B5446	male	White	15	SRNS
 B5450	female	Asian	2	SSNS
-B5452	female	White	23	SSNS
+B5452	female	White	23	SRNS
 B5474	male	Asian	17	SSNS
 B5505	female	White	17	SRNS
 B5522	female	White	53	SSNS
@@ -451,7 +451,7 @@ B6451	male	White	15	SRNS
 B6462	male	Asian	23	SSNS
 B6467	male	Mixed	1	SSNS
 B6487	male	White	67	SSNS
-B6495	male	White	1	SSNS
+B6495	male	White	1	SRNS
 B6508	female	White	4	SSNS
 B6525	male	Asian	3	SSNS
 B653	female	Asian	2	SRNS
@@ -485,11 +485,11 @@ B7030	male	White	1	SRNS
 B7085	female	White	13	SSNS
 B7086	female	White	64	SSNS
 B7128	female	Asian	16	SRNS
-B7140	male	White	28	SSNS
+B7140	male	White	28	SRNS
 B7168	male	Unknown	2	SSNS
 B7188	female	White	50	SSNS
 B7245	female	White	26	SRNS
-B7247	female	Unknown	35	SSNS
+B7247	female	Unknown	35	SRNS
 B7278	male	Unknown	23	SSNS
 B7327	male	White	56	SRNS
 B7328	male	White	44	SRNS
@@ -529,7 +529,7 @@ B8359	male	White	22	SSNS
 B8371	male	White	77	SSNS
 B8391	male	White	8	SRNS
 B8461	male	White	21	SSNS
-B8500	female	White	25	SSNS
+B8500	female	White	25	SRNS
 B8549	male	White	68	SSNS
 B8583	female	White	4	SSNS
 B8600	male	White	73	SSNS
@@ -564,7 +564,7 @@ B915	male	White	4	SRNS
 B9152	female	Asian	0	NS UNCLASSIFIED
 B9211	male	White	0	SRNS
 B9234	male	White	12	SSNS
-B9236	male	White	2	SSNS
+B9236	male	White	2	SRNS
 B9258	female	Mixed	33	SSNS
 B926	male	Asian	13	SRNS
 B9295	male	Asian	12	SSNS
@@ -588,4 +588,4 @@ B9933	female	White	67	SSNS
 B9983	female	White	14	SSNS
 B9995	male	Asian	4	SSNS
 B3210d	male	Unknown	1	SRNS
-B5319d	female	Unknown	1	SSNS
+B5319d	female	Unknown	1	SRNS

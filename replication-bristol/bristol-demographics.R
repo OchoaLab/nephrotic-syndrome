@@ -3,7 +3,7 @@ library(tibble)
 library(ochoalabtools)
 
 # constants
-age_cut <- 18
+age_cut <- 22
 
 # load data!
 data <- read_tsv( 'pheno_Bristol.csv' )
