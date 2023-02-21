@@ -1,0 +1,133 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-02-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(genio)
+```
+
+Spreadsheet with gene lists extracted from locuszoom: https://docs.google.com/spreadsheets/d/1oUT78mhJNJBREsPiLZvq9NoF6_a1ZGxI9gDAmIh99Sg/edit#gid=0
+
+```{r}
+ssns_european = read_csv('SSNSvsControl_european.csv') %>% 
+  mutate(SNP = gsub(",", "", SNP),  SNP = gsub(" ", "", SNP)) %>% 
+  separate(SNP, c("CHR", "POS"))
+
+# load gmmat analysis for pvals
+ancestry_w <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/ssns_ctr/mac_20/glmm.score.bed.ancestry_white_ssns_ctr_20_PC.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ancestry_w_2 <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/ssns_ctr/mac_20/conditional_chr6/conditional_chr6_2/glmm.score.bed.ancestry_white_ssns_ctr_20_PC_chr6_2.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+srns_ctr_match = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/srns_control/glmm.score.bed.srns_ctr_PC_match_20.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ns_ctr = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/full_data/glmm.score.bed.allPC_20.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+  
+ssns_ctr = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/ssns_ctr/full_data/glmm.score.bed.all_ssns_ctr_20.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ssns_ctr_4 = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/ssns_ctr/full_data/conditional_chr6/conditional_chr6_2/conditional_chr6_3/conditional_chr6_4/glmm.score.bed.all_ssns_ctr_PC_20_chr6_4.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+#cond2_w = merge(ssns_european %>% filter(analysis == "conditional_2"), ancestry_w, by = c("CHR", "POS"), all.x = TRUE)
+```
+
+```{r}
+all_list = read_csv('combined_list.csv') %>% 
+  mutate(SNP = gsub(",", "", SNP),  SNP = gsub(" ", "", SNP)) %>% 
+  separate(SNP, c("CHR", "POS"))
+
+all_list %>% distinct(.keep_all = TRUE)
+original_w = merge(all_list %>% filter(analysis == "ssns_control_european_original"), ancestry_w, by = c("CHR", "POS"), all.x = TRUE)
+cond2_w = merge(all_list %>% filter(analysis == "ssns_control_european_conditional_2"), ancestry_w_2, by = c("CHR", "POS"), all.x = TRUE)
+original_ssns = merge(all_list %>% filter(analysis == "ssns_control_original"), ssns_ctr, by = c("CHR", "POS"), all.x = TRUE)
+ssns_4 = merge(all_list %>% filter(analysis == "ssns_control_conditional_4"), ssns_ctr_4, by = c("CHR", "POS"), all.x = TRUE) %>% filter(SNP != "chr10:81000844:TA:T")
+original_ns = merge(all_list %>% filter(analysis == "ns_control_original"), ns_ctr, by = c("CHR", "POS"), all.x = TRUE)
+original_srns = merge(all_list %>% filter(analysis == "srns_control_matching"), srns_ctr_match, by = c("CHR", "POS"), all.x = TRUE)
+
+# ssns_4 %>% filter(CHR == 10)
+# ssns_ctr_4 %>% filter(SNP == "chr10:81000844:T:TA" | SNP == "chr10:81000844:TA:T")
+```
+
+```{r}
+sum(nrow(original_w), nrow(original_ns), nrow(original_srns), nrow(original_ssns), nrow(cond2_w), nrow(ssns_4))
+combine_list_gmmat = rbind(original_w, cond2_w, original_ssns, ssns_4, original_ns, original_srns)
+write.table(combine_list_gmmat, "combined_list_pval.txt", sep = "\t", row.names=FALSE, quote=FALSE)
+```
+
+# get rsid
+```{r}
+SNP_list = unique(combine_list_gmmat %>% select(SNP))
+write.table(SNP_list, "SNP_list.txt", row.names=FALSE, quote=FALSE, col.names=FALSE)
+```
+# run subset_sig.q
+```{r}
+name <- 'gmmat_ssns_control_gene'
+bim <- read_bim( name )
+bim %>% group_by(id) %>% filter(n()>1)
+bim = bim %>% mutate(id = paste0(chr, ":", pos))
+
+data = read_plink(name)
+X = data$X
+X[1:5, 1:5]
+rownames(X) <- bim$id
+write_plink( "gmmat_ssns_control_gene_recode", X, bim, data$fam )
+```
+
+# run run_convert_vcf_rsid.q
+```{r}
+rsid_vcf <- read.table("rsid_gmmat_ssns_control_gene.vcf.gz", sep = "\t", stringsAsFactors=FALSE, quote = "", header = FALSE)
+rsid_vcf_sub = rsid_vcf[,1:5] %>% rename(CHR = V1, POS = V2, rsid = V3, A2 = V4, A1 = V5)
+
+combine_list_gmmat
+merge_rsid = merge(combine_list_gmmat, rsid_vcf_sub, by = c("CHR", "POS", "A1", "A2"), all.x = TRUE) %>% 
+  select(CHR, POS, rsid, everything()) 
+
+
+merge_rsid %>%
+  filter(is.na(rsid) == TRUE)
+
+write.table(merge_rsid, "combined_list_pval_rsid.txt", row.names=FALSE, quote=FALSE, col.names=TRUE, sep = "\t")
+```
+
+### for SNPNexus
+```{r}
+nexus_list = combine_list_gmmat %>% 
+  mutate(type = "Chromosome", Strand = 1) %>% 
+  select(type, Id = CHR, Position = POS, Allele1 = A1, Allele2 = A2, Strand)
+write.table(nexus_list, "nexus_list.txt", row.names=FALSE, quote=FALSE, col.names=FALSE)
+merge_rsid %>% filter(CHR == 10)
+```
+
+```{r}
+
+```
+
+```{r}
+merge_rsid = read.table("combined_list_pval_rsid.txt", sep = "\t", header = TRUE) %>% distinct(.keep_all = TRUE)
+nexus_neargene <- read.table("nexus_near_gens.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)  %>% 
+  mutate(Chromosome = str_replace(Chromosome, "chr", "")) %>% rename(CHR = Chromosome) %>% 
+  select(-Position) %>% separate(Variation.ID, c('chr', 'POS', "A1", "A2", "strand")) %>% 
+  select(CHR, POS, everything(), -chr, -strand) %>% distinct(.keep_all = TRUE) %>% 
+  mutate(SNP = paste0("chr", CHR, ":", POS, ":", A2, ":", A1)) %>% select(-A1, -A2)
+
+nexus_ensembl = read.table("nexus_ensembl.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE) %>% 
+  mutate(Chromosome = str_replace(Chromosome, "chr", "")) %>% rename(CHR = Chromosome) %>% 
+  select(-Position, -Gene, -Transcript) %>% separate(Variation.ID, c('chr', 'POS', "A1", "A2", "strand")) %>% 
+  select(CHR, POS, everything(), -chr, -Strand, -CDNA.Position,-CDS.Position, -AA.Position) %>% 
+  mutate(SNP = paste0("chr", CHR, ":", POS, ":", A2, ":", A1)) %>% select(-A1, -A2) %>%  distinct(.keep_all = TRUE)
+table(nexus_ensembl$Proteins)
+```
+
+```{r}
+merge_rsid_neargene = merge(merge_rsid, nexus_neargene,  by = c("CHR", "POS", "SNP"), all.x = TRUE) %>% 
+  select(CHR, POS, rsid, SNP, everything(), -cM, -SNP) %>% rename(locuszoom_gene = gene)
+
+merge_rsid_neargene_en = merge(merge_rsid_neargene, nexus_ensembl,  by = c("CHR", "POS", "SNP"), all.x = TRUE) %>% 
+  select(CHR, POS, rsid, SNP, everything())
+
+write_df = merge_rsid_neargene %>% select(CHR, POS, rsid, A1, A2, locuszoom_gene, analysis, GMMAT_N = N, 
+                                             GMMAT_AF = AF, GMMAT_SCORE = SCORE, GMMAT_VAR = VAR, GMMAT_PVAL = PVAL, everything())
+
+write.table(write_df, "combined_list_pval_rsid_SNPnexus.txt", row.names=FALSE, quote=FALSE, col.names=TRUE, sep = "\t")
+
+```
+
+
+
