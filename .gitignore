@@ -1,8 +1,7 @@
 *~
-unpub/*
+unpub
 
 # we should never commit data here, so let's forbid the bed/bim/fam/phen extensions
-# (Yiqi has accidentally added these files several times)
 *.bed
 *.bim
 *.fam

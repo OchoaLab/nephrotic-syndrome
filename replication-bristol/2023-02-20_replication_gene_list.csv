@@ -1,0 +1,137 @@
+CHR	POS	rsid	A1	A2	locuszoom_gene	analysis	GMMAT_N	GMMAT_AF	GMMAT_SCORE	GMMAT_VAR	GMMAT_PVAL	Overlapped.Gene	Type	Annotation	Nearest.Upstream.Gene	Type.of.Nearest.Upstream.Gene	Distance.to.Nearest.Upstream.Gene	Nearest.Downstream.Gene	Type.of.Nearest.Downstream.Gene	Distance.to.Nearest.Downstream.Gene
+1	158671494	rs41273529	T	G	SPTA1	ssns_control_conditional_4	4278	0.995325	-12.8101	6.47623	4.81E-07	SPTA1	protein_coding	intronic	None	None	None	None	None	None
+1	158671494	rs41273529	T	G	SPTA1	ssns_control_original	4278	0.995325	-13.9396	6.67855	6.89E-08	SPTA1	protein_coding	intronic	None	None	None	None	None	None
+1	158671494	rs41273529	T	G	SPTA1	ns_control_original	4485	0.995318	-14.9225	7.87065	1.04E-07	SPTA1	protein_coding	intronic	None	None	None	None	None	None
+1	178122313	rs141155936	T	G	RASAL2	ssns_control_conditional_4	4278	0.997429	-3.80797	0.408331	2.53E-09	RASAL2	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+1	178482034	rs141179591	T	C	RASAL2, CLEC20A	ssns_control_conditional_4	4278	0.997662	-3.79709	0.417926	4.27E-09	RASAL2	protein_coding	3utr	None	None	None	None	None	None
+1	178482034	rs141179591	T	C	RASAL2, CLEC20A	ssns_control_conditional_4	4278	0.997662	-3.79709	0.417926	4.27E-09	CLEC20A	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+1	183296666	rs12046529	T	C	NMNAT2	ssns_control_european_original	913	0.89759	-21.0792	18.4129	9.00E-07	NMNAT2	protein_coding	intronic	None	None	None	None	None	None
+1	183296666	rs12046529	T	C	NMNAT2	ssns_control_european_conditional_2	913	0.89759	-20.8213	15.6504	1.42E-07	NMNAT2	protein_coding	intronic	None	None	None	None	None	None
+1	189264062	rs142449678	C	G	GAPDHP75	ssns_control_original	4278	0.996026	-9.04999	3.74071	2.88E-06	None	None	None	GAPDHP75	processed_pseudogene	130770	RNA5SP73	rRNA_pseudogene	402087
+1	189264062	rs142449678	C	G	GAPDHP75	ssns_control_conditional_4	4278	0.996026	-9.87649	3.61671	2.07E-07	None	None	None	GAPDHP75	processed_pseudogene	130770	RNA5SP73	rRNA_pseudogene	402087
+1	194172781	rs147195221	A	G	AL136456.1	ns_control_original	4485	0.995987	-11.6799	4.83643	1.09E-07	AL356272.1	lincRNA	non-coding intronic	None	None	None	None	None	None
+1	218141640	rs185225301	C	T	RNU1-141P	ssns_control_original	4278	0.99626	-11.4055	3.90852	7.97E-09	None	None	None	RNU1-141P	snRNA	11688	RRP15	protein_coding	143647
+1	218141640	rs185225301	C	T	RNU1-141P	ssns_control_conditional_4	4278	0.99626	-10.2656	4.10598	4.06E-07	None	None	None	RNU1-141P	snRNA	11688	RRP15	protein_coding	143647
+1	219966396	NA	T	C	EPRS	ssns_control_european_original	913	0.54655	36.307	51.641	4.36E-07	None	None	None	RF00012	snoRNA	3531	EPRS	protein_coding	2205
+1	237719883	rs150332780	G	A	RYR2	ns_control_original	4485	0.996544	-9.56885	3.4856	2.97E-07	RYR2	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+1	26453229	rs182676324	A	G	DHDDS	ssns_control_original	4278	0.997662	-6.48247	2.45348	3.49E-05	DHDDS	protein_coding	intronic	None	None	None	None	None	None
+1	28659335	rs147603544	A	G	GMEB1	ssns_control_conditional_4	4278	0.997312	-8.25365	2.62767	3.55E-07	None	None	None	RNU11	snRNA	10602	GMEB1	protein_coding	9397
+10	128288864	rs187219819	A	T	LINC01163	srns_control_matching	780	0.991026	-7.39957	1.97825	1.43E-07	LINC01163	lincRNA	non-coding intronic	None	None	None	None	None	None
+10	14248996	rs369086403	G	C	FRMD4A	srns_control_matching	780	0.996795	-4.08585	0.669959	5.98E-07	FRMD4A	protein_coding	intronic	None	None	None	None	None	None
+10	81000844	rs879322182	TA	T	WARS2P1	ssns_control_conditional_4	4278	0.997546	-7.49417	2.30643	8.03E-07	None	None	None	WARS2P1	processed_pseudogene	59644	RPA2P2	processed_pseudogene	135695
+10	87375521	rs191714675	T	A	NPAP1P3	ns_control_original	4485	0.995875	-12.2461	6.23369	9.35E-07	None	None	None	NUTM2D	protein_coding	4826	NPAP1P3	processed_pseudogene	1375
+10	9172071	rs144878284	G	A	LINC00709	ssns_control_conditional_4	4278	0.997546	-5.68988	1.02504	1.91E-08	None	None	None	AC044784.1	lincRNA	198603	LINC00709	lincRNA	103762
+10	9172071	rs144878284	G	A	LINC00709	ssns_control_original	4278	0.997546	-4.28828	1.90362	0.00188303	None	None	None	AC044784.1	lincRNA	198603	LINC00709	lincRNA	103762
+11	110198817	rs10789754	T	C	RDX	srns_control_matching	780	0.591667	-34.1755	46.2847	5.08E-07	RDX	protein_coding	intronic	None	None	None	None	None	None
+11	88636286	rs7112929	G	T	GRM5	srns_control_matching	780	0.307692	32.6585	42.6837	5.77E-07	GRM5	protein_coding	intronic	None	None	None	None	None	None
+11	92501896	rs554648910	A	G	FAT3	ssns_control_original	4278	0.997312	-7.15594	2.74695	1.58E-05	FAT3	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+11	98729819	rs112288580	C	A	AP003715.1	ns_control_original	4485	0.993868	-15.3095	8.43511	1.35E-07	None	None	None	AP003715.1	lincRNA	46084	AP002428.1	lincRNA	209093
+12	113718087	rs138466996	A	G	LINC01234	ssns_control_original	4278	0.997546	-8.88597	3.4776	1.89E-06	LINC01234	lincRNA	non-coding intronic	None	None	None	None	None	None
+12	113718087	rs138466996	A	G	LINC01234	ns_control_original	4485	0.997213	-11.4419	4.67293	1.20E-07	LINC01234	lincRNA	non-coding intronic	None	None	None	None	None	None
+12	123654350	rs530165824	A	AGTG	GTF2H3	ssns_control_original	4278	0.996844	-8.37518	3.21742	3.02E-06	GTF2H3	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+12	1279275	rs147198356	A	C	ERC1	srns_control_matching	780	0.987179	-8.50993	2.67146	1.92E-07	ERC1	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+12	23788690	rs142500565	T	C	SOX5	ssns_control_conditional_4	4278	0.997195	-3.45493	0.490585	8.11E-07	SOX5	protein_coding	intronic	None	None	None	None	None	None
+12	52409604	rs189468936	A	C	AC055736.1	ns_control_original	4485	0.992196	-12.6309	6.53033	7.70E-07	AC055736.1	antisense	non-coding intronic	None	None	None	None	None	None
+12	94349241	rs143420452	T	C	CEP83	ns_control_original	4485	0.997324	-4.8626	0.948563	5.95E-07	CEP83	protein_coding	intronic	None	None	None	None	None	None
+12	97181965	rs150918987	A	G	AC007656.2	ns_control_original	4485	0.995206	-10.5173	3.69891	4.54E-08	AC007656.1	lincRNA	non-coding intronic	None	None	None	None	None	None
+13	68873986	rs560315402	C	CTTGTTAAATA	LINC00550	ssns_control_conditional_4	4278	0.995091	-10.6894	4.41948	3.68E-07	LINC00550	lincRNA	non-coding intronic	None	None	None	None	None	None
+13	78236524	rs151109286	T	C	OBI1-AS1	ssns_control_original	4278	0.997195	-5.50731	1.91885	7.02E-05	RNF219-AS1	antisense	non-coding intronic	None	None	None	None	None	None
+13	78236524	rs151109286	T	C	OBI1-AS1	ssns_control_conditional_4	4278	0.997195	-6.18546	1.38569	1.48E-07	RNF219-AS1	antisense	non-coding intronic	None	None	None	None	None	None
+13	82585533	rs73237813	T	C	AL445255.1	srns_control_matching	780	0.916667	-19.871	16.471	9.77E-07	None	None	None	PTMAP5	transcribed_processed_pseudogene	894461	GYG1P2	processed_pseudogene	237598
+14	61440360	rs17098370	C	T	PRKCH	ssns_control_conditional_4	4278	0.988897	-19.4234	13.0733	7.79E-08	PRKCH	protein_coding	intronic	None	None	None	None	None	None
+14	62099875	rs955811742	G	GTGTC	SYT16	ssns_control_conditional_4	4278	0.997662	-7.63314	2.14377	1.85E-07	SYT16	protein_coding	intronic	None	None	None	None	None	None
+14	62099875	rs955811742	G	GTGTC	SYT16	ssns_control_original	4278	0.997662	-7.26494	2.4639	3.69E-06	SYT16	protein_coding	intronic	None	None	None	None	None	None
+15	101859143	rs567952513	G	GTATA	OR4F13P	ssns_control_original	4278	0.997078	-9.49672	3.81356	1.16E-06	None	None	None	OR4F13P	transcribed_unprocessed_pseudogene	8820	OR4F28P	unprocessed_pseudogene	16820
+15	35314734	rs78518076	G	A	DPH6	srns_control_matching	780	0.978846	-11.3037	4.22481	3.81E-08	DPH6	protein_coding	non-coding intronic	None	None	None	None	None	None
+16	11070710	rs7200940	C	G	CLEC16A, AC007014.1	ssns_control_original	4278	0.33719	-64.8776	214.546	9.45E-06	CLEC16A	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+16	11070710	rs7200940	C	G	CLEC16A, AC007014.1	ssns_control_original	4278	0.33719	-64.8776	214.546	9.45E-06	AC007014.1	antisense	non-coding intronic	None	None	None	None	None	None
+16	11070710	rs7200940	C	G	CLEC16A, AC007014.1	ssns_control_conditional_4	4278	0.33719	-78.8067	196.919	1.96E-08	CLEC16A	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+16	11070710	rs7200940	C	G	CLEC16A, AC007014.1	ssns_control_conditional_4	4278	0.33719	-78.8067	196.919	1.96E-08	AC007014.1	antisense	non-coding intronic	None	None	None	None	None	None
+16	11070710	rs7200940	C	G	CLEC16A, AC007014.1	ns_control_original	4485	0.335563	-96.9492	275.77	5.28E-09	CLEC16A	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+16	11070710	rs7200940	C	G	CLEC16A, AC007014.1	ns_control_original	4485	0.335563	-96.9492	275.77	5.28E-09	AC007014.1	antisense	non-coding intronic	None	None	None	None	None	None
+16	8118018	NA	T	G	AC093515.1	ssns_control_european_original	913	0.984666	-8.12829	2.63274	5.46E-07	None	None	None	AC093515.1	lincRNA	223623	AC018767.2	lincRNA	158245
+16	84652109	rs146706995	A	G	KLHL36	ns_control_original	4485	0.992531	-13.0262	7.06075	9.48E-07	KLHL36	protein_coding	intronic	None	None	None	None	None	None
+17	51793737	rs11655453	T	C	CA10	ssns_control_european_original	913	0.96057	-16.1077	8.37064	2.59E-08	CA10	protein_coding	intronic	None	None	None	None	None	None
+17	56125448	rs62072970	A	G	ANKFN1	ssns_control_original	4278	0.993104	-10.3385	7.20298	0.000117089	ANKFN1	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+17	63567803	rs79836779	C	G	DCAF7	ssns_control_european_conditional_2	913	0.978094	-8.38996	2.84153	6.45E-07	DCAF7	protein_coding	intronic	None	None	None	None	None	None
+17	63864649	rs141845405	T	G	TCAM1P	ssns_control_european_conditional_2	913	0.976451	-8.90297	3.08563	4.01E-07	None	None	None	TCAM1P	transcribed_unitary_pseudogene	270	CSH2	protein_coding	7363
+18	10466005	rs77135368	G	A	APCDD1	srns_control_matching	780	0.992949	-6.34434	1.66542	8.83E-07	APCDD1	protein_coding	intronic	None	None	None	None	None	None
+18	2727044	rs139087832	T	C	SMCHD1, AP001011.1	ssns_control_original	4278	0.995442	-4.06387	3.24815	0.0241415	SMCHD1	protein_coding	non-coding,intronic,5upstream	None	None	None	None	None	None
+18	2727044	rs139087832	T	C	SMCHD1, AP001011.1	ssns_control_original	4278	0.995442	-4.06387	3.24815	0.0241415	AP001011.1	antisense	non-coding intronic	None	None	None	None	None	None
+18	2727044	rs139087832	T	C	SMCHD1, AP001011.1	ssns_control_conditional_4	4278	0.995442	-6.0342	1.38323	2.89E-07	SMCHD1	protein_coding	non-coding,intronic,5upstream	None	None	None	None	None	None
+18	2727044	rs139087832	T	C	SMCHD1, AP001011.1	ssns_control_conditional_4	4278	0.995442	-6.0342	1.38323	2.89E-07	AP001011.1	antisense	non-coding intronic	None	None	None	None	None	None
+18	68286968	rs184584419	T	G	AC005909.2	ssns_control_conditional_4	4278	0.996494	-9.60493	3.33335	1.43E-07	None	None	None	AC022968.1	processed_pseudogene	8725	AC005909.1	lincRNA	140062
+19	30189784	rs149936968	G	A	AC005597.1	srns_control_matching	780	0.987821	-7.71712	2.47924	9.53E-07	None	None	None	AC008507.1	processed_pseudogene	151603	AC005597.1	antisense	29882
+19	50471914	rs545545886	G	A	FAM71E1	ssns_control_conditional_4	4278	0.994741	-13.3452	6.24323	9.25E-08	FAM71E1	protein_coding	intronic	None	None	None	None	None	None
+2	120875986	rs142191037	A	G	GLI2	srns_control_matching	780	0.994231	-5.8949	1.35568	4.13E-07	GLI2	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+2	128236642	rs113008991	T	C	HS6ST1	ssns_control_conditional_4	4278	0.997662	-6.28018	1.44484	1.74E-07	None	None	None	AC017079.2	processed_pseudogene	18570	HS6ST1	protein_coding	74
+2	131837748	rs560948754	C	CAA	AC103564.2	ssns_control_conditional_4	4278	0.995559	-9.50369	3.52637	4.17E-07	None	None	None	AC103564.2	unprocessed_pseudogene	1217	AJ239322.2	lincRNA	120528
+2	136428976	rs557175118	CT	C	RN7SKP141	ssns_control_conditional_4	4278	0.997195	-3.51884	0.456378	1.90E-07	None	None	None	RN7SKP141	misc_RNA	38308	SMC4P1	unprocessed_pseudogene	115735
+2	182777657	rs188389581	T	C	DNAJC10	srns_control_matching	780	0.996154	-4.84326	0.891943	2.92E-07	DNAJC10	protein_coding	3utr,3downstream	None	None	None	None	None	None
+2	2849577	rs200063372	CT	C	AC011995.2	ssns_control_conditional_4	4278	0.994857	-11.1806	4.93325	4.81E-07	None	None	None	AC011995.2	lincRNA	11187	AC011995.1	lincRNA	20980
+2	41952003	rs62140163	G	A	C2orf91	ssns_control_european_original	913	0.982475	-9.94314	4.03063	7.32E-07	C2orf91	protein_coding	non-coding intronic,intronic,3downstream	None	None	None	None	None	None
+2	76342443	rs200512342	T	TC	AC073091.3	ssns_control_original	4278	0.994741	-9.92652	3.87245	4.55E-07	None	None	None	AC073091.2	processed_pseudogene	80783	RN7SKP203	misc_RNA	102635
+20	18137708	rs192263372	A	G	PET117	ssns_control_conditional_4	4278	0.995325	-9.25984	3.5673	9.45E-07	None	None	None	RF00019	misc_RNA	24129	PET117	protein_coding	165
+20	41772455	rs149068797	T	G	AL133229.1	srns_control_matching	780	0.985897	-8.278	2.83424	8.78E-07	None	None	None	RF00568	snoRNA	59855	AL049812.2	antisense	218685
+22	29127065	rs132272	A	G	KREMEN1	ssns_control_european_original	913	0.0306681	14.3322	7.88823	3.34E-07	KREMEN1	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+22	43217545	rs138996	G	A	SCUBE1	ssns_control_european_conditional_2	913	0.296276	31.2022	36.5187	2.43E-07	SCUBE1	protein_coding	intronic	None	None	None	None	None	None
+22	43217545	rs138996	G	A	SCUBE1	ssns_control_european_original	913	0.296276	32.1084	42.5506	8.55E-07	SCUBE1	protein_coding	intronic	None	None	None	None	None	None
+3	132710057	NA	T	C	NPHP3-ACAD11, NPHP3	srns_control_matching	780	0.994872	-5.3923	1.20594	9.09E-07	NPHP3-ACAD11	protein_coding	intronic	None	None	None	None	None	None
+3	132710057	NA	T	C	NPHP3-ACAD11, NPHP3	srns_control_matching	780	0.994872	-5.3923	1.20594	9.09E-07	NPHP3	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+3	136725851	rs188764043	C	G	STAG1	srns_control_matching	780	0.994872	-5.44729	1.18272	5.48E-07	STAG1	protein_coding	intronic	None	None	None	None	None	None
+3	148619480	rs111278439	T	G	AC069410.1	srns_control_matching	780	0.984615	-9.32266	3.39883	4.26E-07	None	None	None	AC069410.1	lincRNA	27553	RPL38P1	processed_pseudogene	76514
+3	194853411	rs144320368	A	G	AC090505.2	ssns_control_conditional_4	4278	0.996961	-7.17089	1.90166	1.99E-07	None	None	None	AC090505.2	lincRNA	20819	XXYLT1	protein_coding	214868
+3	34563042	rs142968324	C	A	LINC01811	ssns_control_conditional_4	4278	0.997195	-2.68727	0.295936	7.82E-07	None	None	None	LINC01811	lincRNA	165	FECHP1	processed_pseudogene	309599
+4	132276787	rs187490735	A	G	AC093916.1	ns_control_original	4485	0.996544	-10.9861	4.88552	6.68E-07	None	None	None	AC096711.3	lincRNA	152756	ELL2P2	processed_pseudogene	90999
+4	136790863	rs62313693	C	T	LINC02511	srns_control_matching	780	0.962179	-13.5656	7.23033	4.54E-07	None	None	None	AC093875.1	TEC	237124	LINC02511	lincRNA	5859
+4	167203980	rs184934338	C	T	SPOCK3	ns_control_original	4485	0.996544	-11.5476	5.08096	3.01E-07	SPOCK3	protein_coding	intronic	None	None	None	None	None	None
+4	175927544	rs78857944	T	G	GPM6A	ssns_control_european_conditional_2	913	0.981928	-8.82668	3.03244	4.00E-07	GPM6A	protein_coding	intronic	None	None	None	None	None	None
+4	176069183	rs146370798	A	C	WDR17	ssns_control_european_original	913	0.975356	-12.751	6.11794	2.53E-07	WDR17	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+4	9172304	rs1319121362	C	T	AC108519.1, FAM90A26	ssns_control_original	4278	0.991702	-12.3119	7.99598	1.34E-05	FAM90A26	protein_coding	intronic	None	None	None	None	None	None
+4	9172304	rs1319121362	C	T	AC108519.1, FAM90A26	ssns_control_conditional_4	4278	0.991702	-14.3895	6.91738	4.47E-08	FAM90A26	protein_coding	intronic	None	None	None	None	None	None
+5	120017735	rs75544584	G	A	AC008574.1	srns_control_matching	780	0.982692	-9.90311	4.04597	8.51E-07	None	None	None	AC008550.1	processed_pseudogene	336655	AC008574.1	lincRNA	227713
+5	134067946	rs144950775	G	T	AC008608.1	srns_control_matching	780	0.985256	-8.38392	2.75522	4.40E-07	None	None	None	AC008608.2	lincRNA	62384	AC008608.1	processed_pseudogene	13968
+5	98809033	rs77382985	G	C	RGMB	ssns_control_european_original	913	0.986309	-8.98909	3.28983	7.20E-07	None	None	None	RGMB	protein_coding	10390	CSNK1A1P3	processed_pseudogene	24349
+5	99111016	rs142994558	T	C	LINC02062	ssns_control_conditional_4	4278	0.997429	-7.1407	2.09979	8.32E-07	None	None	None	LINC02062	lincRNA	116003	AC114324.2	transcribed_unprocessed_pseudogene	378543
+6	102333044	rs145826857	T	C	AL357139.2	ssns_control_conditional_4	4278	0.996143	-10.6238	4.42922	4.46E-07	None	None	None	AP002530.1	processed_pseudogene	253489	AL357139.1	processed_pseudogene	120323
+6	116452638	rs35460002	C	CA	Z84488.2	ssns_control_conditional_4	4278	0.642824	74.3795	194.807	9.87E-08	Z84488.2	protein_coding	intronic	None	None	None	None	None	None
+6	1388663	rs150268667	T	G	FOXF2	srns_control_matching	780	0.992308	-7.07981	1.82477	1.60E-07	None	None	None	AL034346.1	antisense	3597	FOXF2	protein_coding	913
+6	147619086	NA	T	C	SAMD5	srns_control_matching	780	0.996154	-4.78478	0.920389	6.12E-07	SAMD5	protein_coding	intronic	None	None	None	None	None	None
+6	154581357	NA	G	A	RPS4XP8	srns_control_matching	780	0.994872	-5.4861	1.16824	3.86E-07	None	None	None	RPS4XP8	processed_pseudogene	4278	AL591419.1	processed_pseudogene	24259
+6	26144053	rs80080917	G	A	HIST1H2AC	ssns_control_original	4278	0.978728	-29.5155	27.8157	2.19E-08	None	None	None	HIST1H2AC	protein_coding	4937	HIST1H1E	protein_coding	12301
+6	27604218	rs370434259	A	C	RNU6-471P	ssns_control_original	4278	0.990416	-19.7711	13.1626	5.05E-08	None	None	None	RNU6-471P	snRNA	7701	AL031229.1	processed_pseudogene	48384
+6	27604218	rs370434259	A	C	RNU6-471P	ns_control_original	4485	0.990412	-20.8328	15.5525	1.27E-07	None	None	None	RNU6-471P	snRNA	7701	AL031229.1	processed_pseudogene	48384
+6	27957298	rs150850606	G	C	OR2B6	ns_control_original	4485	0.981828	-27.4868	29.6916	4.55E-07	OR2B6	protein_coding	coding nonsyn	None	None	None	None	None	None
+6	28004946	rs374877234	C	T	IQCB2P	ssns_control_original	4278	0.974988	-32.7475	31.507	5.41E-09	None	None	None	OR2W4P	unprocessed_pseudogene	26871	IQCB2P	processed_pseudogene	5777
+6	28830799	rs182017763	C	T	AL662890.1	ns_control_original	4485	0.971572	-33.5635	42.7153	2.82E-07	None	None	None	NOP56P1	processed_pseudogene	46795	AL662890.1	lincRNA	7070
+6	28830799	rs182017763	C	T	AL662890.1	ssns_control_original	4278	0.970781	-38.1735	36.5625	2.73E-10	None	None	None	NOP56P1	processed_pseudogene	46795	AL662890.1	lincRNA	7070
+6	31445184	rs2596464	C	T	HCP5, LINC01149	ssns_control_european_original	913	0.506024	-33.8473	44.0689	3.42E-07	HCP5	sense_overlapping	non-coding intronic	None	None	None	None	None	None
+6	31445184	rs2596464	C	T	HCP5, LINC01149	ssns_control_european_original	913	0.506024	-33.8473	44.0689	3.42E-07	LINC01149	lincRNA	non-coding intronic	None	None	None	None	None	None
+6	32658569	rs17211741	A	G	HLA-DQB1	ns_control_original	4485	0.863211	-162.963	149.7	1.79E-40	None	None	None	HLA-DQA1	protein_coding	11507	HLA-DQB1	protein_coding	898
+6	32663671	NA	G	A	HLA-DQB1	ssns_control_european_original	913	0.529025	-58.3609	50.1905	1.75E-16	HLA-DQB1	protein_coding	non-coding,intronic,5upstream	None	None	None	None	None	None
+6	32684091	rs2856696	T	A	HLA-DQB1	ssns_control_original	4278	0.881019	-146.29	110.352	4.41E-44	None	None	None	HLA-DQB1	protein_coding	15708	MTCO3P1	unprocessed_pseudogene	22033
+6	37362263	rs111294277	C	T	RNF8	ssns_control_european_original	913	0.983571	-9.4558	3.18132	1.15E-07	RNF8	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+6	88479561	rs145501474	A	G	AL139042.1	ns_control_original	4485	0.992977	-16.8934	11.5453	6.63E-07	None	None	None	AL139042.1	lincRNA	58528	RNGTT	protein_coding	130711
+7	112148784	rs181924921	G	A	DOCK4	ns_control_original	4485	0.995875	-12.3534	5.54069	1.54E-07	DOCK4	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+7	128813285	rs117089146	G	A	CCDC136	srns_control_matching	780	0.980128	-10.4667	4.38423	5.77E-07	CCDC136	protein_coding	non-coding intronic,intronic,5upstream	None	None	None	None	None	None
+7	137480586	rs540645858	G	C	DGKI	ssns_control_original	4278	0.99626	-12.7927	5.63254	7.03E-08	DGKI	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+7	137480586	rs540645858	G	C	DGKI	ns_control_original	4485	0.99621	-13.7361	6.61938	9.35E-08	DGKI	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+7	137517685	rs536765398	T	A	DGKI	ssns_control_conditional_4	4278	0.996844	-11.1482	4.485	1.41E-07	DGKI	protein_coding	non-coding intronic,intronic	None	None	None	None	None	None
+7	152464809	rs139677904	G	C	LINC01003	srns_control_matching	780	0.989744	-7.65481	2.38969	7.35E-07	LINC01003	lincRNA	non-coding	None	None	None	None	None	None
+7	22032950	rs566406945	C	G	RAPGEF5	ssns_control_conditional_4	4278	0.997662	-6.64684	1.64949	2.27E-07	None	None	None	CDCA7L	protein_coding	86866	RAPGEF5	protein_coding	85288
+7	22032950	rs566406945	C	G	RAPGEF5	ssns_control_original	4278	0.997662	-5.6097	1.98584	6.87E-05	None	None	None	CDCA7L	protein_coding	86866	RAPGEF5	protein_coding	85288
+7	38151354	rs146739574	T	G	STARD3NL	ssns_control_original	4278	0.995909	-8.03574	3.50988	1.79E-05	None	None	None	SFRP4	protein_coding	125659	STARD3NL	protein_coding	26868
+7	52765248	rs74767394	A	T	SGO1P2	ssns_control_conditional_4	4278	0.996727	-7.43827	2.28772	8.75E-07	None	None	None	RF00322	snoRNA	495679	SGO1P2	processed_pseudogene	126589
+8	107771874	rs10098704	G	A	AC025508.1	ssns_control_original	4278	0.861851	53.1307	101.534	1.34E-07	None	None	None	PGAM1P13	processed_pseudogene	123842	RNA5SP275	rRNA_pseudogene	112620
+8	107771874	rs10098704	G	A	AC025508.1	ssns_control_conditional_4	4278	0.861851	49.505	90.3334	1.90E-07	None	None	None	PGAM1P13	processed_pseudogene	123842	RNA5SP275	rRNA_pseudogene	112620
+8	135957971	rs183510267	A	G	LINC02055	ssns_control_original	4278	0.996026	-12.3928	5.384	9.25E-08	LINC02055	lincRNA	non-coding intronic	None	None	None	None	None	None
+8	135957971	rs183510267	A	G	LINC02055	ns_control_original	4485	0.996098	-12.3623	6.13279	5.98E-07	LINC02055	lincRNA	non-coding intronic	None	None	None	None	None	None
+8	14596273	rs114576378	A	T	SGCZ	srns_control_matching	780	0.986538	-9.21829	2.63204	1.33E-08	SGCZ	protein_coding	intronic	None	None	None	None	None	None
+8	14839397	NA	C	G	SGCZ	ns_control_original	4485	0.997659	-8.27109	2.57024	2.48E-07	SGCZ	protein_coding	intronic	None	None	None	None	None	None
+9	137106584	rs7467333	T	C	MAN1B1	ssns_control_conditional_4	4278	0.997078	-4.71059	0.888373	5.80E-07	MAN1B1	protein_coding	non-coding,non-coding intronic,intronic,5upstream	None	None	None	None	None	None
+9	137106584	rs7467333	T	C	MAN1B1	ssns_control_original	4278	0.997078	-3.40347	1.94729	0.0147292	MAN1B1	protein_coding	non-coding,non-coding intronic,intronic,5upstream	None	None	None	None	None	None
+9	24544291	rs150320525	T	A	IZUMO3	ssns_control_conditional_4	4278	0.994741	-10.628	4.39697	4.01E-07	IZUMO3	protein_coding	intronic	None	None	None	None	None	None
+9	794704	rs146811174	A	C	DMRT1	ssns_control_original	4278	0.997429	-5.25232	2.46807	0.000827933	None	None	None	KANK1	protein_coding	48598	DMRT1	protein_coding	46986
+9	794704	rs146811174	A	C	DMRT1	ssns_control_conditional_4	4278	0.997429	-7.05577	1.91528	3.43E-07	None	None	None	KANK1	protein_coding	48598	DMRT1	protein_coding	46986
+9	83702136	rs79938725	G	C	UBQLN1	srns_control_matching	780	0.990385	-7.44148	1.9616	1.08E-07	UBQLN1	protein_coding	intronic	None	None	None	None	None	None
+9	87925507	NA	G	A	SPATA31C1	srns_control_matching	780	0.992308	-6.76483	1.7038	2.19E-07	None	None	None	SPATA31C1	transcribed_unprocessed_pseudogene	2002	AL353572.2	processed_pseudogene	18769
