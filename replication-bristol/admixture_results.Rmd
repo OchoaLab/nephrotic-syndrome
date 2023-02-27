@@ -1,0 +1,257 @@
+---
+title: "admixture_results"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(genio)
+#devtools::install_github('StoreyLab/popkin')
+library(popkin)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(data.table)
+library(cluster)
+library(factoextra)
+
+#install.packages('factoextra')
+```
+
+```{r}
+# PCA analysis
+pca <- read_table2("NS_BristolPCA10.eigenvec")
+eigenval <- scan("NS_BristolPCA10.eigenval")
+
+pheno_ <- read.csv("/datacommons/ochoalab/ssns_gwas/replication/bristol_data/pheno_Bristol.csv") 
+rownames(pheno_) <- NULL
+
+pca_race = merge(pca, pheno_, by.x = "IID", by.y = "AcquisitionNumber")
+```
+
+## k-medioids method
+```{r}
+pca_remove_out = pca_race %>% select(PC1, PC2) 
+pca_remove = pca_race
+
+#pca_remove_out = pca_outlier_label %>% filter(RACE != "outlier")  %>% select(PC1, PC2) 
+#pca_remove = pca_outlier_label %>% filter(RACE != "outlier")
+library(cluster)
+pca_a_scale <- scale(pca_remove_out) 
+fviz_nbclust(pca_a_scale, pam, method = "wss")
+kmed = pam(pca_a_scale, k = 3, metric = "euclidean", stand = FALSE)
+fviz_cluster(kmed, data = pca_a_scale)
+cluster_assign = kmed$clustering %>% as.data.frame() 
+
+colnames(cluster_assign) = "assign"
+cluster_assign %>% mutate(assign = as.factor(assign)) %>% count(assign)
+pca_assign_new = cbind(pca_remove, cluster_assign) 
+id_cluster1 = pca_assign_new %>% filter(assign == 1) %>% pull(IID)
+id_cluster2 = pca_assign_new %>% filter(assign == 2) %>% pull(IID)
+id_cluster3 = pca_assign_new %>% filter(assign == 3) %>% pull(IID)
+
+```
+
+
+## plink1.9 neighbor calculation
+
+```{r}
+neighbor <- read.table("PCA_neighbor_all.nearest", header = TRUE)
+
+outlier_id = neighbor %>% filter(Z< -3) %>% pull(IID)
+length(unique(outlier_id))
+pca_outlier_label = pca_race %>% drop_na(RACE) %>% mutate(RACE = as.factor(ifelse(IID %in% outlier_id, "outlier", RACE )),
+                                        shape = ifelse(RACE == "outlier", 24, 20)) %>% arrange(shape)
+ggplot(pca_outlier_label, aes(x = PC1, y = PC2, color = RACE)) +
+  ggtitle("Bristol (Z < -3)") +
+  geom_point() + 
+  scale_color_manual(values = c("gray", "gray",
+                                "gray", "red", "gray", "gray"))
+                                
+levels(pca_outlier_label$RACE)
+```
+
+## k-medioids method
+```{r}
+pca_remove_out = pca_race %>% select(PC1, PC2) 
+pca_remove = pca_race
+pca_outlier_label = pca_race
+pca_remove_out = pca_outlier_label %>% filter(RACE != "outlier")  %>% select(PC1, PC2) 
+# pca_remove = pca_outlier_label %>% filter(RACE != "outlier")
+library(cluster)
+pca_a_scale <- scale(pca_remove_out) 
+fviz_nbclust(pca_a_scale, pam, method = "wss")
+kmed = pam(pca_a_scale, k = 3, metric = "euclidean", stand = FALSE)
+fviz_cluster(kmed, data = pca_a_scale)
+cluster_assign = kmed$clustering %>% as.data.frame() 
+
+colnames(cluster_assign) = "assign"
+cluster_assign %>% mutate(assign = as.factor(assign)) %>% count(assign)
+pca_assign_new = cbind(pca_remove, cluster_assign) 
+id_cluster1 = pca_assign_new %>% filter(assign == 1) %>% pull(IID)
+id_cluster2 = pca_assign_new %>% filter(assign == 2) %>% pull(IID)
+id_cluster3 = pca_assign_new %>% filter(assign == 3) %>% pull(IID)
+pca_outlier_label_new = pca_outlier_label %>% drop_na(RACE) %>% mutate(RACE = as.factor(ifelse(IID %in% id_cluster1, "cluster1", ifelse(IID %in% id_cluster2, "cluster2", ifelse(IID %in% id_cluster3, "cluster3", "outlier"))))) #%>% mutate(RACE = ifelse(RACE == "4", "outlier", RACE))#%>% filter(RACE != "outlier") #%>% filter(RACE != "cluster2")
+                                                                       
+table(pca_outlier_label_new$RACE)
+pca_outlier_label_new %>% filter(RACE == "outlier")
+ggplot(pca_outlier_label_new, aes(x = PC1, y = PC2, color = RACE)) +
+  ggtitle("Bristol PCA with cluster id's (outliers removed)") +
+  geom_point(alpha = 0.7) + 
+  #geom_text(aes(label=ifelse(RACE == "cluster2",as.character("clutser2"),'')),hjust=0,vjust=0, show_guide  = FALSE)  +
+  scale_color_manual(values = c("red", "green", "blue", "orange"))
+```
+
+## calculate Z-score
+```{r}
+z_score_df = pca_outlier_label_new %>% select(IID, PC1, PC2, ancestry_label = RACE) %>%  
+  group_by(ancestry_label) %>%
+  mutate(z_score_1 = scale(PC1), z_score_2 = scale(PC2)) %>% 
+  mutate(chi_sqr_z = (z_score_1)^2 + (z_score_2)^2)
+
+hist(z_score_df$chi_sqr_z)
+```
+
+```{r}
+out_cluster1 = z_score_df %>% filter(ancestry_label == "cluster1" & chi_sqr_z>8) %>% pull(IID)
+out_cluster2 = z_score_df %>% filter(ancestry_label == "cluster2" & chi_sqr_z>8) %>% pull(IID)
+out_cluster3 = z_score_df %>% filter(ancestry_label == "cluster3" & chi_sqr_z>8) %>% pull(IID)
+
+id_cluster1 = z_score_df %>% filter(ancestry_label == "cluster1" & chi_sqr_z<8) %>% pull(IID)
+id_cluster2 = z_score_df %>% filter(ancestry_label == "cluster2" & chi_sqr_z<8) %>% pull(IID)
+id_cluster3 = z_score_df %>% filter(ancestry_label == "cluster3" & chi_sqr_z<8) %>% pull(IID)
+
+df_newlab = z_score_df %>% mutate(new_labels = as.factor(ifelse(IID %in% out_cluster1, "cluster1_outlier", 
+                                          ifelse(IID %in% out_cluster2, "cluster2_outlier",
+                                                 ifelse(IID %in% out_cluster3, "cluster3_outlier",
+                                                        ifelse(IID %in% id_cluster1, "cluster1",
+                                                               ifelse(IID %in% id_cluster2, "cluster2", "cluster3"))))))) 
+
+write.table(cbind(0, id_cluster1), 
+            "/datacommons/ochoalab/ssns_gwas/replication/bristol_data/AF/labels_euro.txt", 
+            row.names=FALSE, quote=FALSE, col.names = F)
+
+table(df_newlab$new_labels)
+ggplot(df_newlab, aes(x = PC1, y = PC2, color = new_labels)) +
+  ggtitle("Bristol") +
+  geom_point(alpha = 0.8) + 
+  scale_color_manual(values = c("pink", "red", "#56B4E9", "blue", "#009E73","green"))
+```
+
+# iterate clustering after removing outliers: remove outliers and run pca again before clustering
+```{r}
+recluster = df_newlab %>% 
+  filter(new_labels == "cluster1 (n = 428)" | new_labels == "cluster2 (n = 111)" | new_labels == "cluster3 (n = 16)")
+
+outliers_remove = cbind(c(out_cluster1, out_cluster2, out_cluster3), c(out_cluster1, out_cluster2, out_cluster3)) %>% as.data.frame()
+write.table(outliers_remove, 
+            "/datacommons/ochoalab/ssns_gwas/replication/bristol_data/admixture/outlier_labels1.txt", 
+            row.names=FALSE, quote=FALSE, col.names=FALSE)
+
+
+pca <- read_table2("NS_BristolPCA10_2.eigenvec")
+eigenval <- scan("NS_BristolPCA10_2.eigenval")
+pheno_ <- read.csv("/datacommons/ochoalab/ssns_gwas/replication/bristol_data/pheno_Bristol.csv") 
+rownames(pheno_) <- NULL
+pca_race = merge(pca, pheno_, by.x = "IID", by.y = "AcquisitionNumber")
+
+
+pca_remove_out = pca_race %>% select(PC1, PC2) 
+pca_remove = pca_race
+
+pca_a_scale <- scale(pca_remove_out) 
+fviz_nbclust(pca_a_scale, pam, method = "wss")
+kmed = pam(pca_a_scale, k = 3, metric = "euclidean", stand = FALSE)
+fviz_cluster(kmed, data = pca_a_scale)
+cluster_assign = kmed$clustering %>% as.data.frame() 
+
+colnames(cluster_assign) = "assign"
+cluster_assign %>% mutate(assign = as.factor(assign)) %>% count(assign)
+pca_assign_new = cbind(pca_remove, cluster_assign) 
+table(pca_assign_new$assign)
+id_cluster1 = pca_assign_new %>% filter(assign == 1) %>% pull(IID)
+id_cluster2 = pca_assign_new %>% filter(assign == 2) %>% pull(IID)
+id_cluster3 = pca_assign_new %>% filter(assign == 3) %>% pull(IID)
+pca_outlier_label_new = pca_assign_new %>% drop_na(RACE) %>% mutate(RACE = as.factor(ifelse(IID %in% id_cluster1, "cluster1", ifelse(IID %in% id_cluster2, "cluster2", ifelse(IID %in% id_cluster3, "cluster3", "outlier"))))) 
+
+table(pca_outlier_label_new$RACE)
+```
+
+
+## calculate Z-score
+```{r}
+z_score_df = pca_outlier_label_new %>% select(IID, PC1, PC2, ancestry_label = RACE) %>%  
+  group_by(ancestry_label) %>%
+  mutate(z_score_1 = scale(PC1), z_score_2 = scale(PC2)) %>% 
+  mutate(chi_sqr_z = (z_score_1)^2 + (z_score_2)^2)
+
+hist(z_score_df$chi_sqr_z)
+```
+
+```{r}
+out_cluster1 = z_score_df %>% filter(ancestry_label == "cluster1" & chi_sqr_z>8) %>% pull(IID)
+out_cluster2 = z_score_df %>% filter(ancestry_label == "cluster2" & chi_sqr_z>8) %>% pull(IID)
+out_cluster3 = z_score_df %>% filter(ancestry_label == "cluster3" & chi_sqr_z>8) %>% pull(IID)
+
+id_cluster1 = z_score_df %>% filter(ancestry_label == "cluster1" & chi_sqr_z<8) %>% pull(IID)
+id_cluster2 = z_score_df %>% filter(ancestry_label == "cluster2" & chi_sqr_z<8) %>% pull(IID)
+id_cluster3 = z_score_df %>% filter(ancestry_label == "cluster3" & chi_sqr_z<8) %>% pull(IID)
+
+df_newlab = z_score_df %>% mutate(new_labels = as.factor(ifelse(IID %in% out_cluster1, "cluster1_outlier (n = 28)", 
+                                          ifelse(IID %in% out_cluster2, "cluster2_outlier (n = 13)",
+                                                 ifelse(IID %in% out_cluster3, "cluster3_outlier (n = 1)",
+                                                        ifelse(IID %in% id_cluster1, "cluster1 (n = 400)",
+                                                               ifelse(IID %in% id_cluster2, "cluster2 (n = 98)", "cluster3 (n = 15)"))))))) 
+
+
+table(df_newlab$new_labels)
+ggplot(df_newlab, aes(x = PC1, y = PC2, color = new_labels)) +
+  ggtitle("Bristol - reclustering 2") +
+  geom_point(alpha = 0.8) + 
+  scale_color_manual(values = c("pink", "red", "#56B4E9", "blue", "#009E73","green"))
+```
+
+## Admixture analysis
+```{r}
+name <- '/datacommons/ochoalab/ssns_gwas/replication/bristol_data/NS_Bristol_mind'
+fam <- read_fam( name )
+table(fam$sex)
+
+# pheno_ <- read.csv("/datacommons/ochoalab/ssns_gwas/replication/bristol_data/pheno_Bristol.csv") %>% 
+#   filter(AcquisitionNumber %in% fam$id) 
+# pheno_arrange = pheno_[match(fam$id, pheno_$AcquisitionNumber),]
+# rownames(pheno_arrange) <- NULL
+
+# remove individuals
+#remove_mind = read.table("/datacommons/ochoalab/ssns_gwas/replication/bristol_data/NS_Bristol_mind.mindrem.id")$V1
+remove_cluster = read.table("/datacommons/ochoalab/ssns_gwas/replication/bristol_data/admixture/outlier_labels1_df.txt", header = TRUE, sep = "\t") %>% select(IID, new_labels)
+
+pheno_new = remove_cluster[match(fam$id, remove_cluster$IID),]
+rownames(pheno_new) <- NULL
+unique(pheno_new$new_labels)
+```
+
+
+```{r fig.width=15, fig.height=4}
+admix_outQ <- read_table("NS_Bristol_mind.4.Q", col_names = FALSE) 
+names(admix_outQ) <- 1:4
+
+admix_race = cbind(admix_outQ, pheno_new$IID, pheno_new$new_labels) %>% 
+  mutate( `pheno_new$new_labels` = as.factor(`pheno_new$new_labels`))
+
+admix_race$`pheno_new$new_labels` <- factor(admix_race$`pheno_new$new_labels`, 
+                                            levels = c("cluster1", "cluster1_outlier", 
+                                                       "cluster2", "cluster2_outlier", "cluster3", "cluster3_outlier"))
+admix_arrange = admix_race %>% arrange(`pheno_new$new_labels`) %>% mutate(`pheno_new$new_labels` = as.character(`pheno_new$new_labels`))
+
+```
+
+```{r fig.width=20, fig.height=5}
+Q_mat = as.matrix(admix_arrange[,1:4])
+Q <- Q_mat[ , admix_order_cols( Q_mat ) ]
+plot_admix( admix_arrange[,1:4], labs = admix_arrange$`pheno_new$new_labels`, leg_width = 0.05, labs_cex = 0.7, labs_col = "red",labs_las = 2, mar_pad = 0.5)
+```
