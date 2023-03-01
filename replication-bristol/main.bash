@@ -17,9 +17,7 @@ Rscript 00-bristol-demographics.R
 # - gnomad v2 genomes and exomes: both ignored in the end, but commands stay here for reference
 
 # convert loci to replicate into simple chr/pos table in right format (chr prefixes, no header)
-# reads: 2023-02-20_replication_gene_list.csv
-# creates: snp-list.txt
-time Rscript 01-list-to-regions.R
+time Rscript 01-list-to-regions.R 2023-02-20_replication_gene_list.csv snp-list.txt
 # 0m0.897s duke-ochoa
 
 # get gnomad info for those SNPs!
@@ -119,9 +117,58 @@ bcftools query -f '%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AC_nfe\t%AN_nfe\t%AC_afr\t%AN
 # clean up the data using this script
 # most of the cleanup is removing unmatched rows in gnomad output, most of which were junk
 # only one query SNP was not found:
-time Rscript 02-cleanup.R
+time Rscript 02-cleanup.R 2023-02-20_replication_gene_list.csv gnomad-3-genome.txt
 # 0m1.003s duke-ochoa
 # Removing loci unmatched in gnomad:
 #   CHR       POS rsid         REF   ALT   chrpos      
 # 1 chr4  9172304 rs1319121362 T     C     chr4:9172304
 
+###################
+### GNOMAD NULL ###
+###################
+
+# minimal repeat of analysis on random SNPs, to assess calibration of test
+
+# download a large list of random SNPs to compare to, as controls for inflation analysis (not in repo)
+scp $dcc:/datacommons/ochoalab/ssns_gwas/replication/bristol_data/AF/gmmat_ssns_ctr_all_random1000.txt .
+
+# create regions for tabix from this data
+time Rscript 01-list-to-regions.R gmmat_ssns_ctr_all_random1000.txt snp-list-null.txt
+
+# query gnomad v3 only!
+for chr in {1..22}; do
+    time tabix -h $google_gnomad/3.1.2/vcf/genomes/gnomad.genomes.v3.1.2.sites.chr$chr.vcf.bgz -R snp-list-null.txt > gnomad-3-genome-null-chr$chr.vcf
+    # have to compress and index for merging
+    bgzip gnomad-3-genome-null-chr$chr.vcf
+    bcftools index gnomad-3-genome-null-chr$chr.vcf.gz
+done
+# 0m58.218s, 0m49.737s, 0m52.019s, 0m52.127s, 0m35.224s, ...
+
+# now merge them for simplicity
+bcftools merge gnomad-3-genome-null-chr{?,??}.vcf.gz > gnomad-3-genome-null.vcf
+# clean up intermediates
+rm gnomad-3-genome-null-chr*.vcf.gz{,.csi}
+
+# numbers of SNPs
+wc -l snp-list-null.txt                  # 1000
+grep -c -v '^#' gnomad-3-genome-null.vcf # 1384
+
+# also clean up temporary indexes that were automatically downloaded by tabix (all gnomad versions covered)
+rm gnomad.*.tbi
+# this is no longer needed, redundant
+rm snp-list-null.txt
+# move other extras to unpub, they won't be on github
+mv gnomad-3-genome-null.vcf unpub/
+
+# make nice table out of nasty VCF data
+echo -e "CHROM\tPOS\tID\tREF\tALT\tAC_nfe\tAN_nfe\tAC_afr\tAN_afr\tAC_sas\tAN_sas" > gnomad-3-genome-null.txt
+bcftools query -f '%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AC_nfe\t%AN_nfe\t%AC_afr\t%AN_afr\t%AC_sas\t%AN_sas\n' unpub/gnomad-3-genome-null.vcf >> gnomad-3-genome-null.txt
+
+# and subset properly!
+time Rscript 02-cleanup.R gmmat_ssns_ctr_all_random1000.txt gnomad-3-genome-null.txt
+# Removing loci unmatched in gnomad:
+#   CHR         POS REF    ALT   chrposrefalt            
+# 1 chr3  118562867 A      G     chr3:118562867:A:G      
+# 2 chr4    2396433 G      A     chr4:2396433:G:A        
+# 3 chr12 108308483 GCCTGT G     chr12:108308483:GCCTGT:G
+# 4 chr19    133886 T      A     chr19:133886:T:A        
