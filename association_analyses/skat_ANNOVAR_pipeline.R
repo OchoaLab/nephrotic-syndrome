@@ -9,7 +9,7 @@
 file = read.table("all_ssns_anno_step2_0215.hg38_multianno.txt", sep = "\t", header = TRUE)
 file_filter = file %>% 
   filter(Func.wgEncodeGencodeBasicV26 == "exonic" | Func.wgEncodeGencodeBasicV26 == "exonic;splicing") %>% 
-  filter(ExonicFunc.wgEncodeGencodeBasicV26 != "nonsynonymous SNV" | ExonicFunc.wgEncodeGencodeBasicV26 != "unknown") %>% 
+  filter(ExonicFunc.wgEncodeGencodeBasicV26 != "synonymous SNV") %>% 
   select(Chr, Otherinfo5, Ref, Alt, Func.wgEncodeGencodeBasicV26, Gene.wgEncodeGencodeBasicV26)
 
 gene_group = separate_rows(file_filter, Gene.wgEncodeGencodeBasicV26 ,sep = ";") %>% select(-Func.wgEncodeGencodeBasicV26) %>% distinct(.keep_all = TRUE)
