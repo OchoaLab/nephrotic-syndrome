@@ -1,0 +1,212 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-04-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(karyoploteR)
+```
+
+###### African
+```{r}
+# create input for karyoploteR package
+afr_original = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/afr/glmm.score.bed.ancestry_ssns_ctr_afr_mac20_PC_nohwe.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+afr_original_results = afr_original %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+
+GR_input = afr_original_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+afr_original_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+
+afr_cond1 <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/conditional/afr/glmm.score.bed.ancestry_black_ssns_ctr_mac20_PC_chr6.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+afr_cond1_results = afr_cond1 %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = afr_cond1_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+afr_cond1_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+
+afr_cond2 <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/conditional/conditional2/afr/glmm.score.bed.ancestry_black_ssns_ctr_mac20_PC_chr6_2.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+afr_cond2_results = afr_cond2 %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = afr_cond2_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+afr_cond2_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+# afr_cond1_LZ = afr_cond1_results %>% arrange(P) %>% head(n = 5000) %>% arrange(CHR, BP)
+# write.table(afr_cond1_LZ, 
+#             "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/locuszoom/ssns_afr_cond1_top5000snps.txt", 
+#             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
+# afr_cond2_LZ = afr_cond2_results %>% arrange(P) %>% head(n = 5000) %>% arrange(CHR, BP)
+# write.table(afr_cond2_LZ, 
+#             "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/locuszoom/ssns_afr_cond2_top5000snps.txt", 
+#             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
+```
+
+
+```{r fig.width=10, fig.height=5}
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, 
+                    chromosomes = chr_plot, main = "SSNS vs Control (African Ancestry)", cex=1.5, plot.params = pp)
+####
+kpPlotManhattan(kp, data = afr_cond2_gr, points.col="2blues", r0=autotrack(1,3, margin = 0.15),
+                genomewide.col = "red", genomewideline = -log10(5e-8), suggestive.col = "blue", suggestiveline = -log10(1e-5))
+#kpAddBase(h = -log10(2.074689e-05), col = "gray")
+kpAddLabels(kp, labels = "Cond 2", srt=90, pos=3, r0=autotrack(1,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=8, r0=autotrack(1,3, margin = 0.15))
+
+#####
+kpPlotManhattan(kp, data = afr_cond1_gr, points.col="2blues", r0=autotrack(2,3, margin = 0.15),
+                genomewide.col = "red", genomewideline = -log10(5e-8), suggestive.col = "blue", suggestiveline = -log10(1e-5))
+kpAddLabels(kp, labels = "Cond 1", srt=90, pos=3, r0=autotrack(2,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=8.5, r0=autotrack(2,3, margin = 0.15))
+
+########
+kpPlotManhattan(kp, data = afr_original_gr, points.col="2blues", r0=autotrack(3,3, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue",
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Original", srt=90, pos=3, r0=autotrack(3,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=14, r0=autotrack(3,3, margin = 0.15))
+
+```
+
+###### European
+```{r}
+euro_original = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/euro/glmm.score.bed.ancestry_ssns_ctr_euro_PC_mac20_nohwe.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+euro_original_results = euro_original %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+
+GR_input = euro_original_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+euro_original_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+
+euro_cond1 <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/conditional/euro/glmm.score.bed.ancestry_white_ssns_ctr_20_PC_chr6.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+euro_cond1_results = euro_cond1 %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = euro_cond1_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+euro_cond1_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+
+euro_cond2 <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/conditional/conditional2/euro/glmm.score.bed.ancestry_white_ssns_ctr_20_PC_chr6_2.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+euro_cond2_results = euro_cond2 %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = euro_cond2_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+euro_cond2_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+# euro_cond1_LZ = euro_cond1_results %>% arrange(P) %>% head(n = 5000) %>% arrange(CHR, BP)
+# write.table(euro_cond1_LZ,
+#             "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/locuszoom/ssns_euro_cond1_top5000snps.txt",
+#             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
+# euro_cond2_LZ = euro_cond2_results %>% arrange(P) %>% head(n = 5000) %>% arrange(CHR, BP)
+# write.table(euro_cond2_LZ,
+#             "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/locuszoom/ssns_euro_cond2_top5000snps.txt",
+#             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
+```
+
+
+```{r fig.width=10, fig.height=5}
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, 
+                    chromosomes = chr_plot, main = "SSNS vs Control (European Ancestry)", cex=1.5, plot.params = pp)
+
+####
+kpPlotManhattan(kp, data = euro_cond2_gr, points.col="2blues", r0=autotrack(1,3, margin = 0.15),
+                genomewide.col = "red", genomewideline = -log10(5e-8), suggestive.col = "blue", suggestiveline = -log10(1e-5))
+#kpAddBase(h = -log10(2.074689e-05), col = "gray")
+kpAddLabels(kp, labels = "Cond 2", srt=90, pos=3, r0=autotrack(1,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=7.3, r0=autotrack(1,3, margin = 0.15))
+
+#####
+kpPlotManhattan(kp, data = euro_cond1_gr, points.col="2blues", r0=autotrack(2,3, margin = 0.15),
+                genomewide.col = "red", genomewideline = -log10(5e-8), suggestive.col = "blue", suggestiveline = -log10(1e-5))
+kpAddLabels(kp, labels = "Cond 1", srt=90, pos=3, r0=autotrack(2,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=8, r0=autotrack(2,3 , margin = 0.15))
+
+########
+kpPlotManhattan(kp, data = euro_original_gr, points.col="2blues", r0=autotrack(3,3, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue",
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Original", srt=90, pos=3, r0=autotrack(3,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=16, r0=autotrack(3,3, margin = 0.15))
+
+```
+
+###### South Asian
+```{r}
+sas_original = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/sas/glmm.score.bed.ancestry_ssns_ctr_sas_mac20_PC_nohwe.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+sas_original_results = sas_original %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+
+GR_input = sas_original_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+sas_original_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+
+sas_cond1 <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/conditional/sas/glmm.score.bed.ancestry_sa_ssns_ctr_20_PC_chr6.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+sas_cond1_results = sas_cond1 %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = sas_cond1_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+sas_cond1_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+
+sas_cond2 <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/conditional/conditional2/sas/glmm.score.bed.ancestry_sa_ssns_ctr_20_PC_chr6_2.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+sas_cond2_results = sas_cond2 %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = sas_cond2_results %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+sas_cond2_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+# sas_cond1_LZ = sas_cond1_results %>% arrange(P) %>% head(n = 5000) %>% arrange(CHR, BP)
+# write.table(sas_cond1_LZ,
+#             "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/locuszoom/ssns_sas_cond1_top5000snps.txt",
+#             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
+# sas_cond2_LZ = sas_cond2_results %>% arrange(P) %>% head(n = 5000) %>% arrange(CHR, BP)
+# write.table(sas_cond2_LZ,
+#             "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/locuszoom/ssns_sas_cond2_top5000snps.txt",
+#             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
+```
+
+
+```{r fig.width=10, fig.height=5}
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, 
+                    chromosomes = chr_plot, main = "SSNS vs Control (South Asian Ancestry)", cex=1.5, plot.params = pp)
+
+####
+kpPlotManhattan(kp, data = sas_cond2_gr, points.col="2blues", r0=autotrack(1,3, margin = 0.15),
+                genomewide.col = "white", genomewideline = -log10(5e-8), suggestive.col = "blue", suggestiveline = -log10(1e-5))
+#kpAddBase(h = -log10(2.074689e-05), col = "gray")
+kpAddLabels(kp, labels = "Cond 2", srt=90, pos=3, r0=autotrack(1,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=6, r0=autotrack(1,3 , margin = 0.15))
+
+#####
+kpPlotManhattan(kp, data = sas_cond1_gr, points.col="2blues", r0=autotrack(2,3, margin = 0.15),
+                genomewide.col = "white", genomewideline = -log10(5e-8), suggestive.col = "blue", suggestiveline = -log10(1e-5))
+kpAddLabels(kp, labels = "Cond 1", srt=90, pos=3, r0=autotrack(2,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=6.5, r0=autotrack(2,3 , margin = 0.15))
+
+########
+kpPlotManhattan(kp, data = sas_original_gr, points.col="2blues", r0=autotrack(3,3, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue",
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Original", srt=90, pos=3, r0=autotrack(3,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=11, r0=autotrack(3,3, margin = 0.15))
+
+```
+
+
+

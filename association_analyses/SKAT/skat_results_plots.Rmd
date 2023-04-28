@@ -1,0 +1,224 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-02-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(qqman)
+library(genio)
+```
+
+```{r}
+file = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/ssns_ctr/mac_20/SKAT/annovar/all_ssns_anno_step2_0215.hg38_multianno.txt", sep = "\t", header = TRUE)
+file_filter = file %>% 
+  filter(Func.wgEncodeGencodeBasicV26 == "exonic" | Func.wgEncodeGencodeBasicV26 == "exonic;splicing") %>% 
+  filter(ExonicFunc.wgEncodeGencodeBasicV26 != "synonymous SNV") %>% 
+  select(Chr, Otherinfo5, Ref, Alt, Func.wgEncodeGencodeBasicV26, Gene.wgEncodeGencodeBasicV26)
+gene_group = file_filter %>% select(-Func.wgEncodeGencodeBasicV26) %>% distinct(.keep_all = TRUE)
+#gene_group = separate_rows(file_filter, Gene.wgEncodeGencodeBasicV26 ,sep = ";") %>% select(-Func.wgEncodeGencodeBasicV26) %>% distinct(.keep_all = TRUE)
+
+length(unique(gene_group$Gene.wgEncodeGencodeBasicV26))
+
+write.table(gene_group, "gene_group_0321.txt", row.names=FALSE, quote=FALSE, col.names=TRUE)
+```
+
+```{r}
+all_skat <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/allssns_PC20_smmat_sameweight_0424.txt", sep = " ", stringsAsFactors=FALSE, quote = "", header = FALSE)
+
+names(all_skat) = c("variant", "variant_N", "min_missing", "mean_missing", "max_missing", "min_AF", "mean_AF", "max_AF", "SKAT_PVAL")
+variant_list = all_skat %>% arrange(SKAT_PVAL) %>% filter(SKAT_PVAL < 3.47e-06) %>% pull(variant)
+selected_variant = all_skat %>% arrange(SKAT_PVAL) %>% filter(SKAT_PVAL < 3.47e-06) 
+
+variant_list_full = all_skat %>% pull(variant)
+```
+
+# create skat manhattan plots
+```{r}
+gene_group = separate_rows(file_filter, Gene.wgEncodeGencodeBasicV26 ,sep = ";") %>% select(-Func.wgEncodeGencodeBasicV26) %>% distinct(.keep_all = TRUE)
+chr_pos = gene_group %>% filter(Gene.wgEncodeGencodeBasicV26 %in% variant_list_full) 
+chr_pos %>% filter(Gene.wgEncodeGencodeBasicV26 %in% variant_list)
+```
+
+
+```{r}
+chr_pos = gene_group %>% filter(Gene.wgEncodeGencodeBasicV26 %in% variant_list_full) %>% distinct(Gene.wgEncodeGencodeBasicV26, .keep_all = TRUE)
+selected_variant_df = merge(chr_pos, all_skat, by.y = "variant", by.x = "Gene.wgEncodeGencodeBasicV26") %>% 
+  dplyr::rename(Variant = Gene.wgEncodeGencodeBasicV26, Pos = Otherinfo5) %>% arrange(Chr, Pos) %>% dplyr::rename(SNP = Variant, CHR = Chr, BP = Pos, P = SKAT_PVAL) 
+# write.table(selected_variant_df, "/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/ssns_ctr/mac_20/SKAT/SMMAT_out/selected_variant_ssns.txt", row.names=FALSE, quote=FALSE, col.names=TRUE, sep = "\t")
+
+selected_variant_df %>% arrange(P)
+
+ancestry_all = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/glmm.score.bed.all_ssns_ctr_mac20_PC_nohwe.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE) 
+results_all = ancestry_all %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+```
+
+```{r fig.width=7, fig.height=10}
+par( mfrow = c(2,1) )
+manhattan(results_all %>% filter(CHR == 6), annotateTop = FALSE, main = "GMMAT: SSNS vs Control")
+manhattan(selected_variant_df %>% filter(CHR == 6), annotateTop = FALSE, annotatePval = 3.47e-06, main = "SMMAT", ylim = c(0,27), suggestiveline = F, genomewideline = -log10(3.47e-06))
+#manhattan(results_sa, annotateTop = FALSE, main = "South Asian (With PCs)", ylim = c(0,12))
+```
+
+# write sig gene variant table
+```{r}
+variant_list = all_skat %>% filter(SKAT_PVAL < 3.47e-06)  %>% arrange(SKAT_PVAL)  %>% 
+  select(variant, variant_N, SKAT_min_AF = min_AF, SKAT_mean_AF = mean_AF, SKAT_max_AF = max_AF, SKAT_PVAL)
+
+# read gene group file (input for skat), extra significant SNPs to get chr + pos
+group_file = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/ssns_ctr/mac_20/SKAT/group_file_allPC20.txt")
+colnames(group_file) = c("gene", "Chromosome", "Position", "A2", "A1", "strand")
+variant_list_sig = merge(variant_list, group_file, by.x = "variant", by.y = "gene", all.x = TRUE) %>% arrange(SKAT_PVAL) %>% dplyr::rename(gene = variant)
+# check numbers
+table(variant_list_sig$gene)
+nrow(variant_list_sig)
+
+# get annotations
+variant_list_sig_anno = merge(file, variant_list_sig, by.x = c("Chr", "Start"), by.y = c("Chromosome", "Position"), all.y = TRUE) %>% 
+  select(Chr, Pos = Start, Ref, Alt, gene, Func.wgEncodeGencodeBasicV26, GeneDetail.wgEncodeGencodeBasicV26,
+         ExonicFunc.wgEncodeGencodeBasicV26, AAChange.wgEncodeGencodeBasicV26, gene_N = variant_N, SKAT_min_AF, SKAT_mean_AF, SKAT_max_AF,SKAT_PVAL) %>% arrange(SKAT_PVAL)
+
+write.table(variant_list_sig_anno,
+            "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/ssns_ctr_skat_sumstat_variant_list.txt", row.names=FALSE, quote=FALSE, col.names=TRUE, sep = "\t")
+
+```
+
+```{r}
+sig_gene_varlist = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/ssns_ctr_skat_sumstat_variant_list.txt", sep = "\t", header = TRUE) %>% mutate(SNP = paste0("chr", Chr, ":", Pos, ":", Ref, ":", Alt))
+
+unique(sig_gene_varlist$gene)
+##############
+# extract rsid
+##############
+write.table(sig_gene_varlist %>% select(SNP), "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/rsid_anno/ssns_ctr_skat_SNP_only.txt", row.names=FALSE, quote=FALSE, col.names=FALSE)
+
+#### run subset_sig.q
+name <- '/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/rsid_anno/gmmat_ssns_control_gene'
+bim <- read_bim( name )
+bim %>% group_by(id) %>% filter(n()>1)
+bim = bim %>% mutate(id = paste0(chr, ":", pos))
+
+data = read_plink(name)
+X = data$X
+X[1:5, 1:5]
+rownames(X) <- bim$id
+write_plink( "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/rsid_anno/gmmat_ssns_control_skat_recode", X, bim, data$fam )
+
+#### run convert_vcf_annotate.q
+rsid_vcf <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/rsid_anno/gmmat_ssns_control_skat_recode_rsid.vcf.gz", sep = "\t", stringsAsFactors=FALSE, quote = "", header = FALSE)
+rsid_vcf_sub = rsid_vcf[,1:3] %>% dplyr::rename(Chr = V1, Pos = V2, rsid = V3)
+
+merge_1 = merge(sig_gene_varlist, rsid_vcf_sub, by = c("Chr", "Pos")) 
+
+#### add AF counts
+skat_AF = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/rsid_anno/gmmat_ssns_control_skat_maf.afreq", sep = "\t", header = FALSE) 
+colnames(skat_AF) = c("Chrom", "ID", "Ref", "Alt", "Alt_freqs", "Obs_ct")
+
+merge_2 = merge(merge_1, skat_AF, by.x = c("SNP", "Ref", "Alt"), by.y = c("ID", "Ref", "Alt"))
+merge_clean = merge_2 %>% select(Chr, Pos, Ref, Alt, rsid, Alt_freqs, gene, everything(), -SNP, -Chrom, -Obs_ct) %>% arrange(SKAT_PVAL)
+
+write.table(merge_clean,
+            "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/ssns_ctr_skat_sumstat_anno_list.txt", row.names=FALSE, quote=FALSE, col.names=TRUE, sep = "\t")
+unique(merge_clean$GeneDetail.wgEncodeGencodeBasicV26)
+```
+
+##############
+
+Max Af cut off 0.05
+```{r}
+all_skat <- read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/SKAT/SMMAT_out/allssns_PC20_smmat_sameweight_maxaf005_0424.txt", sep = " ", stringsAsFactors=FALSE, quote = "", header = FALSE)
+
+names(all_skat) = c("variant", "variant_N", "min_missing", "mean_missing", "max_missing", "min_AF", "mean_AF", "max_AF", "SKAT_PVAL")
+variant_list = all_skat %>% arrange(SKAT_PVAL) %>% filter(SKAT_PVAL < 3.47e-06) %>% 
+  select(variant, variant_N, SKAT_min_AF = min_AF, SKAT_mean_AF = mean_AF, SKAT_max_AF = max_AF, SKAT_PVAL)
+
+# subset previous annotated df
+skat2 = merge_clean %>% select(Chr, Pos, Ref, Alt, rsid, Alt_freqs, gene, Func.wgEncodeGencodeBasicV26,
+                               GeneDetail.wgEncodeGencodeBasicV26, ExonicFunc.wgEncodeGencodeBasicV26, AAChange.wgEncodeGencodeBasicV26) %>% 
+  filter(gene %in% variant_list$variant) %>% filter(Alt_freqs <0.05)
+
+skat2_merge = merge(skat2, variant_list, by.x = "gene", by.y = "variant", all.x = TRUE) %>% select(Chr, Pos, Ref, Alt, gene, rsid, Alt_freqs, 
+                                                                                                   Func.wgEncodeGencodeBasicV26, GeneDetail.wgEncodeGencodeBasicV26,
+                                                                                                   ExonicFunc.wgEncodeGencodeBasicV26, AAChange.wgEncodeGencodeBasicV26,
+                                                                                                   gene_N = variant_N, everything()) %>% arrange(SKAT_PVAL)
+
+
+```
+
+# create skat manhattan plots
+```{r}
+gene_group = separate_rows(file_filter, Gene.wgEncodeGencodeBasicV26 ,sep = ";") %>% select(-Func.wgEncodeGencodeBasicV26) %>% distinct(.keep_all = TRUE)
+chr_pos = gene_group %>% filter(Gene.wgEncodeGencodeBasicV26 %in% variant_list_full) 
+chr_pos %>% filter(Gene.wgEncodeGencodeBasicV26 %in% variant_list)
+```
+
+
+```{r}
+chr_pos = gene_group %>% filter(Gene.wgEncodeGencodeBasicV26 %in% variant_list_full) %>% distinct(Gene.wgEncodeGencodeBasicV26, .keep_all = TRUE)
+selected_variant_df_005 = merge(chr_pos, all_skat, by.y = "variant", by.x = "Gene.wgEncodeGencodeBasicV26") %>% 
+  dplyr::rename(Variant = Gene.wgEncodeGencodeBasicV26, Pos = Otherinfo5) %>% arrange(Chr, Pos) %>% dplyr::rename(SNP = Variant, CHR = Chr, BP = Pos, P = SKAT_PVAL) 
+# write.table(selected_variant_df, "/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/GMMAT/ssns_ctr/mac_20/SKAT/SMMAT_out/selected_variant_ssns.txt", row.names=FALSE, quote=FALSE, col.names=TRUE, sep = "\t")
+
+#selected_variant_df %>% arrange(P)
+# 
+ancestry_all = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/glmm.score.bed.all_ssns_ctr_mac20_PC_nohwe.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+results_all = ancestry_all %>% select(SNP, CHR, BP = POS, P = PVAL, A1, A2) %>% drop_na(P)
+```
+
+```{r fig.width=15, fig.height=4}
+par( mfrow = c(1,3) )
+manhattan(results_all %>% filter(CHR == 6), annotateTop = FALSE, main = "GMMAT: SSNS vs Control")
+manhattan(selected_variant_df %>% filter(CHR == 6), annotateTop = FALSE, annotatePval = 3.47e-06, main = "SMMAT", ylim = c(0,27), suggestiveline = F, genomewideline = -log10(3.47e-06))
+manhattan(selected_variant_df_005 %>% filter(CHR == 6), annotateTop = FALSE, annotatePval = 3.47e-06, main = "SMMAT: max AF cut-off 0.05", ylim = c(0,27), suggestiveline = F, genomewideline = -log10(3.47e-06))
+#manhattan(results_sa, annotateTop = FALSE, main = "South Asian (With PCs)", ylim = c(0,12))
+```
+
+```{r}
+# create input for karyoploteR package
+GR_input = selected_variant_df %>% mutate(chr = paste0("chr", CHR)) %>% select(chr, start = BP, end = BP, A1 = Ref, A2 = Alt, P)%>% drop_na(P)
+skat1 = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+GR_input = selected_variant_df_005 %>% mutate(chr = paste0("chr", CHR)) %>% select(chr, start = BP, end = BP, A1 = Ref, A2 = Alt, P) %>% drop_na(P)
+skat2 = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+GR_input = results_all %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+all_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+```
+
+
+```{r fig.width=10, fig.height=5}
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, 
+                    chromosomes = chr_plot, main = "Replication Analysis", cex=1.5, plot.params = pp)
+# bottom plot
+kpPlotManhattan(kp, data = skat2, points.col="2blues", r0=autotrack(1,3, margin = 0.15),
+                genomewide.col = "blue", genomewideline = -log10(3.47e-06), suggestive.col = "white", suggestiveline = -log10(0.000213))
+kpAddLabels(kp, labels = "SMMAT: Max AF 0.05", srt=90, pos=3, r0=autotrack(1,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=15, r0=autotrack(1,3, , margin = 0.15), tick.pos = c(0,5,10,15))
+
+# middle plot
+kpPlotManhattan(kp, data = skat1, points.col="2blues", r0=autotrack(2,3, margin = 0.15),
+                genomewide.col = "blue", genomewideline = -log10(3.47e-06), suggestive.col = "white", suggestiveline = -log10(0.000213))
+kpAddLabels(kp, labels = "SMMAT", srt=90, pos=3, r0=autotrack(2,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=25, r0=autotrack(2,3,  margin = 0.15), tick.pos = c(0,5,10,15,20, 25))
+
+# top plot
+kpPlotManhattan(kp, data = all_gr, points.col="2blues", r0=autotrack(3,3, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = 7.3,
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "SSNS vs Control", srt=90, pos=3, r0=autotrack(3,3, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=50, r0=autotrack(3,3, margin = 0.15))
+
+```
+
+
