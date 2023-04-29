@@ -10,7 +10,7 @@
 # NOTE: 32G sufficed for HO and HGDP, but increased for TGP
 
 module load R/4.0.3-rhel8
-time Rscript 01-list-to-regions.R /datacommons/ochoalab/ssns_gwas/replication/bristol_data/AF/clump/clump_ssns_ctr_snp_list.txt snp-list.txt
+time Rscript 01-list-to-regions.R /datacommons/ochoalab/ssns_gwas/GMMAT_0418/results_sugg_sig/ssns_ctr_suggsig.txt snp-list.txt
 
 
 google_gnomad=https://storage.googleapis.com/gcp-public-data--gnomad/release
@@ -28,15 +28,15 @@ for chr in {1..22}; do
 done
 # 0m9.030s, 0m7.024s, 0m4.446s, 0m5.121s, 0m5.480s, 0m12.747s, ...
 # now merge them for simplicity
-bcftools merge gnomad-3-genome-sort-out-chr{?,??}.vcf.gz > gnomad-3-genome_clump_ssns.vcf
-clean up intermediates
+bcftools merge gnomad-3-genome-sort-out-chr{?,??}.vcf.gz > gnomad-genome_ssns_control.vcf
+#clean up intermediates
 rm gnomad-3-genome-chr*.vcf.gz{,.csi}
 
 #module unload bcftools/1.4
 
 
 #awkwardly add header line, for easy parsing in R... (bcftools doesn't add it, frustrating)
-echo -e "CHROM\tPOS\tID\tREF\tALT\tAC_nfe\tAN_nfe\tAC_afr\tAN_afr\tAC_sas\tAN_sas" > gnomad-3-genome_clump_ssns.txt
-bcftools query -f '%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AC_nfe\t%AN_nfe\t%AC_afr\t%AN_afr\t%AC_sas\t%AN_sas\n' gnomad-3-genome_clump_ssns.vcf >> gnomad-3-genome_clump_ssns.txt
-time Rscript 02-cleanup.R /datacommons/ochoalab/ssns_gwas/replication/bristol_data/AF/clump/clump_ssns_ctr_snp_list.txt gnomad-3-genome_clump_ssns.txt
+echo -e "CHROM\tPOS\tID\tREF\tALT\tAC_nfe\tAN_nfe\tAC_afr\tAN_afr\tAC_sas\tAN_sas" > gnomad-genome_ssns_control.txt
+bcftools query -f '%CHROM\t%POS\t%ID\t%REF\t%ALT\t%AC_nfe\t%AN_nfe\t%AC_afr\t%AN_afr\t%AC_sas\t%AN_sas\n' gnomad-genome_ssns_control.vcf >> gnomad-genome_ssns_control.txt
+time Rscript 02-cleanup.R /datacommons/ochoalab/ssns_gwas/GMMAT_0418/results_sugg_sig/ssns_ctr_suggsig.txt gnomad-genome_ssns_control.txt
 
