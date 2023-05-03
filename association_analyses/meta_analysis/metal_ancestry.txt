@@ -1,0 +1,36 @@
+# Describe and process the input files
+MARKER   SNP
+WEIGHT   1156
+ALLELE   A1 A2
+FREQ     AF
+EFFECT   SCORE
+STDERR   VAR
+PVAL     PVAL
+
+PROCESS /datacommons/ochoalab/ssns_gwas/GMMAT_0418/ns_ctr/afr/glmm.score.bed.ancestry_afr_PC_mac20_nohwe.txt
+
+# Describe and process the input files
+MARKER   SNP
+WEIGHT   1080
+ALLELE   A1 A2
+FREQ     AF
+EFFECT   SCORE
+STDERR   VAR
+PVAL     PVAL
+
+PROCESS /datacommons/ochoalab/ssns_gwas/GMMAT_0418/ns_ctr/sas/glmm.score.bed.ancestry_ns_sa_PC_mac20_nohwe.txt
+
+# Describe and process the input files
+MARKER   SNP
+WEIGHT   989
+ALLELE   A1 A2
+FREQ     AF
+EFFECT   SCORE
+STDERR   VAR
+PVAL     PVAL
+
+PROCESS /datacommons/ochoalab/ssns_gwas/GMMAT_0418/ns_ctr/euro/glmm.score.bed.ancestry_ns_euro_PC_mac20_no_hwe.txt
+
+# Execute meta-analysis
+OUTFILE metal_ancestry_all.tbl
+ANALYZE
