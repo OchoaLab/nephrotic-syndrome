@@ -6,6 +6,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
+library(tidyverse)
 ```
 
 ```{r}
@@ -40,16 +41,17 @@ phenotype1 = phenotype1 %>% select(AcquisitionNumber = `Acquisition Number`, Sex
 phenotype1_2 = phenotype1_2 %>% select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, DIAGNOSIS = Diagnosis, AGE = `Age at Diagnosis`)
 
 # check for overlap ID's
-intersect(phenotype1$AcquisitionNumber, phenotype1_2$AcquisitionNumber)
+acq_num_intersect <- intersect(phenotype1$AcquisitionNumber, phenotype1_2$AcquisitionNumber)
+# ensure that data agrees enough
+tmp1 <- phenotype1[ match( acq_num_intersect, phenotype1$AcquisitionNumber ), ]
+tmp2 <- phenotype1_2[ match( acq_num_intersect, phenotype1_2$AcquisitionNumber ), ]
+# exact matches
+stopifnot( all( tmp1$Sex == tmp2$Sex ) )
+stopifnot( all( tmp1$RACE == tmp2$RACE ) )
+# rest are good enough, all ages match except one has an extra NA (and one has a stupid "YRS" suffix), and 3 samples switched form SSNS to SRNS, but it's clear they're the same individuals
 # remove repeated rows (info overlap, manually checked)
 phenotype1 = phenotype1 %>% 
-  filter(AcquisitionNumber != "19891275" & 
-           AcquisitionNumber != "19891281" & 
-           AcquisitionNumber !=  "A2008755" &
-           AcquisitionNumber != "A1024006" & 
-           AcquisitionNumber != "A1004719" &
-           AcquisitionNumber != "A1004697" &
-           AcquisitionNumber != "A1002258")
+  filter( !( AcquisitionNumber %in% acq_num_intersect ) )
 
 # combine phenotype data
 phenotype1_ = rbind(phenotype1, phenotype1_2)
@@ -59,11 +61,15 @@ phenotype2 = read_xlsx("PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx",
                col_names  = TRUE)
 
 # check for overlap ID's
-intersect(phenotype1_$AcquisitionNumber, phenotype2$`Acquisition Number`)
-
+acq_num_intersect <- intersect(phenotype1_$AcquisitionNumber, phenotype2$`Acquisition Number`)
+tmp1 <- phenotype1_[ match( acq_num_intersect, phenotype1_$AcquisitionNumber ), ]
+tmp2 <- phenotype2[ match( acq_num_intersect, phenotype2$`Acquisition Number` ), ]
+# exact matches
+stopifnot( all( tmp1$Sex == tmp2$SEX_CDE ) )
+stopifnot( all( tmp1$RACE == tmp2$`Broad Race` ) )
 # remove repeated rows (information overlap from both phenotype files)
 phenotype2 = phenotype2 %>% 
-  filter(`Acquisition Number` != "19960560" & `Acquisition Number` != "19960561") %>% 
+  filter( !( `Acquisition Number` %in% acq_num_intersect ) ) %>% 
   select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, AGE = `Age at Diagnosis`, DIAGNOSIS = Diagnosis)
 
 # combine phenotype data
