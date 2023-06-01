@@ -9,86 +9,141 @@ library(tidyverse)
 library(genio)
 #devtools::install_github('StoreyLab/popkin')
 library(popkin)
+library(ochoalabtools)
 ```
 
+Load admixture proportions `Q` and aligned IDs from `fam`.
+Then load and align demographics `data` to `fam`; `fam` is not used after this.
 ```{r}
-name <- '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_gwas_maf'
-fam <- read_fam( name )
+# assume we're here:
+# /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/admixture/
 
-pheno_ <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/gwas/pheno_file_new.txt", sep = " ", 
-                          stringsAsFactors=FALSE, quote = "")
-colnames(pheno_) = c("famid", "id", "pheno")
+Q <- read_matrix("ssns_gwas_maf.5", ext = 'Q') 
+fam <- read_fam( '../ssns_gwas_maf' )
 
-pheno_complete = read.csv("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/pheno_excelmerge.csv")
-pheno_race = pheno_complete %>% filter(AcquisitionNumber %in% pheno_$id) 
-pheno_race = pheno_race[match(fam$fam, pheno_race$AcquisitionNumber),]
+data <- read_csv( "../pheno_excelmerge.csv", show_col_types = FALSE )
+data <- data %>% filter(AcquisitionNumber %in% fam$id) 
+data <- data[match(fam$id, data$AcquisitionNumber),]
 ```
 
-```{r fig.width=15, fig.height=4}
-admix_outQ <- read_table("ssns_gwas_maf.5.Q", col_names = FALSE) 
-names(admix_outQ) <- 1:5
+Merge minor groups, then order individuals by race:
+```{r}
+# merge these into Other, to simplify plot only
+data$RACE[ data$RACE == 'Mixed' ] <- 'Other'
+data$RACE[ data$RACE == 'Unknown' ] <- 'Other'
 
-admix_race = cbind(admix_outQ, pheno_race$AcquisitionNumber, pheno_race$RACE) %>% 
-  mutate( `pheno_race$RACE` = as.factor(`pheno_race$RACE`))
-
-admix_race$`pheno_race$RACE` <- factor(admix_race$`pheno_race$RACE`, levels = c("Black", "White", "Asian", "Hispanic", "Mixed",
-                                                                                                          "Other", "Unknown"))
-admix_arrange = admix_race %>% arrange(`pheno_race$RACE`) %>% mutate(`pheno_race$RACE` = as.character(`pheno_race$RACE`))
-
+race_order <- c("Black", "White", "Asian", "Hispanic", "Other")
+indexes <- order( match( data$RACE, race_order ) )
+# order both Q and data so they stay aligned
+Q <- Q[ indexes, ]
+data <- data[ indexes, ]
 ```
 
+Automatically label ancestries based on race in which they're most common:
+```{r}
+# desired ancestry labels and correspondence to race
+# (Asian1/2 had to see prelim plots to get association)
+ancestry_order <- c('African', 'European', 'South Asian', 'East Asian', 'Native American')
+ancestry_to_race <- c('Black', 'White', 'Asian1', 'Asian2', 'Hispanic')
+
+# get best race assignment
+anc_names <- admix_label_cols( Q, labs = data$RACE )
+# manually replace race with corresponding ancestry labels
+anc_names[ match( ancestry_to_race, anc_names ) ] <- ancestry_order
+# store in Q matrix now
+colnames( Q ) <- anc_names
+# reorder further to get ancestries in desired order
+indexes <- match( ancestry_order, anc_names )
+Q <- Q[ , indexes ]
+```
+
+Do some manual reordering within race groups for some main ancestry
+```{r}
+reorder_race_anc <- function( Q, data, race, ancestry ) {
+    indexes <- which( data$RACE == race )
+    indexes2 <- order( Q[ indexes, ancestry ], decreasing = TRUE )
+    Q[ indexes, ] <- Q[ indexes[ indexes2 ], ]
+    data[ indexes, ] <- data[ indexes[ indexes2 ], ]
+    return( list( Q = Q, data = data ) )
+}
+# apply to each race/ancestry set
+obj <- reorder_race_anc( Q, data, 'Black', 'African' )
+obj <- reorder_race_anc( obj$Q, obj$data, 'White', 'European' )
+obj <- reorder_race_anc( obj$Q, obj$data, 'Asian', 'South Asian' )
+obj <- reorder_race_anc( obj$Q, obj$data, 'Hispanic', 'Native American' )
+obj <- reorder_race_anc( obj$Q, obj$data, 'Other', 'European' )
+Q <- obj$Q
+data <- obj$data
+```
+
+Further separate less from more admixed individuals in each of the 3 major ancestry.
+This is the key filtering step that enables the ancestry subanalyses!
+```{r}
+# threshold for ancestry subanalyses
+q_cut <- 0.8
+data$RACE[ data$RACE == 'Black' & Q[ , 'African' ] <= q_cut ] <- 'Black-Adm.'
+data$RACE[ data$RACE == 'White' & Q[ , 'European' ] <= q_cut ] <- 'White-Adm.'
+data$RACE[ data$RACE == 'Asian' & Q[ , 'South Asian' ] <= q_cut ] <- 'Asian-Adm.'
+```
+
+Make structure plot!
 ```{r fig.width=20, fig.height=4}
-Q_mat = as.matrix(admix_arrange[,1:5])
-Q <- Q_mat[ , admix_order_cols( Q_mat ) ]
-plot_admix( admix_arrange[,1:5], labs = admix_arrange$`pheno_race$RACE`)
-
+fig_start( 'admix-k5', mar_t = 0.5, mar_b = 4, height = 4, width = 9 )
+plot_admix(
+    Q,
+    labs = data$RACE,
+    labs_cex = 0.7,
+    labs_even = TRUE,
+    labs_line = 2,
+    xlab_line = 3,
+    leg_cex = 0.5,
+    leg_width = 0.1
+)
+fig_end()
 ```
 
-```{r fig.width=20, fig.height=4}
-# remove outliers for admixture plot
-subset = admix_arrange %>% filter((`1` > 0.8 & `pheno_race$RACE` == "Asian")| 
-                           (`3` > 0.8 & `pheno_race$RACE` == "Black")| 
-                           (`5` > 0.8 & `pheno_race$RACE` == "White")|
-                           (`pheno_race$RACE` == "Hispanic")|
-                           (`pheno_race$RACE` == "Mixed")|
-                           (`pheno_race$RACE` == "Other")|
-                           (`pheno_race$RACE` == "Unknown")) 
-plot_admix( subset[,1:5], labs = subset$`pheno_race$RACE`)
-```
 ### PCA analysis
-```{r}
-pca <- read_table2("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/pca/PCA10.eigenvec")
 
-# identify outliers for PCA labels/coloring
-admix_outlier = admix_arrange %>% dplyr::mutate(RACE = ifelse((`1` < 0.8 & `pheno_race$RACE` == "Asian"), "Asian_outlier",
-                                        ifelse((`3` < 0.8 & `pheno_race$RACE` == "Black"), "Black_outlier",
-                                               ifelse( (`5` < 0.8 & `pheno_race$RACE` == "White"), "White_outlier", `pheno_race$RACE`))))
-table(admix_outlier$RACE)
+Load PCs, align to Q/data.
+```{r}
+obj <- read_eigenvec("../pca/PCA10")
+pcs <- obj$eigenvec
+fam <- obj$fam
+
+indexes <- match( data$AcquisitionNumber, fam$id )
+fam <- fam[ indexes, ]
+pcs <- pcs[ indexes, ]
+data$PC1 <- pcs[, 1]
+data$PC2 <- pcs[, 2]
+data$PC3 <- pcs[, 3]
+
+# plot looks better if race is a factor in desired order
+data <- data %>% mutate( RACE = fct_inorder( RACE ) )
 ```
 
+Make PCA plot!
 ```{r}
-pca_admix = merge(admix_outlier, pca, by.x = "pheno_race$AcquisitionNumber", by.y = "#FID", all = TRUE) 
-pca_admix %>% filter(RACE == "Black")
-ggplot(pca_admix, aes(x = PC2, y = PC3, color = RACE)) +
-  geom_point() + ggtitle("ssns_maf_outliers") #+
-  #scale_colour_manual(values = c("Asian_outlier" = "red", "Black_outlier" = "green", "White_outlier" = "blue"))
+fig_start( 'admix-k5-pca', height = 6, width = 7 )
+ggplot(data, aes(x = PC1, y = PC2, color = RACE)) + geom_point() + theme_classic() + labs(color = 'Race') +
+    scale_color_brewer(palette = "Spectral") # Paired
+fig_end()
 ```
 
 ### write outliers into files and calculate allele frequency
+
 ```{r}
-asian_sub = admix_outlier %>% filter(RACE == "Asian")
-fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/ssns_maf_sa.txt")
-writeLines(paste0(asian_sub$`pheno_race$AcquisitionNumber`, " ", asian_sub$`pheno_race$AcquisitionNumber`), fileConn)
-close(fileConn)
+write_ids <- function( data, race, name ) {
+    # get data to output
+    x <- data$AcquisitionNumber[ data$RACE == race ]
+    x <- paste0( x, " ", x )
+    # set filepath
+    file <- paste0( "../allele_freq/ssns_maf_", name, ".txt" )
+    # write it out!
+    write_lines( x, file )
+}
 
-black_sub = admix_outlier %>% filter(RACE == "Black")
-fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/outlier_removal/ssns_maf_black.txt")
-writeLines(paste0(asian_sub$`pheno_race$AcquisitionNumber`, " ", asian_sub$`pheno_race$AcquisitionNumber`), fileConn)
-close(fileConn)
-
-white_sub = admix_outlier %>% filter(RACE == "White")
-fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/outlier_removal/ssns_maf_white.txt")
-writeLines(paste0(asian_sub$`pheno_race$AcquisitionNumber`, " ", asian_sub$`pheno_race$AcquisitionNumber`), fileConn)
-close(fileConn)
+write_ids( data, 'Asian', 'sa' )
+write_ids( data, 'Black', 'black' )
+write_ids( data, 'White', 'white' )
 ```
 
