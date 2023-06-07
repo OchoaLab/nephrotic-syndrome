@@ -1,0 +1,236 @@
+---
+title: "plotting"
+output: html_document
+date: "2023-06-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(ggnewscale)
+```
+
+NS vs SSNS trait comparison, load files
+```{r}
+ns_ctr = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ns_ctr/glmm.score.bed.allPC_mac20_nohwe.txt", 
+                    sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ssns_ctr = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/glmm.score.bed.all_ssns_ctr_mac20_PC_nohwe.txt", 
+                      sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+
+```
+
+# try different thresholds
+# 5mb region chr6:28510120-33480577 in GRCh38
+
+```{r}
+ns_ctr_1e_6 = ns_ctr %>% filter(PVAL < 1e-6) %>% select(CHR, POS, SNP, NS_PVAL = PVAL)
+nrow(ns_ctr_1e_6)
+# ssns match ns snps that satisfy 1e_6 threshold
+ssns_ctr_match = ssns_ctr %>% filter(SNP %in% ns_ctr_1e_6$SNP)
+nrow(ssns_ctr_match)
+
+ns_ctr_vs_ssns_ctr = merge(ns_ctr_1e_6, ssns_ctr_match %>% select(CHR, POS, SNP, SSNS_PVAL = PVAL), by = c("CHR", "POS", "SNP"), all = TRUE) 
+ns_ctr_vs_ssns_ctr = ns_ctr_vs_ssns_ctr %>% mutate(NS_PVAL = -log10(NS_PVAL), SSNS_PVAL = -log10(SSNS_PVAL)) %>% 
+  mutate(HLA_region = as.factor(ifelse(CHR == 6 & (POS >= 28510120 | POS <= 33480577), "HLA region", "exclude HLA region")), data = "data1")
+table(ns_ctr_vs_ssns_ctr$HLA_region)
+
+# ns match ssns snps that satisfy 1e_6 threshold
+ssns_ctr_1e_6 = ssns_ctr %>% filter(PVAL < 1e-6) %>% select(CHR, POS, SNP, SSNS_PVAL = PVAL)
+nrow(ssns_ctr_1e_6)
+ns_ctr_match = ns_ctr %>% filter(SNP %in% ssns_ctr_1e_6$SNP)
+nrow(ns_ctr_match)
+
+ns_ctr_vs_ssns_ctr_2 = merge(ssns_ctr_1e_6, ns_ctr_match %>% select(CHR, POS, SNP, NS_PVAL = PVAL), by = c("CHR", "POS", "SNP"), all = TRUE) 
+ns_ctr_vs_ssns_ctr_2 = ns_ctr_vs_ssns_ctr_2 %>% mutate(NS_PVAL = -log10(NS_PVAL), SSNS_PVAL = -log10(SSNS_PVAL)) %>% 
+  mutate(HLA_region = as.factor(ifelse(CHR == 6 & (POS >= 28510120 | POS <= 33480577), "HLA region", "exclude HLA region")), data = "data2")
+table(ns_ctr_vs_ssns_ctr_2$HLA_region)
+
+# combine, remove NA rows
+ns_ssns_compare = rbind(ns_ctr_vs_ssns_ctr, ns_ctr_vs_ssns_ctr_2) %>% distinct(SNP, .keep_all = TRUE) %>% na.omit()
+```
+
+```{r  fig.width=4, fig.height=2}
+assoc_thresholds <- data.frame(threshold = c(-log10(5e-8), -log10(1e-6)),
+                               assoc_threshold = c('assoc threshold 5e-8', 'assoc threshold 1e-6'),
+                               color = c('red', 'blue'),
+                               linetype = c('dashed', 'dashed'))
+
+ggplot(ns_ssns_compare) +
+  theme_bw() + labs(x = "-log10(pval_NS)", y = '-log10(pval_SSNS)') + 
+  ggtitle("NS vs SSNS comparison (p < 1e-6)") +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = 0)) +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = 3)) +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = -3)) +
+  geom_point(aes(x = NS_PVAL, y = SSNS_PVAL, shape = HLA_region, size = HLA_region, color = HLA_region)) +
+     geom_segment(data = assoc_thresholds,
+               aes(x = threshold, xend = threshold, y = -Inf, yend = Inf, color = assoc_threshold, linetype = assoc_threshold),
+               size = 0.5) +
+     geom_segment(data = assoc_thresholds,
+               aes(x = -Inf, xend = Inf, y = threshold, yend = threshold, color = assoc_threshold, linetype = assoc_threshold),
+               size = 0.5) +
+  scale_color_manual(name = '', values = c('y = x' = "gray",
+                                           "exclude HLA region" = "black", 
+                                           "HLA region" = "black",
+                                           'assoc threshold 5e-8' = 'red',
+                                'assoc threshold 1e-6' = 'blue'),
+                     breaks = c('y = x', 'assoc threshold 5e-8', "assoc threshold 1e-6")) +
+  scale_linetype_manual(name = '', values = c('y = x' = "dotted",
+                                              "exclude HLA region" = "solid", 
+                                           "HLA region" = "solid",'assoc threshold 5e-8' = 'dashed',
+                                'assoc threshold 1e-6' = 'dashed')) +
+  scale_shape_manual(name = '', values = c('exclude HLA region' = 21, 'HLA region' = 21)) +
+  scale_size_manual(name = '', values = c('exclude HLA region' = 1, 'HLA region' = 1)) +
+  facet_wrap(~ HLA_region, scales = "free", ncol = 2) +
+  theme(legend.position = 'right') + 
+  guides(linetype = "none", shape = "none", size = "none")
+```
+
+
+
+# NS joint vs NS meta
+```{r}
+ns_ctr = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ns_ctr/glmm.score.bed.allPC_mac20_nohwe.txt", 
+                    sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ns_meta = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/meta_analysis_gmmat/output/gmmat_ancestry_ns_meta.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE) %>% mutate(SNP1 = SNP) %>% 
+  separate(SNP1, c("CHR", "BP", "a1", "a2")) %>% select(CHR, BP, A1, A2, SNP, NS_meta_PVAL = PVAL) %>% 
+  mutate(CHR = as.numeric(str_remove(CHR, "chr")))
+
+```
+
+```{r}
+ns_ctr_1e_6 = ns_ctr %>% filter(PVAL < 1e-6) %>% select(CHR, POS, SNP, NS_PVAL = PVAL)
+nrow(ns_ctr_1e_6)
+# ns meta match ns joint snps that satisfy 1e-6 threshold
+ns_meta_match = ns_meta %>% filter(SNP %in% ns_ctr_1e_6$SNP)
+nrow(ns_meta_match)
+
+ns_ctr_vs_ns_meta = merge(ns_ctr_1e_6, ns_meta_match %>% select(CHR, POS = BP, SNP, NS_meta_PVAL), by = c("CHR", "POS", "SNP"), all = TRUE) 
+ns_ctr_vs_ns_meta = ns_ctr_vs_ns_meta %>% mutate(NS_PVAL = -log10(NS_PVAL), NS_meta_PVAL = -log10(NS_meta_PVAL)) %>% 
+  mutate(HLA_region = as.factor(ifelse(CHR == 6 & (POS >= 28510120 | POS <= 33480577), "HLA region", "exclude HLA region")))
+table(ns_ctr_vs_ns_meta$HLA_region)
+
+# ns match ssns snps that satisfy 1e-6 threshold
+ns_meta_1e_6 = ns_meta %>% filter(NS_meta_PVAL < 1e-6) %>% select(CHR, POS = BP, SNP, NS_meta_PVAL)
+ns_ctr_match = ns_ctr %>% filter(SNP %in% ns_meta_1e_6$SNP)
+nrow(ns_ctr_match)
+
+ns_ctr_vs_ns_meta_2 = merge(ns_meta_1e_6, ns_ctr_match %>% select(CHR, POS, SNP, NS_PVAL = PVAL), by = c("CHR", "POS", "SNP"), all = TRUE) 
+ns_ctr_vs_ns_meta_2 = ns_ctr_vs_ns_meta_2 %>% mutate(NS_PVAL = -log10(NS_PVAL), NS_meta_PVAL = -log10(NS_meta_PVAL)) %>% 
+  mutate(HLA_region = as.factor(ifelse(CHR == 6 & (POS >= 28510120 | POS <= 33480577), "HLA region", "exclude HLA region")))
+table(ns_ctr_vs_ns_meta_2$HLA_region)
+
+# combine, remove NA rows
+joint_meta_compare = rbind(ns_ctr_vs_ns_meta, ns_ctr_vs_ns_meta_2) %>% distinct(SNP, .keep_all = TRUE) %>% na.omit()
+```
+```{r fig.width=4, fig.height=2}
+assoc_thresholds <- data.frame(threshold = c(-log10(5e-8), -log10(1e-6)),
+                               assoc_threshold = c('assoc threshold 5e-8', 'assoc threshold 1e-6'),
+                               color = c('red', 'blue'),
+                               linetype = c('dashed', 'dashed'))
+
+ggplot(joint_meta_compare) +
+  theme_bw() + 
+  ylab("-log10(pval_joint)") + xlab("-log10(pval_meta)") +
+  ggtitle("NS vs Control: joint and meta comparison (p < 1e-6)") +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = 0)) +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = 3)) +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = -3)) +
+  geom_point(aes(x = NS_meta_PVAL, y = NS_PVAL, shape = HLA_region, size = HLA_region, color = HLA_region)) +
+     geom_segment(data = assoc_thresholds,
+               aes(x = threshold, xend = threshold, y = -Inf, yend = Inf, color = assoc_threshold, linetype = assoc_threshold),
+               size = 0.5) +
+     geom_segment(data = assoc_thresholds,
+               aes(x = -Inf, xend = Inf, y = threshold, yend = threshold, color = assoc_threshold, linetype = assoc_threshold),
+               size = 0.5) +
+  scale_color_manual(name = '', values = c('y = x' = "gray",
+                                           "exclude HLA region" = "black", 
+                                           "HLA region" = "black",
+                                           'assoc threshold 5e-8' = 'red',
+                                'assoc threshold 1e-6' = 'blue'),
+                     breaks = c('y = x', 'assoc threshold 5e-8', "assoc threshold 1e-6")) +
+  scale_linetype_manual(name = '', values = c('y = x' = "dotted",
+                                              "exclude HLA region" = "solid", 
+                                           "HLA region" = "solid",'assoc threshold 5e-8' = 'dashed',
+                                'assoc threshold 1e-6' = 'dashed')) +
+  scale_shape_manual(name = '', values = c('exclude HLA region' = 21, 'HLA region' = 21)) +
+  scale_size_manual(name = '', values = c('exclude HLA region' = 1, 'HLA region' = 1)) +
+  facet_wrap(~ HLA_region, scales = "free", ncol = 2) +
+  theme(legend.position = 'right') + 
+  guides(linetype = "none", shape = "none", size = "none")
+```
+
+# SSNS joint vs SSNS meta
+```{r}
+ssns_ctr = ssns_ctr = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/ssns_ctr/glmm.score.bed.all_ssns_ctr_mac20_PC_nohwe.txt", 
+                      sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+
+ssns_meta = read.table("/datacommons/ochoalab/ssns_gwas/GMMAT_0418/meta_analysis_gmmat/output/gmmat_ancestry_ssns_meta.txt", sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE) %>% mutate(SNP1 = SNP) %>% 
+  separate(SNP1, c("CHR", "BP", "a1", "a2")) %>% select(CHR, BP, A1, A2, SNP, SSNS_meta_PVAL = PVAL) %>% 
+  mutate(CHR = as.numeric(str_remove(CHR, "chr")))
+
+```
+
+
+```{r}
+ssns_ctr_1e_6 = ssns_ctr %>% filter(PVAL < 1e-6) %>% select(CHR, POS, SNP, SSNS_PVAL = PVAL)
+nrow(ssns_ctr_1e_6)
+# ssns meta match ssns joint snps that satisfy 1e-6 threshold
+ssns_meta_match = ssns_meta %>% filter(SNP %in% ssns_ctr_1e_6$SNP)
+nrow(ssns_meta_match)
+
+ssns_ctr_vs_ssns_meta = merge(ssns_ctr_1e_6, ssns_meta_match %>% select(CHR, POS = BP, SNP, SSNS_meta_PVAL = SSNS_meta_PVAL), by = c("CHR", "POS", "SNP"), all = TRUE) 
+ssns_ctr_vs_ssns_meta = ssns_ctr_vs_ssns_meta %>% mutate(SSNS_PVAL = -log10(SSNS_PVAL), SSNS_meta_PVAL = -log10(SSNS_meta_PVAL)) %>% 
+  mutate(HLA_region = as.factor(ifelse(CHR == 6 & (POS >= 28510120 | POS <= 33480577), "HLA region", "exclude HLA region")))
+table(ssns_ctr_vs_ssns_meta$HLA_region)
+
+# ssns joint match ssns meta snps that satisfy 1e-6 threshold
+ssns_meta_1e_6 = ssns_meta  %>% select(CHR, POS = BP, SNP, SSNS_meta_PVAL = SSNS_meta_PVAL) %>% filter(SSNS_meta_PVAL < 1e-6)
+ssns_ctr_match = ssns_ctr %>% filter(SNP %in% ssns_meta_1e_6$SNP)
+nrow(ssns_ctr_match)
+
+ssns_ctr_vs_ssns_meta_2 = merge(ssns_meta_1e_6, ssns_ctr_match %>% select(CHR, POS, SNP, SSNS_PVAL = PVAL), by = c("CHR", "POS", "SNP"), all = TRUE) 
+ssns_ctr_vs_ssns_meta_2 = ssns_ctr_vs_ssns_meta_2 %>% mutate(SSNS_PVAL = -log10(SSNS_PVAL), SSNS_meta_PVAL = -log10(SSNS_meta_PVAL)) %>% 
+  mutate(HLA_region = as.factor(ifelse(CHR == 6 & (POS >= 28510120 | POS <= 33480577), "HLA region", "exclude HLA region")))
+table(ssns_ctr_vs_ssns_meta_2$HLA_region)
+
+# combine 
+joint_meta_compare_ssns = rbind(ssns_ctr_vs_ssns_meta, ssns_ctr_vs_ssns_meta_2) %>% distinct(SNP, .keep_all = TRUE) %>% na.omit()
+```
+
+```{r fig.width=4, fig.height=2}
+assoc_thresholds <- data.frame(threshold = c(-log10(5e-8), -log10(1e-6)),
+                               assoc_threshold = c('assoc threshold 5e-8', 'assoc threshold 1e-6'),
+                               color = c('red', 'blue'),
+                               linetype = c('dashed', 'dashed'))
+
+ggplot(joint_meta_compare_ssns) +
+  theme_bw() + 
+  ylab("-log10(pval_joint)") + xlab("-log10(pval_meta)") +
+  ggtitle("SSNS vs Control: joint and meta comparison (p < 1e-6)") +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = 0)) +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = 3)) +
+  geom_abline(aes(color = 'y = x', linetype = 'y = x', slope = 1, intercept = -3)) +
+  geom_point(aes(x = SSNS_meta_PVAL, y = SSNS_PVAL, shape = HLA_region, size = HLA_region, color = HLA_region)) +
+     geom_segment(data = assoc_thresholds,
+               aes(x = threshold, xend = threshold, y = -Inf, yend = Inf, color = assoc_threshold, linetype = assoc_threshold),
+               size = 0.5) +
+     geom_segment(data = assoc_thresholds,
+               aes(x = -Inf, xend = Inf, y = threshold, yend = threshold, color = assoc_threshold, linetype = assoc_threshold),
+               size = 0.5) +
+  scale_color_manual(name = '', values = c('y = x' = "gray",
+                                           "exclude HLA region" = "black", 
+                                           "HLA region" = "black",
+                                           'assoc threshold 5e-8' = 'red',
+                                'assoc threshold 1e-6' = 'blue'),
+                     breaks = c('y = x', 'assoc threshold 5e-8', "assoc threshold 1e-6")) +
+  scale_linetype_manual(name = '', values = c('y = x' = "dotted",
+                                              "exclude HLA region" = "solid", 
+                                           "HLA region" = "solid",'assoc threshold 5e-8' = 'dashed',
+                                'assoc threshold 1e-6' = 'dashed')) +
+  scale_shape_manual(name = '', values = c('exclude HLA region' = 21, 'HLA region' = 21)) +
+  scale_size_manual(name = '', values = c('exclude HLA region' = 1, 'HLA region' = 1)) +
+  facet_wrap(~ HLA_region, scales = "free", ncol = 2) +
+  theme(legend.position = 'right') + 
+  guides(linetype = "none", shape = "none", size = "none")
+```
