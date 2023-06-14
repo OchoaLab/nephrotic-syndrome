@@ -1,5 +1,8 @@
 ### GMMAT Wald/ORs ###
 
+# run from this location:
+cd /datacommons/ochoalab/ssns_gwas/GMMAT_0418/PRS/
+
 # SRNS vs SSNS
 
 # get ORs for top SNPs
@@ -17,7 +20,7 @@ Rscript gmmat_OR_ssns_ctrl_batch-collect.R
 ### PRSice ###
 
 # ALL run from this location!
-# /datacommons/ochoalab/ssns_gwas/replication/bristol_data/GMMAT
+cd /datacommons/ochoalab/ssns_gwas/replication/bristol_data/GMMAT
 
 wc -l srns_ssns_mac20.{bim,fam}
 # 7891682 srns_ssns_mac20.bim
@@ -26,6 +29,7 @@ wc -l srns_ssns_mac20.{bim,fam}
 # base data is really small in this case, maybe should extend it, make it bigger!
 zcat /datacommons/ochoalab/ssns_gwas/GMMAT_0418/PRS/glmm.wald_srns_ssns.txt.gz|wc -l
 # 2651
+# 13972
 
 # creates
 # - srns_ssns.phen (removed bad col names of srns_ssns_pheno.txt)
@@ -64,7 +68,8 @@ time PRSice \
        -C srns_ssns_covar_prsice.txt \
        --cov-factor sex,race \
        -o srns_ssns_mac20_prsice
-# 0m15.906s
+# 0m15.906s slice1
+# 0m27.905s, 0m9.434s slice2
 
 # plotting failed on DCC, downloaded the necessary outputs (non-genetic, non-identifiable info) and ran this locally to complete plots:
 time ~/bin/PRSice_linux/PRSice.R \
