@@ -7,10 +7,12 @@ library(readr)
 library(data.table)
 
 # hardcoded parameters
-p_cut <- 1e-4
+p_cut_max <- 1e-3
+p_cut_min <- 1e-4
 n_batches <- 100
 
 # numbers for reference, on score test summary stats table before subsetting
+# with p_cut_min <- 0
 ## nrow( snps )            # [1] 12256040
 ## sum( snps$PVAL < 1e-4 ) # [1] 2650
 ## sum( snps$PVAL < 1e-5 ) # [1] 1024
@@ -18,6 +20,8 @@ n_batches <- 100
 ## sum( snps$PVAL < 1e-7 ) # [1] 215
 ## sum( snps$PVAL < 1e-8 ) # [1] 41
 ## sum( snps$PVAL < 1e-9 ) # [1] 3
+
+# slice between 1e-3 and 1e-4: 11321
 
 # get batch number from terminal
 args <- commandArgs( trailingOnly = TRUE )
@@ -77,7 +81,7 @@ snps <- fread(
 )
 
 # filter data by p-value threshold, after that we only need SNPs
-snps <- snps$SNP[ snps$PVAL <= p_cut ]
+snps <- snps$SNP[ p_cut_min < snps$PVAL & snps$PVAL <= p_cut_max ]
 # report number of total SNPs
 message( 'Total SNPs (all batches): ', length( snps ) )
 # get batch to calculate in this particular run
