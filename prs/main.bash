@@ -11,10 +11,55 @@ sbatch -a 1-100 gmmat_OR_srns_ssns_batch.q
 Rscript gmmat_OR_srns_ssns_batch-collect.R
 
 # SSNS vs control
-
 sbatch -a 1-100 gmmat_OR_ssns_ctrl_batch.q
 Rscript gmmat_OR_ssns_ctrl_batch-collect.R
 
+# calculate in-sample R2 for SRNS
+
+# merge covariates (demographics and PCs) into one with standard column names
+cd /datacommons/ochoalab/ssns_gwas/GMMAT_0418/srns_ctr/srns_ssns/
+Rscript prsice-00-reformat-srns-discovery.R
+
+# back to PRS subdir
+cd /datacommons/ochoalab/ssns_gwas/GMMAT_0418/PRS/
+mkdir srns-discovery
+cd srns-discovery
+base=/datacommons/ochoalab/ssns_gwas
+# for genotypes, covariates
+name=$base/GMMAT_0418/srns_ctr/srns_ssns/srns_ssns_mac20
+# phenotype is elsewhere, lacks header as desired!
+phen=$base/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/case_control/ssns_srns_pheno.txt
+
+module load PRSice/2.3.3
+time PRSice \
+       --bp POS \
+       -p PVAL \
+       --beta \
+       --binary-target T \
+       --a1 A2 \
+       --a2 A1 \
+       --clump-kb 6000 \
+       --clump-r2 0.3 \
+       --keep-ambig \
+       --memory 1000 \
+       -n 1 \
+       -k 0.2 \
+       -b $base/GMMAT_0418/PRS/glmm.wald_srns_ssns.txt.gz \
+       -t $name \
+       -f $phen \
+       -C ${name}_covar_prsice.txt \
+       --cov-factor sex,race \
+       -o prsice
+# 0m51.982s
+module purge
+
+# plotting failed on DCC, downloaded the necessary outputs (non-genetic, non-identifiable info) and ran this locally to complete plots:
+time ~/bin/PRSice_linux/PRSice.R \
+     --plot \
+     --binary-target T \
+     -t srns_ssns_mac20 \
+     -f ssns_srns_pheno.txt \
+     -o prsice
 
 
 ### PRSice ###
@@ -35,20 +80,16 @@ zcat /datacommons/ochoalab/ssns_gwas/GMMAT_0418/PRS/glmm.wald_srns_ssns.txt.gz|w
 # - srns_ssns.phen (removed bad col names of srns_ssns_pheno.txt)
 # - srns_ssns_covar_prsice.txt (merged/clean of srns_ssns_covar.txt and srns_ssns.eigenvec)
 module load R/4.0.0
-Rscript prsice-00-reformat.R
+Rscript prsice-00-reformat-srns-bristol.R
 module unload R/4.0.0
 
-# load preinstalled PRSice on DCC!
-#module load PRSice/3.2.3 # actually 2.1.4.beta (19 October 2018), older!
-module load PRSice/2.3.3 # correct, 2.3.3 (2020-08-05) 
-# my local version is 2.3.5 (2021-09-20) 
-# online log goes up to 2.3.3, so I don't know what the difference is
+# NOTE: this other module appears newer but isn't!
+# module load PRSice/3.2.3 # actually 2.1.4.beta (19 October 2018), older!
 
 # NOTES:
 # -k <prevalence> used 0.2 = proportion of NS cases that are SRNS, from Rasheed's intro
 
-# time PRSice.R \
-#      --prsice /opt/apps/rhel8/PRSice-2.3.3/PRSice \
+module load PRSice/2.3.3
 time PRSice \
        --bp POS \
        -p PVAL \
@@ -68,6 +109,7 @@ time PRSice \
        -C srns_ssns_covar_prsice.txt \
        --cov-factor sex,race \
        -o srns_ssns_mac20_prsice
+module purge
 # 0m15.906s slice1
 # 0m27.905s, 0m9.434s slice2
 
