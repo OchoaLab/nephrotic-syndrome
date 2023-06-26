@@ -30,6 +30,9 @@ name=$base/GMMAT_0418/srns_ctr/srns_ssns/srns_ssns_mac20
 # phenotype is elsewhere, lacks header as desired!
 phen=$base/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/newfiles_alpha/imputation_10_new/results/case_control/ssns_srns_pheno.txt
 
+pcuts=1e-40,1e-39,1e-38,1e-37,1e-36,1e-35,1e-34,1e-33,1e-32,1e-31,1e-30,1e-29,1e-28,1e-27,1e-26,1e-25,1e-24,1e-23,1e-22,1e-21,1e-20,1e-19,1e-18,1e-17,1e-16,1e-15,1e-14,1e-13,1e-12,1e-11,1e-10,1e-9,1e-8,1e-7,1e-6,1e-5,2e-5,3e-5,4e-5,5e-5,6e-5,7e-5,8e-5,9e-5,1e-4,2e-4,3e-4,4e-4,5e-4,6e-4,7e-4,8e-4,9e-4
+
+# NOTE: this case appears backwards unexpectedly
 module load PRSice/2.3.3
 time PRSice \
        --bp POS \
@@ -44,6 +47,8 @@ time PRSice \
        --memory 1000 \
        -n 1 \
        -k 0.2 \
+       --fastscore \
+       --bar-levels $pcuts \
        -b $base/GMMAT_0418/PRS/glmm.wald_srns_ssns.txt.gz \
        -t $name \
        -f $phen \
@@ -57,12 +62,54 @@ module purge
 time ~/bin/PRSice_linux/PRSice.R \
      --plot \
      --binary-target T \
+     --bar-levels $pcuts \
      -t srns_ssns_mac20 \
      -f ssns_srns_pheno.txt \
      -o prsice
 
 
-### PRSice ###
+# test SSNS-ctrl on SRNS-SSNS (both discovery but only SSNS are shared)
+# use same $base, $name, $phen as above; all is the same except
+# - base data is ssns-ctrl
+# - expect direction to be reversed (srns is 1 in srns-ssns, but ssns is 1 in ssns-ctrl), so I reversed A1/A2 to compensate (back to default; that is, usually gmmat is reversed but here we want that)
+cd ..
+mkdir srns-discovery-ssns
+cd srns-discovery-ssns
+
+module load PRSice/2.3.3
+time PRSice \
+       --bp POS \
+       -p PVAL \
+       --beta \
+       --binary-target T \
+       --clump-kb 6000 \
+       --clump-r2 0.3 \
+       --keep-ambig \
+       --memory 1000 \
+       -n 1 \
+       -k 0.2 \
+       --fastscore \
+       --bar-levels $pcuts \
+       -b $base/GMMAT_0418/PRS/glmm.wald_ssns_ctrl.txt.gz \
+       -t $name \
+       -f $phen \
+       -C ${name}_covar_prsice.txt \
+       --cov-factor sex,race \
+       -o prsice
+# 0m51.982s
+module purge
+
+# plotting failed on DCC, downloaded the necessary outputs (non-genetic, non-identifiable info) and ran this locally to complete plots:
+time ~/bin/PRSice_linux/PRSice.R \
+     --plot \
+     --binary-target T \
+     --bar-levels $pcuts \
+     -t srns_ssns_mac20 \
+     -f ssns_srns_pheno.txt \
+     -o prsice
+
+
+### BRISTOL VALIDATIONS ###
 
 # ALL run from this location!
 cd /datacommons/ochoalab/ssns_gwas/replication/bristol_data/GMMAT
@@ -89,26 +136,33 @@ module unload R/4.0.0
 # NOTES:
 # -k <prevalence> used 0.2 = proportion of NS cases that are SRNS, from Rasheed's intro
 
+# put the output in a separate dir
+mkdir srns-ssns-bristol-srns-ssns-discovery
+cd srns-ssns-bristol-srns-ssns-discovery
+
+# NOTE: this case appears backwards unexpectedly
 module load PRSice/2.3.3
 time PRSice \
-       --bp POS \
-       -p PVAL \
-       --beta \
-       --binary-target T \
-       --a1 A2 \
-       --a2 A1 \
-       --clump-kb 6000 \
-       --clump-r2 0.3 \
-       --keep-ambig \
-       --memory 1000 \
-       -n 1 \
-       -k 0.2 \
-       -b /datacommons/ochoalab/ssns_gwas/GMMAT_0418/PRS/glmm.wald_srns_ssns.txt.gz \
-       -t srns_ssns_mac20 \
-       -f srns_ssns.phen \
-       -C srns_ssns_covar_prsice.txt \
-       --cov-factor sex,race \
-       -o srns_ssns_mac20_prsice
+     --bp POS \
+     -p PVAL \
+     --beta \
+     --binary-target T \
+     --a1 A2 \
+     --a2 A1 \
+     --clump-kb 6000 \
+     --clump-r2 0.3 \
+     --keep-ambig \
+     --memory 1000 \
+     -n 1 \
+     -k 0.2 \
+     --fastscore \
+     --bar-levels $pcuts \
+     -b $base/GMMAT_0418/PRS/glmm.wald_srns_ssns.txt.gz \
+     -t ../srns_ssns_mac20 \
+     -f ../srns_ssns.phen \
+     -C ../srns_ssns_covar_prsice.txt \
+     --cov-factor sex,race \
+     -o prsice
 module purge
 # 0m15.906s slice1
 # 0m27.905s, 0m9.434s slice2
@@ -117,9 +171,55 @@ module purge
 time ~/bin/PRSice_linux/PRSice.R \
      --plot \
      --binary-target T \
+     --bar-levels $pcuts \
      -t srns_ssns_mac20 \
      -f srns_ssns.phen \
-     -o srns_ssns_mac20_prsice
+     -o prsice
+
+# version with ssns gwas!
+cd ..
+mkdir srns-ssns-bristol-ssns-ctrl-discovery
+cd srns-ssns-bristol-ssns-ctrl-discovery
+module load PRSice/2.3.3
+time PRSice \
+       --bp POS \
+       -p PVAL \
+       --beta \
+       --binary-target T \
+       --clump-kb 6000 \
+       --clump-r2 0.3 \
+       --keep-ambig \
+       --memory 1000 \
+       -n 1 \
+       -k 0.2 \
+       --fastscore \
+       --bar-levels $pcuts \
+       -b $base/GMMAT_0418/PRS/glmm.wald_ssns_ctrl.txt.gz \
+       -t ../srns_ssns_mac20 \
+       -f ../srns_ssns.phen \
+       -C ../srns_ssns_covar_prsice.txt \
+       --cov-factor sex,race \
+       -o prsice
+module purge
+
+# plot locally
+time ~/bin/PRSice_linux/PRSice.R \
+     --plot \
+     --binary-target T \
+     --bar-levels $pcuts \
+     -t srns_ssns_mac20 \
+     -f srns_ssns.phen \
+     -o prsice
+
+
+
+
+
+
+
+
+
+
 
 # add after assessing if results depend too much on this, and runtime, only active if --perm <n> is used
 #    --logit-perm
