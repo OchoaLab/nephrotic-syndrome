@@ -1,0 +1,450 @@
+---
+title: "allele_freq_preprocessing"
+output: html_document
+date: "2023-07-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+name <- '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_gwas_maf'
+bim <- read_bim( name )
+bim %>% group_by(id) %>% filter(n()>1)
+```
+
+## remove duplicate ID's from ssns
+```{r}
+bim_id = bim %>% group_by(id) %>% filter(n()>1) %>% pull(id) 
+
+ind_remove = c()
+for (id in unique(bim_id)) {
+  
+  ind = grep(id, rownames(X))
+  x_temp = X[ind,]
+  print(mean(x_temp[1,] == x_temp[2,], na.rm = TRUE))
+  if (mean(x_temp[1,] == x_temp[2,], na.rm = TRUE) > 0.99) {
+    ind_remove = c(ind_remove, ind[2])
+  } else {
+    ind_remove = c(ind_remove, ind)
+  }
+}
+
+X <- X[ -ind_remove, ]
+bim <- bim[ -ind_remove, ]
+write_plink( "ssns_gwas_maf_dedup", X, bim, data$fam )
+```
+
+## write SSNS control IDs into text file for AF test and subset with admixture results
+
+```{r}
+name <- '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge'
+merge = read_plink(name)
+fam = merge$fam
+
+ssns_pheno = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/pheno_excelmerge.csv", sep = ",", header = TRUE)
+
+table(ssns_pheno$RACE, ssns_pheno$DIAGNOSIS)
+
+# admixture results:
+ssns_admixfilter_eur = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_admixfilter_eur.txt",
+                                  header = FALSE) #486
+ssns_admixfilter_afr = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_admixfilter_afr.txt",
+                                  header = FALSE) #495
+ssns_admixfilter_sas = read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_admixfilter_sas.txt",
+                                  header = FALSE) #591
+
+# filter for controls in each ancestry: 
+ssns_pheno_eur = ssns_pheno %>% filter(RACE == "White" & DIAGNOSIS == "Control") %>% filter(AcquisitionNumber %in% ssns_admixfilter_eur$V1) %>%
+  pull(AcquisitionNumber) #274 
+ssns_fam_eur = subset(fam, id %in% ssns_pheno_eur) #274
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_admixfilter_eur.txt")
+writeLines(paste0(ssns_fam_eur$id, " ", ssns_fam_eur$id), fileConn)
+close(fileConn)
+
+ssns_pheno_afr = ssns_pheno %>% filter(RACE == "Black" & DIAGNOSIS == "Control") %>% filter(AcquisitionNumber %in% ssns_admixfilter_afr$V1) %>%
+  pull(AcquisitionNumber) #301
+ssns_fam_afr = subset(fam, id %in% ssns_pheno_afr) #301
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_admixfilter_afr.txt")
+writeLines(paste0(ssns_fam_afr$id, " ", ssns_fam_afr$id), fileConn)
+close(fileConn)
+
+ssns_pheno_sas = ssns_pheno %>% filter(RACE == "Asian" & DIAGNOSIS == "Control") %>% filter(AcquisitionNumber %in% ssns_admixfilter_sas$V1) %>%
+  pull(AcquisitionNumber) #248
+ssns_fam_sas = subset(fam, id %in% ssns_pheno_sas) #248
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_admixfilter_sas.txt")
+writeLines(paste0(ssns_fam_sas$id, " ", ssns_fam_sas$id), fileConn)
+close(fileConn)
+```
+
+## write tgp ancestry into text files
+```{r}
+AFR = c('MSL', 'YRI', "ESN", "GWD", "LWK", "ACB", "ASW")
+EUR = c('CEU', 'GBR', 'IBS', 'TSI', 'FIN')
+SAS = c('PJL', 'GIH', 'ITU', 'STU', 'BEB')
+
+tgp_eur = fam[which(fam$fam %in% EUR),]
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_eur.txt")
+writeLines(paste0(tgp_eur$fam, " ", tgp_eur$id), fileConn)
+close(fileConn)
+
+tgp_sas = fam[which(fam$fam %in% SAS),]
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_sas.txt")
+writeLines(paste0(tgp_sas$fam, " ", tgp_sas$id), fileConn)
+close(fileConn)
+
+tgp_afr = fam[which(fam$fam %in% AFR),]
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_afr.txt")
+writeLines(paste0(tgp_afr$fam, " ", tgp_afr$id), fileConn)
+close(fileConn)
+```
+
+## use plink to calculate allele frequencies for controls from each ancestry
+
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep ssns_control_admixfilter_afr.txt --freq --out ssns_control_afr
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep ssns_control_admixfilter_eur.txt --freq --out ssns_control_eur
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep ssns_control_admixfilter_sas.txt --freq --out ssns_control_sas
+
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep tgp_control_sas.txt --freq --out tgp_control_sas
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep tgp_control_eur.txt --freq --out tgp_control_eur
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep tgp_control_afr.txt --freq --out tgp_control_afr
+
+## Read plink output files
+```{r}
+afreq_ssns_afr <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_afr.afreq", sep = "\t")
+colnames(afreq_ssns_afr) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_eur <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_eur.afreq", sep = "\t")
+colnames(afreq_ssns_eur) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_sas <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_sas.afreq", sep = "\t")
+colnames(afreq_ssns_sas) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+tgp_sas <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_sas.afreq", sep = "\t")
+colnames(tgp_sas) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+tgp_eur <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_eur.afreq", sep = "\t")
+colnames(tgp_eur) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+tgp_afr <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_afr.afreq", sep = "\t")
+colnames(tgp_afr) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+```
+
+```{r}
+plot(afreq_ssns_sas$ALT_FREQS, tgp_sas$ALT_FREQS, xlab="ssns_control_southasians N = 248", ylab="tgp_southasians N = 489", main = "Group: South Asian", pch='.')
+plot(afreq_ssns_eur$ALT_FREQS, tgp_eur$ALT_FREQS, xlab="ssns_control_european N = 274", ylab="tgp_white N = 503",  main = "Group: European", pch='.')
+plot(afreq_ssns_afr$ALT_FREQS, tgp_afr$ALT_FREQS, xlab="ssns_control_african N = 301", ylab="tgp_black N = 661",  main = "Group: African", pch='.')
+```
+
+## Identify ref/alt alleles
+
+```{r}
+comp <- function(x) chartr("ATGC","TACG",x)
+afreq_ssns_afr_comp = afreq_ssns_afr[which(afreq_ssns_afr$REF == comp(afreq_ssns_afr$ALT)),]
+tgp_afr_comp = tgp_afr[which(afreq_ssns_afr$REF == comp(afreq_ssns_afr$ALT)),]
+
+afreq_ssns_eur_comp = afreq_ssns_eur[which(afreq_ssns_eur$REF == comp(afreq_ssns_eur$ALT)),]
+tgp_eur_comp = tgp_eur[which(afreq_ssns_eur$REF == comp(afreq_ssns_eur$ALT)),]
+
+afreq_ssns_sas_comp = afreq_ssns_sas[which(afreq_ssns_sas$REF == comp(afreq_ssns_sas$ALT)),]
+tgp_sas_comp = tgp_sas[which(afreq_ssns_sas$REF == comp(afreq_ssns_sas$ALT)),]
+```
+
+```{r}
+plot(afreq_ssns_sas_comp$ALT_FREQS, tgp_sas_comp$ALT_FREQS, xlab="ssns_control_southasians N = 248", 
+     ylab="tgp_southasians N = 489", main = "ref == comp(alt) Group: South Asian", pch='.')
+plot(afreq_ssns_eur_comp$ALT_FREQS, tgp_eur_comp$ALT_FREQS, xlab="ssns_control_european N = 274", 
+     ylab="tgp_european N = 503",  main = "ref == comp(alt) Group: European", pch='.')
+plot(afreq_ssns_afr_comp$ALT_FREQS, tgp_afr_comp$ALT_FREQS, xlab="ssns_control_african N = 301", 
+     ylab="tgp_african N = 661",  main = "ref == comp(alt) Group: African", pch='.')
+```
+
+# AF test for all ancestry combined (df = 3)
+```{r}
+ssns_afr_ac = afreq_ssns_afr %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_afr_ac = tgp_afr %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_sas_ac = afreq_ssns_sas %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_sas_ac = tgp_sas %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_eur_ac = afreq_ssns_eur %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_eur_ac = tgp_eur %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+
+# define function input
+x1 = ssns_afr_ac$alt_allele_count
+n1 = ssns_afr_ac$OBS_CT 
+x2 = tgp_afr_ac$alt_allele_count 
+n2 = tgp_afr_ac$OBS_CT 
+x3 = ssns_sas_ac$alt_allele_count
+n3 = ssns_sas_ac$OBS_CT
+x4 = tgp_sas_ac$alt_allele_count
+n4 = tgp_sas_ac$OBS_CT
+x5 = ssns_eur_ac$alt_allele_count
+n5 = ssns_eur_ac$OBS_CT
+x6 = tgp_eur_ac$alt_allele_count
+n6 = tgp_eur_ac$OBS_CT
+
+output_p = likelihoodratio_3(x1, n1, x2, n2, x3, n3, x4, n4, x5, n5, x6, n6)
+# p-values for ssns p data
+#output_all = likelihoodratio(x1, n1, x2, n2, 3)
+hist(output_p, breaks = 50, main = "p-vals likelihood ratio test (all ancestry)")
+qq(output_p, main = "QQ-plot for all ancestry")
+```
+
+## ref == comp(alt)
+```{r}
+## define variables (P data)
+ssns_afr_refcomp = afreq_ssns_afr_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_afr_refcomp = tgp_afr_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_sas_refcomp = afreq_ssns_sas_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_sas_refcomp = tgp_sas_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_eur_refcomp = afreq_ssns_eur_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_eur_refcomp = tgp_eur_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+
+# define function input
+x1 = ssns_afr_refcomp$alt_allele_count
+n1 = ssns_afr_refcomp$OBS_CT 
+x2 = tgp_afr_refcomp$alt_allele_count 
+n2 = tgp_afr_refcomp$OBS_CT 
+x3 = ssns_sas_refcomp$alt_allele_count
+n3 = ssns_sas_refcomp$OBS_CT
+x4 = tgp_sas_refcomp$alt_allele_count
+n4 = tgp_sas_refcomp$OBS_CT
+x5 = ssns_eur_refcomp$alt_allele_count
+n5 = ssns_eur_refcomp$OBS_CT
+x6 = tgp_eur_refcomp$alt_allele_count
+n6 = tgp_eur_refcomp$OBS_CT
+
+output_comp_p = likelihoodratio_3(x1, n1, x2, n2, x3, n3, x4, n4, x5, n5, x6, n6)
+hist(output_comp_p, breaks = 50, main = "ref == comp(alt): p-vals likelihood ratio test (all ancestry)")
+qq(output_comp_p, main = "ref == comp(alt): QQ-plot for all ancestry")
+
+# compute input variables for ssns (1-p data)
+ssns_afr_refcomp_f = afreq_ssns_afr_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
+tgp_afr_refcomp_f = tgp_afr_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_sas_refcomp_f = afreq_ssns_sas_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
+tgp_sas_refcomp_f = tgp_sas_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_eur_refcomp_f = afreq_ssns_eur_comp %>% mutate(alt_allele_count = as.integer(round((1-ALT_FREQS) * OBS_CT)))
+tgp_eur_refcomp_f = tgp_eur_comp %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+
+# subset SNPs in original P version
+tgp_afr_f = tgp_afr_refcomp_f %>% filter(ID %in% tgp_afr_refcomp$ID)
+ssns_afr_f = ssns_afr_refcomp_f %>% filter(ID %in% ssns_afr_refcomp$ID)
+tgp_sas_f = tgp_sas_refcomp_f %>% filter(ID %in% tgp_sas_refcomp$ID)
+ssns_sas_f = ssns_sas_refcomp_f %>% filter(ID %in% ssns_sas_refcomp$ID)
+tgp_eur_f = tgp_eur_refcomp_f %>% filter(ID %in% tgp_eur_refcomp$ID)
+ssns_eur_f = ssns_eur_refcomp_f %>% filter(ID %in% ssns_eur_refcomp$ID)
+
+# define function input
+x1 = ssns_afr_f$alt_allele_count
+n1 = ssns_afr_f$OBS_CT 
+x2 = tgp_afr_f$alt_allele_count 
+n2 = tgp_afr_f$OBS_CT 
+x3 = ssns_sas_f$alt_allele_count
+n3 = ssns_sas_f$OBS_CT
+x4 = tgp_sas_f$alt_allele_count
+n4 = tgp_sas_f$OBS_CT
+x5 = ssns_eur_f$alt_allele_count
+n5 = ssns_eur_f$OBS_CT
+x6 = tgp_eur_f$alt_allele_count
+n6 = tgp_eur_f$OBS_CT
+
+output_comp_1_p = likelihoodratio_3(x1, n1, x2, n2, x3, n3, x4, n4, x5, n5, x6, n6)
+hist(output_comp_1_p, breaks = 50, main = "ref == comp(alt); ssns (1-p): p-vals likelihood ratio test (all ancestry)")
+qq(output_comp_1_p, main = "ref == comp(alt); ssns (1-p): QQ-plot for all ancestry")
+
+output_all_snp_AFR = cbind(tgp_afr_f$ID, tgp_afr_f$ALT_FREQS, ssns_afr_f$ALT_FREQS ,output_comp_1_p, output_comp_p) %>% 
+  as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
+  mutate(remove = as.factor(ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) < 1e-10, 1, 0)),
+         flip = as.factor(ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) > 1e-10, 1, 0)),
+         both_notsig = as.factor(ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10, 1, 0)),
+         category = ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) < 1e-10, "remove",
+                           ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) > 1e-10, "flip",
+                                  ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10 & as.numeric(output_comp_p) < as.numeric(output_comp_1_p), "both_notsig_flip", 
+                                         ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10 & as.numeric(output_comp_p) > as.numeric(output_comp_1_p), 
+                                                "both_notsig_keep", "keep"))))) %>% mutate(category = ifelse(is.na(category) == TRUE,
+                                                                                                             "alt_freq_0", category))
+
+output_all_snp_AFR$category <- factor(output_all_snp_AFR$category, 
+                                      levels = c("keep", "alt_freq_0", "flip", "remove", "both_notsig_keep", "both_notsig_flip"))
+table(output_all_snp_AFR$category)
+ggplot(output_all_snp_AFR %>% filter(category != "alt_freq_0") %>% arrange(category), 
+       aes(x=as.numeric(ssns_alt_freq), y=as.numeric(tgp_alt_freq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('(ref == comp(alt)) likelihood ratio test; African ancestry; cutoff 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow", "red"))
+
+
+output_all_snp_SAS = cbind(tgp_sas_f$ID, tgp_sas_f$ALT_FREQS, ssns_sas_f$ALT_FREQS ,output_comp_1_p, output_comp_p) %>% 
+  as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
+  mutate(remove = as.factor(ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) < 1e-10, 1, 0)),
+         flip = as.factor(ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) > 1e-10, 1, 0)),
+         both_notsig = as.factor(ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10, 1, 0)),
+         category = ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) < 1e-10, "remove",
+                           ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) > 1e-10, "flip",
+                                 ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10 & as.numeric(output_comp_p) < as.numeric(output_comp_1_p), "both_notsig_flip", 
+                                         ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10 & as.numeric(output_comp_p) > as.numeric(output_comp_1_p), "both_notsig_keep", "keep")))))  %>% 
+  mutate(category = ifelse(is.na(category) == TRUE, "alt_freq_0", category))
+output_all_snp_SAS$category <- factor(output_all_snp_SAS$category, levels = c("keep", "alt_freq_0", "flip", "remove","both_notsig_keep", "both_notsig_flip"))
+table(output_all_snp_SAS$category)
+ggplot(output_all_snp_SAS %>% filter(category != "alt_freq_0") %>% arrange(category), aes(x=as.numeric(ssns_alt_freq), y=as.numeric(tgp_alt_freq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('(ref == comp(alt)) likelihood ratio test; South Asian ancestry; cutoff 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow", "red"))
+
+output_all_snp_EUR = cbind(tgp_eur_f$ID, tgp_eur_f$ALT_FREQS, ssns_eur_f$ALT_FREQS ,output_comp_1_p, output_comp_p) %>% 
+  as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
+  mutate(remove = as.factor(ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) < 1e-10, 1, 0)),
+         flip = as.factor(ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) > 1e-10, 1, 0)),
+         both_notsig = as.factor(ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10, 1, 0)),
+         category = ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) < 1e-10, "remove",
+                           ifelse(as.numeric(output_comp_p) < 1e-10 & as.numeric(output_comp_1_p) > 1e-10, "flip",
+                                 ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10 & as.numeric(output_comp_p) < as.numeric(output_comp_1_p), "both_notsig_flip", 
+                                         ifelse(as.numeric(output_comp_p) > 1e-10 & as.numeric(output_comp_1_p) > 1e-10 & as.numeric(output_comp_p) > as.numeric(output_comp_1_p), "both_notsig_keep", "keep")))))%>% 
+  mutate(category = ifelse(is.na(category) == TRUE, "alt_freq_0", category))
+output_all_snp_EUR$category <- factor(output_all_snp_EUR$category, levels = c("keep", "alt_freq_0", "flip", "remove", "both_notsig_keep", "both_notsig_flip"))
+table(output_all_snp_EUR$category)
+
+ggplot(output_all_snp_EUR %>% filter(category != "alt_freq_0") %>% arrange(category), aes(x=as.numeric(ssns_alt_freq), y=as.numeric(tgp_alt_freq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('(ref == comp(alt)) likelihood ratio test; European ancestry; cutoff 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow", "red"))
+
+```
+
+## Gather 'remove' list  (priority over flip)
+```{r}
+# removal from ref != comp(alt)
+afreq_ssns_afr_ = afreq_ssns_afr[which(afreq_ssns_afr$REF != comp(afreq_ssns_afr$ALT)),]
+tgp_afr_ = tgp_afr[which(afreq_ssns_afr$REF != comp(afreq_ssns_afr$ALT)),]
+afreq_ssns_eur_ = afreq_ssns_eur[which(afreq_ssns_eur$REF != comp(afreq_ssns_eur$ALT)),]
+tgp_eur_ = tgp_eur[which(afreq_ssns_eur$REF != comp(afreq_ssns_eur$ALT)),]
+afreq_ssns_sas_ = afreq_ssns_sas[which(afreq_ssns_sas$REF != comp(afreq_ssns_sas$ALT)),]
+tgp_sas_ = tgp_sas[which(afreq_ssns_sas$REF != comp(afreq_ssns_sas$ALT)),]
+
+## ancestry
+ssns_afr = afreq_ssns_afr_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_afr = tgp_afr_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_sas = afreq_ssns_sas_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_sas = tgp_sas_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+ssns_eur = afreq_ssns_eur_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+tgp_eur = tgp_eur_ %>% mutate(alt_allele_count = as.integer(round(ALT_FREQS * OBS_CT)))
+
+# define function input
+x1 = ssns_afr$alt_allele_count
+n1 = ssns_afr$OBS_CT 
+x2 = tgp_afr$alt_allele_count 
+n2 = tgp_afr$OBS_CT 
+x3 = ssns_sas$alt_allele_count
+n3 = ssns_sas$OBS_CT
+x4 = tgp_sas$alt_allele_count
+n4 = tgp_sas$OBS_CT
+x5 = ssns_eur$alt_allele_count
+n5 = ssns_eur$OBS_CT
+x6 = tgp_eur$alt_allele_count
+n6 = tgp_eur$OBS_CT
+
+# p-values for ssns p data
+output_ref = likelihoodratio_3(x1, n1, x2, n2, x3, n3, x4, n4, x5, n5, x6, n6)
+remove_snp = cbind(tgp_afr$ID, output_ref) %>% as.data.frame() %>% filter(as.numeric(output_ref) < 1e-10) %>% pull(V1)
+hist(output_ref, breaks = 50, main = "ref != comp(alt): p-vals likelihood ratio test (all ancestry)")
+qq(output_ref, main = "ref != comp(alt): QQ-plot for all ancestry")
+
+
+# plot removal snps from ref!=comp(alt)
+remove_snp_AFR = cbind(tgp_afr$ID, tgp_afr$ALT_FREQS, ssns_afr$ALT_FREQS, output_ref) %>% 
+  as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
+  mutate(remove = as.factor(ifelse(as.numeric(output_ref) < 1e-10, 1, 0)),
+         category = ifelse(as.numeric(output_ref) < 1e-10 , "remove", "keep")) %>% 
+  mutate(category = ifelse(is.na(category) == TRUE, "alt_freq_0", category))
+remove_snp_AFR$category <- factor(remove_snp_AFR$category, levels = c("keep", "alt_freq_0", "remove"))
+table(remove_snp_AFR$category)
+ggplot(remove_snp_AFR %>% filter(category != "alt_freq_0") %>% arrange(category), aes(x=as.numeric(ssns_alt_freq), y=as.numeric(tgp_alt_freq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('(ref != comp(alt)) likelihood ratio test; African ancestry; cutoff 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "darkgreen"))
+
+remove_snp_SAS = cbind(tgp_sas$ID, tgp_sas$ALT_FREQS, ssns_sas$ALT_FREQS, output_ref) %>% 
+  as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
+  mutate(remove = as.factor(ifelse(as.numeric(output_ref) < 1e-10, 1, 0)),
+         category = ifelse(as.numeric(output_ref) < 1e-10, "remove", "keep")) %>% 
+  mutate(category = ifelse(is.na(category) == TRUE, "alt_freq_0", category))
+remove_snp_SAS$category <- factor(remove_snp_SAS$category, levels = c("keep", "alt_freq_0", "remove"))
+table(remove_snp_SAS$category)
+ggplot(remove_snp_SAS %>% filter(category != "alt_freq_0") %>% arrange(category), aes(x=as.numeric(ssns_alt_freq), y=as.numeric(tgp_alt_freq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('(ref != comp(alt)) likelihood ratio test; South Asian ancestry; cutoff 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "darkgreen"))
+
+remove_snp_EUR = cbind(tgp_eur$ID, tgp_eur$ALT_FREQS, ssns_eur$ALT_FREQS, output_ref) %>% 
+  as.data.frame() %>% rename(ID = V1, tgp_alt_freq = V2, ssns_alt_freq = V3) %>% 
+  mutate(remove = as.factor(ifelse(as.numeric(output_ref) < 1e-10, 1, 0)),
+         category = ifelse(as.numeric(output_ref) < 1e-10, "remove", "keep")) %>% 
+  mutate(category = ifelse(is.na(category) == TRUE, "alt_freq_0", category))
+remove_snp_EUR$category <- factor(remove_snp_EUR$category, levels = c("keep", "alt_freq_0", "remove"))
+table(remove_snp_EUR$category)
+ggplot(remove_snp_EUR %>% filter(category != "alt_freq_0") %>% arrange(category), aes(x=as.numeric(ssns_alt_freq), y=as.numeric(tgp_alt_freq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('(ref != comp(alt)) likelihood ratio test; European ancestry; cutoff 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "darkgreen"))
+
+# removal from ref == comp(alt)
+remove_snpID = output_all_snp_B %>% filter(remove == 1) %>% pull(ID)
+combine_removeID = unique(c(remove_snp, remove_snpID))
+
+```
+
+## plot original AF plots with identified remove and flip snps
+```{r}
+afreq_ssns_afr = afreq_ssns_afr %>% select(ID, ssns_altfreq = ALT_FREQS)
+afreq_ssns_eur = afreq_ssns_eur %>% select(ID, ssns_altfreq = ALT_FREQS)
+afreq_ssns_sas = afreq_ssns_sas %>% select(ID, ssns_altfreq = ALT_FREQS)
+tgp_sas = tgp_sas %>% select(ID, tgp_altfreq = ALT_FREQS)
+tgp_eur = tgp_eur %>% select(ID, tgp_altfreq = ALT_FREQS)
+tgp_afr  = tgp_afr %>% select(ID, tgp_altfreq = ALT_FREQS)
+
+# flip list, notsig list, NA list
+final_flipID = output_all_snp_AFR %>% filter(flip == 1) %>% pull(ID)
+notsig_all_keep = output_all_snp_AFR %>% filter(category == "both_notsig_keep") %>% pull(ID)
+notsig_all_flip = output_all_snp_AFR %>% filter(category == "both_notsig_flip") %>% pull(ID)
+NA_list = unique(c(output_all_snp_AFR %>% filter(category == "alt_freq_0") %>% pull(ID), remove_snp_EUR %>% filter(category == "alt_freq_0") %>% pull(ID)))
+
+merge_AF_AFR = merge(afreq_ssns_afr, tgp_afr, by = "ID") %>% mutate(category = ifelse(ID %in% final_flipID, "flip", 
+                                                                                    ifelse(ID %in% combine_removeID, "remove", ifelse(ID %in% notsig_all_keep, "not_sig_all_keep", 
+                                                                                                                                      ifelse(ID %in% NA_list, "alt_freq_0", 
+                                                                                                                                             ifelse(ID %in% notsig_all_flip, "not_sig_all_flip", "keep")))))) 
+merge_AF_AFR$category <- factor(merge_AF_AFR$category, levels = c("keep", "alt_freq_0", "flip", "remove", "not_sig_all_keep", "not_sig_all_flip"))
+ggplot(merge_AF_AFR %>% arrange(category) %>% filter(category != "alt_freq_0"), aes(x=as.numeric(ssns_altfreq), y=as.numeric(tgp_altfreq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('ssns+tgp merged allele freq: African ancestry; sig level 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow", "red"))
+
+merge_AF_SAS = merge(afreq_ssns_sas, tgp_sas, by = "ID") %>% mutate(category = ifelse(ID %in% final_flipID, "flip", 
+                                                                                    ifelse(ID %in% combine_removeID, "remove", ifelse(ID %in% notsig_all_keep, "not_sig_all_keep", 
+                                                                                                                                      ifelse(ID %in% NA_list, "alt_freq_0", 
+                                                                                                                                             ifelse(ID %in% notsig_all_flip, "not_sig_all_flip", "keep")))))) 
+merge_AF_SAS$category <- factor(merge_AF_SAS$category, levels = c("keep", "alt_freq_0", "flip", "remove", "not_sig_all", "not_sig_all_keep", "not_sig_all_flip"))
+ggplot(merge_AF_SAS %>% arrange(category) %>% filter(category != "alt_freq_0"), aes(x=as.numeric(ssns_altfreq), y=as.numeric(tgp_altfreq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('ssns+tgp merged allele freq: South Asian ancestry; sig level 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow", "red"))
+
+merge_AF_EUR = merge(afreq_ssns_eur, tgp_eur, by = "ID") %>% mutate(category = ifelse(ID %in% final_flipID, "flip", 
+                                                                                    ifelse(ID %in% combine_removeID, "remove", ifelse(ID %in% notsig_all_keep, "not_sig_all_keep", 
+                                                                                                                                      ifelse(ID %in% NA_list, "alt_freq_0", 
+                                                                                                                                             ifelse(ID %in% notsig_all_flip, "not_sig_all_flip", "keep")))))) 
+merge_AF_EUR$category <- factor(merge_AF_EUR$category, levels = c("keep", "alt_freq_0", "flip", "remove", "not_sig_all", "not_sig_all_keep", "not_sig_all_flip"))
+ggplot(merge_AF_EUR %>% arrange(category) %>% filter(category != "alt_freq_0"), aes(x=as.numeric(ssns_altfreq), y=as.numeric(tgp_altfreq), color = category)) + geom_point(size = 0.5) + 
+  ggtitle('ssns+tgp merged allele freq: European ancestry; sig level 1e-10') + scale_x_continuous(name="SSNS") +
+  scale_y_continuous(name="TGP") + scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow", "red"))
+table(merge_AF_EUR$category)
+```
+## Write SNP id's to remove/flip into txt file
+```{r}
+# simplify category
+merge_AF = merge_AF_EUR %>% mutate(category = ifelse(category == "not_sig_all_keep", "keep", 
+                                                   ifelse(category == "not_sig_all_flip", "flip", 
+                                                          ifelse(category == "alt_freq_0", "keep",as.character(category)))))
+table(merge_AF$category)
+remove_id = merge_AF %>% filter(category == "remove") %>% pull(ID)
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/remove_10.txt")
+writeLines(paste0(remove_id), fileConn)
+close(fileConn)
+
+flip_id = merge_AF %>% filter(category == "flip") %>% pull(ID)
+fileConn<-file("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/flip_10.txt")
+writeLines(paste0(flip_id), fileConn)
+close(fileConn)
+```

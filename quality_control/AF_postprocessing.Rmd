@@ -1,0 +1,75 @@
+---
+title: "AF_postprocessing"
+output: html_document
+date: "2023-07-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+Once the remove_10.txt and flip_10.txt are prepared:
+
+## split
+module load Plink/2.00a2LM
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_pheno.txt --make-bed --out ssns_split
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --remove /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_pheno.txt --make-bed --out tgp_split
+module unload Plink/2.00a2LM
+
+## flip SSNS snps (for each significance level)
+module load Plink/1.90
+time plink --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_split --flip /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/flip_10.txt --make-bed --out ssns_flip_10
+
+## merge SSNS + TGP
+### SNPs not in TGP will get removed at this step
+time plink --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_flip_10 --bmerge /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/tgp_split --keep-allele-order --out ssns_flip_tpg_merge_10
+
+## remove snps
+time plink --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_flip_tpg_merge_10 --exclude /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/remove_10.txt --make-bed --out ssns_tgp_af_10
+
+Compute allele frequency again (double check results):
+- split by ancestry and compute in plink
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_tgp_af_10 --keep /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_admixfilter_afr.txt --freq --out ssns_control_afr_10
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_tgp_af_10 --keep /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_admixfilter_eur.txt  --freq --out ssns_control_eur_10
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_tgp_af_10 --keep /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/ssns_control_admixfilter_sas.txt --freq --out ssns_control_sas_10
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_tgp_af_10 --keep /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_sas.txt --freq --out tgp_sas_10
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_tgp_af_10 --keep /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_eur.txt --freq --out tgp_eur_10
+time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_tgp_af_10 --keep /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/tgp_control_afr.txt --freq --out tgp_afr_10
+
+## Read plink output files
+```{r}
+afreq_ssns_afr <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_control_afr_10.afreq", sep = "\t")
+colnames(afreq_ssns_afr) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_eur <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_control_eur_10.afreq", sep = "\t")
+colnames(afreq_ssns_eur) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+afreq_ssns_sas <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_control_sas_10.afreq", sep = "\t")
+colnames(afreq_ssns_sas) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+tgp_sas <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/tgp_sas_10.afreq", sep = "\t")
+colnames(tgp_sas) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+tgp_eur <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/tgp_eur_10.afreq", sep = "\t")
+colnames(tgp_eur) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+
+tgp_afr <- read.table("/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/tgp_afr_10.afreq", sep = "\t")
+colnames(tgp_afr) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+```
+
+```{r}
+plot(afreq_ssns_sas$ALT_FREQS, tgp_sas$ALT_FREQS, xlab="ssns_control_southasians", ylab="tgp_southasians", main = "Group: South Asian", pch='.')
+plot(afreq_ssns_eur$ALT_FREQS, tgp_eur$ALT_FREQS, xlab="ssns_control_european", ylab="tgp_european",  main = "Group: European", pch='.')
+plot(afreq_ssns_afr$ALT_FREQS, tgp_afr$ALT_FREQS, xlab="ssns_control_african", ylab="tgp_african",  main = "Group: African", pch='.')
+```
+
+Prepare for imputation server: Rsq filter = 0.3
+
+for i in {1..22}
+do
+	plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/post_AF/ssns_tgp_af_10 --chr ${i} --output-chr chrM --export vcf bgz id-paste=iid --out chr_${i}
+        bcftools index chr_${i}.vcf.gz
+done
+
+
