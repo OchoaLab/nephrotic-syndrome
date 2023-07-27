@@ -84,6 +84,27 @@ q_cut <- 0.8
 data$RACE[ data$RACE == 'Black' & Q[ , 'African' ] <= q_cut ] <- 'Black-Adm.'
 data$RACE[ data$RACE == 'White' & Q[ , 'European' ] <= q_cut ] <- 'White-Adm.'
 data$RACE[ data$RACE == 'Asian' & Q[ , 'South Asian' ] <= q_cut ] <- 'Asian-Adm.'
+
+# for reference, race/ethnicity clusters by subclassification
+table( data$RACE, data$DIAGNOSIS )
+##            Control NS UNCLASSIFIED SRNS SSNS
+## Asian          248               0   14  329
+## Asian-Adm.      67               0    2   18
+## Black          301               5   41  148
+## Black-Adm.     148               0   29   23
+## Hispanic         2               6   22   29
+## Other            5               2    4   19
+## White          274               1   75  136
+## White-Adm.       4               0    6   23
+table( data$RACE )
+##      Asian Asian-Adm.      Black Black-Adm.   Hispanic      Other      White 
+##        591         87        495        200         59         30        486 
+## White-Adm. 
+##         33 
+table( data$DIAGNOSIS )
+## Control NS UNCLASSIFIED            SRNS            SSNS 
+##    1049              14             193             725 
+nrow( data ) # [1] 1981
 ```
 
 Make structure plot!
