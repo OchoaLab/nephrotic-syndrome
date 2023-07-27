@@ -48,7 +48,7 @@ July/August 2022 (PCA/admixture analysis to identify outliers, allele frequency 
 
 * Identifying outliers: extract south asian individual id's/remove highly admixed individuals for AF test with TGP
   
-* AF tests (likelihoodratiotest_function.R and merge_analysis_AF.Rmd)
+* AF tests (AF_preprocessing.Rmd)
   -> identify flip/remove SNPs for SSNS. Split with TGP, flip, merge with TGP, remove. (rm_flip_step.q) 
 
 September 2022 (Imputation on TopMed server)
