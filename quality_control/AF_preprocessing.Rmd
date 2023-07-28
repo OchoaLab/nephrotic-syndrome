@@ -1,7 +1,7 @@
 ---
 title: "allele_freq_preprocessing"
 output: html_document
-date: "2023-07-27"
+date: "2023-07-28"
 ---
 
 ```{r setup, include=FALSE}
@@ -9,6 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ochoalabtools)
 library(popgeninfer) # remotes::install_github('OchoaLab/popgeninfer')
+library(scales) # for a color hack
 ```
 
 ```{r}
@@ -214,12 +215,16 @@ ids_comp_flip <- ids_comp[ category_comp == "Flipped" ]
 
 # to prep for big plot later, arrange all data in a single data frame
 # make it easy to facet by ancestry and "comp" status
+# includes p-values for a separate plot, and IDs just for reference (not used by plots)
 data_comp <- tibble(
-    TGP  = c(  tgp_afr$ALT_FREQS[ indexes_comp ],  tgp_eur$ALT_FREQS[ indexes_comp ],  tgp_sas$ALT_FREQS[ indexes_comp ] ),
-    SSNS = c( ssns_afr$ALT_FREQS[ indexes_comp ], ssns_eur$ALT_FREQS[ indexes_comp ], ssns_sas$ALT_FREQS[ indexes_comp ] ),
+    ids = rep.int( ids_comp, 3 ),
+    WGS   = c(  tgp_afr$ALT_FREQS[ indexes_comp ],  tgp_eur$ALT_FREQS[ indexes_comp ],  tgp_sas$ALT_FREQS[ indexes_comp ] ),
+    Array = c( ssns_afr$ALT_FREQS[ indexes_comp ], ssns_eur$ALT_FREQS[ indexes_comp ], ssns_sas$ALT_FREQS[ indexes_comp ] ),
     Category = rep.int( category_comp, 3 ),
     ancestry = c( rep.int( 'African', m_comp ), rep.int( 'European', m_comp ), rep.int( 'South Asian', m_comp ) ),
-    comp = 'Reverse complement ref/alt'
+    comp = 'Reverse complement ref/alt',
+    pvals_fwd = rep.int( pvals_comp_fwd, 3 ),
+    pvals_rev = rep.int( pvals_comp_rev, 3 )
 )
 ```
 
@@ -251,15 +256,19 @@ ids_noncomp_remove <- tgp_afr$ID[ category_noncomp == "Removed" ]
 
 # prep data for big plot, as before
 data_noncomp <- tibble(
-    TGP  = c(  tgp_afr$ALT_FREQS,  tgp_eur$ALT_FREQS,  tgp_sas$ALT_FREQS ),
-    SSNS = c( ssns_afr$ALT_FREQS, ssns_eur$ALT_FREQS, ssns_sas$ALT_FREQS ),
+    ids = rep.int( tgp_afr$ID, 3 ),
+    WGS   = c(  tgp_afr$ALT_FREQS,  tgp_eur$ALT_FREQS,  tgp_sas$ALT_FREQS ),
+    Array = c( ssns_afr$ALT_FREQS, ssns_eur$ALT_FREQS, ssns_sas$ALT_FREQS ),
     Category = rep.int( category_noncomp, 3 ),
     ancestry = c( rep.int( 'African', m_noncomp ), rep.int( 'European', m_noncomp ), rep.int( 'South Asian', m_noncomp ) ),
-    comp = 'Non-reverse complement ref/alt'
+    comp = 'Non-reverse complement ref/alt',
+    pvals_fwd = rep.int( pvals_noncomp, 3 ),
+    pvals_rev = NA
 )
 ```
 
 ## Write SNP id's to remove/flip into txt file
+
 ```{r}
 # same as originals, but order is different
 write_lines( c( ids_comp_remove, ids_noncomp_remove ), "remove_10.txt")
@@ -267,6 +276,47 @@ write_lines( ids_comp_flip, "flip_10.txt")
 # these weren't removed before, but imputation server probably removes them due to high missingness (fully missing in TGP):
 write_lines( ids_na, "snps-missing-tgp.txt")
 ```
+
+## Save plotting data
+
+Save this big tibble used to make plots, to just load back if we're just tweaking plots and analysis didn't change
+
+```{r}
+# combine all data to plot into a single tibble
+data <- bind_rows( data_comp, data_noncomp )
+# save!
+write_tsv( data, "af-test.txt.gz")
+```
+
+## Reload plotting data if needed
+
+Skip if analysis was redone from the start and everything is loaded in the session already.
+
+Run if this is a new session and we're only tweaking plots, to reload plotting data only.
+
+```{r}
+# Reload these libraries too
+library(tidyverse)
+library(ochoalabtools)
+library(scales) # for a color hack
+# and make sure we're in the correct path.
+setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/' )
+# load big tibble
+data <- read_tsv( "af-test.txt.gz", col_types = 'cddcccdd' )
+# reset plotting order (not preserved in flattened tibble)
+data$Category <- factor( data$Category, levels = c("Unchanged", "Flipped", "Removed") )
+
+# if making p-value plot, extract that data from the tibble this way:
+# first subset to a single ancestry (which one doesn't matter, p-values are the same for each, but they are repeated otherwise)
+data_afr <- filter( data, ancestry == 'African' )
+# reidentify comp cases
+indexes_comp2 <- data_afr$comp == 'Reverse complement ref/alt'
+# now recover p-value distributions
+pvals_noncomp <- data_afr$pvals_fwd[ !indexes_comp2 ]
+pvals_comp_fwd <- data_afr$pvals_fwd[ indexes_comp2 ]
+pvals_comp_rev <- data_afr$pvals_rev[ indexes_comp2 ]
+```
+
 
 ## P-value distribution plots
 
@@ -297,11 +347,12 @@ fig_end()
 Combine all data into a nice plot faceted by ancestry and "comp" status:
 
 ```{r}
-# combine all data to plot into a single tibble
-data <- bind_rows( data_comp, data_noncomp )
-
-# this plots "Unchanged" first (at back), followed by "Flip", "Remove", in order of Category factor, so we can see smaller categories most clearly
+# this plots "Unchanged" first (at back), followed by "Flipped", "Removed", in order of Category factor, so we can see smaller categories most clearly
 data <- data %>% arrange( Category )
+
+# get default colors for these many categories, but reorder
+colors <- hue_pal()(3) # default (red, green, blue)
+colors <- c( "#999999", colors[ c(3, 1) ] ) # want (Unchanged=darkgray, Flipped=blue, Removed=red )
 
 # visualize results by ancestry
 # these are full-page figs, scale (w/h) appropriately
@@ -311,12 +362,14 @@ fig_start(
     width = dims[1], # 7.5 for scale=1
     height = dims[2] # 7.5 for scale=1
 )
-ggplot( data, aes( x = SSNS, y = TGP, color = Category ) ) +
+ggplot( data, aes( x = Array, y = WGS, color = Category ) ) +
+    labs( x = 'Array allele frequency', y = 'WGS allele frequency' ) +
     theme_classic() +
     xlim( 0, 1 ) +
     ylim( 0, 1 ) +
-    geom_point(size = 0.5) + 
-    scale_color_manual(values=c("#999999", "#56B4E9",  "darkgreen", "yellow", "red")) +
+    geom_point( size = 0.25 ) + 
+    scale_color_manual( values = colors ) +
+    guides( colour = guide_legend( override.aes = list( size = 1 ) ) ) + # increase point size in legend only
     facet_grid( ancestry ~ comp )
 fig_end()
 ```
