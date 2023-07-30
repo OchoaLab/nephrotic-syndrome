@@ -1,51 +1,27 @@
 ---
 title: "allele_freq_preprocessing"
 output: html_document
-date: "2023-07-28"
+date: "2023-07-30"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(genio)
 library(tidyverse)
 library(ochoalabtools)
 library(popgeninfer) # remotes::install_github('OchoaLab/popgeninfer')
 library(scales) # for a color hack
 ```
 
-```{r}
-bim <- read_bim( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_gwas_maf' )
-bim %>% group_by(id) %>% filter(n()>1)
-```
-
-## remove duplicate ID's from ssns
-```{r}
-bim_id = bim %>% group_by(id) %>% filter(n()>1) %>% pull(id) 
-
-ind_remove = c()
-for (id in unique(bim_id)) {
-  
-  ind = grep(id, rownames(X))
-  x_temp = X[ind,]
-  print(mean(x_temp[1,] == x_temp[2,], na.rm = TRUE))
-  if (mean(x_temp[1,] == x_temp[2,], na.rm = TRUE) > 0.99) {
-    ind_remove = c(ind_remove, ind[2])
-  } else {
-    ind_remove = c(ind_remove, ind)
-  }
-}
-
-X <- X[ -ind_remove, ]
-bim <- bim[ -ind_remove, ]
-write_plink( "ssns_gwas_maf_dedup", X, bim, data$fam )
-```
-
 ## write SSNS control IDs into text file for AF test and subset with admixture results
 
 ```{r}
-merge = read_plink( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge' )
+# some of the initial analysis begins here
+setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/' )
+merge = read_plink( 'ssns_tpg_merge' )
 fam = merge$fam
 
-# most of the processing happens here, go to that directory
+# the rest of the processing happens here, go to that directory
 setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/' )
 
 ssns_pheno = read.table("pheno_excelmerge.csv", sep = ",", header = TRUE)
