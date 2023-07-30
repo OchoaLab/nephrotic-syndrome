@@ -18,8 +18,8 @@ Then load and align demographics `data` to `fam`; `fam` is not used after this.
 # assume we're here:
 # /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/admixture/
 
-Q <- read_matrix("ssns_gwas_maf.5", ext = 'Q') 
-fam <- read_fam( '../ssns_gwas_maf' )
+Q <- read_matrix("array-clean.5.Q.gz") 
+fam <- read_fam( '../array-clean' )
 
 data <- read_csv( "../pheno_excelmerge.csv", show_col_types = FALSE )
 data <- data %>% filter(AcquisitionNumber %in% fam$id) 
@@ -127,7 +127,7 @@ fig_end()
 
 Load PCs, align to Q/data.
 ```{r}
-obj <- read_eigenvec("../pca/PCA10")
+obj <- read_eigenvec("../array-clean")
 pcs <- obj$eigenvec
 fam <- obj$fam
 
@@ -150,7 +150,7 @@ ggplot(data, aes(x = PC1, y = PC2, color = RACE)) + geom_point() + theme_classic
 fig_end()
 ```
 
-### write outliers into files and calculate allele frequency
+### write IDs of unadmixed individuals into files
 
 ```{r}
 write_ids <- function( data, race, name ) {
@@ -158,7 +158,7 @@ write_ids <- function( data, race, name ) {
     x <- data$AcquisitionNumber[ data$RACE == race ]
     x <- paste0( x, " ", x )
     # set filepath
-    file <- paste0( "../allele_freq/ssns_maf_", name, ".txt" )
+    file <- paste0( "ids_", name, ".txt" )
     # write it out!
     write_lines( x, file )
 }

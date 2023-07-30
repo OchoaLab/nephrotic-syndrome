@@ -4,6 +4,7 @@ library(tidyverse)
 # NOTE: this requires `--mem 16G` on DCC!
 
 # identifies SNPs with duplicate IDs, which means duplicate chr:pos (format of ID)
+# I inspected them visually, and saw alt/ref are equivalent (so these aren't multiallelic cases)
 # then looks at concordance:
 # - if it's high then we keep first SNP out of the set of duplicates (because they're identical or nearly so, then practically it doesn't matter which one we keep)
 # - if it's low, we throw away both (we have no way of knowing which one is the right/better one)
@@ -43,4 +44,4 @@ X <- X[ -ind_remove, ]
 bim <- bim[ -ind_remove, ]
 
 # save new version!
-write_plink( "ssns_gwas_maf_dedup", X, bim, data$fam )
+write_plink( "array-clean", X, bim, data$fam )
