@@ -13,109 +13,53 @@ library(popgeninfer) # remotes::install_github('OchoaLab/popgeninfer')
 library(scales) # for a color hack
 ```
 
-## write SSNS control IDs into text file for AF test and subset with admixture results
-
-```{r}
-# some of the initial analysis begins here
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/' )
-merge = read_plink( 'ssns_tpg_merge' )
-fam = merge$fam
-
-# the rest of the processing happens here, go to that directory
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/' )
-
-ssns_pheno = read.table("pheno_excelmerge.csv", sep = ",", header = TRUE)
-
-table(ssns_pheno$RACE, ssns_pheno$DIAGNOSIS)
-
-# admixture results:
-ssns_admixfilter_eur = read.table("ssns_admixfilter_eur.txt", header = FALSE) #486
-ssns_admixfilter_afr = read.table("ssns_admixfilter_afr.txt", header = FALSE) #495
-ssns_admixfilter_sas = read.table("ssns_admixfilter_sas.txt", header = FALSE) #591
-
-# filter for controls in each ancestry: 
-ssns_pheno_eur = ssns_pheno %>% filter(RACE == "White" & DIAGNOSIS == "Control") %>% filter(AcquisitionNumber %in% ssns_admixfilter_eur$V1) %>%
-  pull(AcquisitionNumber) #274 
-ssns_fam_eur = subset(fam, id %in% ssns_pheno_eur) #274
-write_lines(paste0(ssns_fam_eur$id, " ", ssns_fam_eur$id), "ssns_control_admixfilter_eur.txt")
-
-ssns_pheno_afr = ssns_pheno %>% filter(RACE == "Black" & DIAGNOSIS == "Control") %>% filter(AcquisitionNumber %in% ssns_admixfilter_afr$V1) %>%
-  pull(AcquisitionNumber) #301
-ssns_fam_afr = subset(fam, id %in% ssns_pheno_afr) #301
-write_lines(paste0(ssns_fam_afr$id, " ", ssns_fam_afr$id), "ssns_control_admixfilter_afr.txt")
-
-ssns_pheno_sas = ssns_pheno %>% filter(RACE == "Asian" & DIAGNOSIS == "Control") %>% filter(AcquisitionNumber %in% ssns_admixfilter_sas$V1) %>%
-  pull(AcquisitionNumber) #248
-ssns_fam_sas = subset(fam, id %in% ssns_pheno_sas) #248
-write_lines(paste0(ssns_fam_sas$id, " ", ssns_fam_sas$id), "ssns_control_admixfilter_sas.txt")
-```
-
 ## write tgp ancestry into text files
 ```{r}
-AFR = c('MSL', 'YRI', "ESN", "GWD", "LWK", "ACB", "ASW")
-EUR = c('CEU', 'GBR', 'IBS', 'TSI', 'FIN')
-SAS = c('PJL', 'GIH', 'ITU', 'STU', 'BEB')
+# all the data is here
+setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/' )
+fam <- read_fam( 'ssns_tgp_merge' )
 
-tgp_eur = fam[which(fam$fam %in% EUR),]
-write_lines(paste0(tgp_eur$fam, " ", tgp_eur$id), "tgp_control_eur.txt")
+# put outputs in a subdirectory
+if ( !dir.exists( 'allele_freq' ) )
+    dir.create( 'allele_freq' )
+setwd( 'allele_freq' )
 
-tgp_sas = fam[which(fam$fam %in% SAS),]
-write_lines(paste0(tgp_sas$fam, " ", tgp_sas$id), "tgp_control_sas.txt")
+# define TGP ancestries
+AFR <- c('MSL', 'YRI', "ESN", "GWD", "LWK", "ACB", "ASW")
+EUR <- c('CEU', 'GBR', 'IBS', 'TSI', 'FIN')
+SAS <- c('PJL', 'GIH', 'ITU', 'STU', 'BEB')
 
-tgp_afr = fam[which(fam$fam %in% AFR),]
-write_lines(paste0(tgp_afr$fam, " ", tgp_afr$id), "tgp_control_afr.txt")
+# save fam files with IDs for the desired individuals only
+write_fam( "tgp_controls_eur", fam[ fam$fam %in% EUR, ] )
+write_fam( "tgp_controls_sas", fam[ fam$fam %in% SAS, ] )
+write_fam( "tgp_controls_afr", fam[ fam$fam %in% AFR, ] )
 ```
 
 ## use plink to calculate allele frequencies for controls from each ancestry
 
-time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep ssns_control_admixfilter_afr.txt --freq --out ssns_control_afr
-time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep ssns_control_admixfilter_eur.txt --freq --out ssns_control_eur
-time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep ssns_control_admixfilter_sas.txt --freq --out ssns_control_sas
+```bash
+plink2 --bfile ../ssns_tgp_merge --keep ../admixture/ids_controls_afr.txt --freq --out array_controls_afr
+plink2 --bfile ../ssns_tgp_merge --keep ../admixture/ids_controls_eur.txt --freq --out array_controls_eur
+plink2 --bfile ../ssns_tgp_merge --keep ../admixture/ids_controls_sas.txt --freq --out array_controls_sas
 
-time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep tgp_control_sas.txt --freq --out tgp_control_sas
-time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep tgp_control_eur.txt --freq --out tgp_control_eur
-time plink2 --bfile /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/ssns_tpg_merge --keep tgp_control_afr.txt --freq --out tgp_control_afr
+plink2 --bfile ../ssns_tgp_merge --keep tgp_controls_afr.fam --freq --out tgp_controls_afr
+plink2 --bfile ../ssns_tgp_merge --keep tgp_controls_eur.fam --freq --out tgp_controls_eur
+plink2 --bfile ../ssns_tgp_merge --keep tgp_controls_sas.fam --freq --out tgp_controls_sas
+```
 
 ## Read plink output files
 
 Note the below tables are all aligned (each row is the same SNP in all of them) by construction, because they came from the same data (`ssns_tgp_merge`) without SNP filters.  The first four columns (CHROM, ID, REF, ALT) are identical in all files!
 
 ```{r}
-ssns_afr <- read_tsv("ssns_control_afr.afreq", col_types = 'icccdi')
-ssns_eur <- read_tsv("ssns_control_eur.afreq", col_types = 'icccdi')
-ssns_sas <- read_tsv("ssns_control_sas.afreq", col_types = 'icccdi')
-tgp_afr <- read_tsv("tgp_control_afr.afreq", col_types = 'icccdi')
-tgp_eur <- read_tsv("tgp_control_eur.afreq", col_types = 'icccdi')
-tgp_sas <- read_tsv("tgp_control_sas.afreq", col_types = 'icccdi')
-```
-
-# Separate SNPs missing in TGP
-
-These SNPs have zero observed counts in TGP, so they cannot be plotted (there's no frequency in TGP, shows up as NaN in files) and they always produce NA p-values.
-It's cleanest to remove/separate them early.
-
-```{r}
-# total starting SNPs
-nrow( tgp_afr ) # 833047
-# identify SNPs with this problem
-indexes_na <- tgp_afr$OBS_CT == 0
-# get list of SNP IDs, to get removed later
-ids_na <- tgp_afr$ID[ indexes_na ]
-length( ids_na ) # 70419
-# the rest of the data is no longer needed for those SNPs, throw them away
-ssns_afr <- ssns_afr[ !indexes_na, ]
-ssns_eur <- ssns_eur[ !indexes_na, ]
-ssns_sas <- ssns_sas[ !indexes_na, ]
-tgp_afr <- tgp_afr[ !indexes_na, ]
-tgp_eur <- tgp_eur[ !indexes_na, ]
-tgp_sas <- tgp_sas[ !indexes_na, ]
-# confirm that now nothing is missing
-stopifnot( !anyNA( ssns_afr ) )
-stopifnot( !anyNA( ssns_eur ) )
-stopifnot( !anyNA( ssns_sas ) )
-stopifnot( !anyNA( tgp_afr ) )
-stopifnot( !anyNA( tgp_eur ) )
-stopifnot( !anyNA( tgp_sas ) )
+# rest of processing happens here
+setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/' )
+arr_afr <- read_tsv("array_controls_afr.afreq", col_types = 'icccdi')
+arr_eur <- read_tsv("array_controls_eur.afreq", col_types = 'icccdi')
+arr_sas <- read_tsv("array_controls_sas.afreq", col_types = 'icccdi')
+tgp_afr <- read_tsv("tgp_controls_afr.afreq", col_types = 'icccdi')
+tgp_eur <- read_tsv("tgp_controls_eur.afreq", col_types = 'icccdi')
+tgp_sas <- read_tsv("tgp_controls_sas.afreq", col_types = 'icccdi')
 ```
 
 # AF test for all ancestry combined (df = 3)
@@ -125,16 +69,16 @@ stopifnot( !anyNA( tgp_sas ) )
 pcut <- 1e-10
 
 # recover allele counts from frequencies and sample sizes
-ssns_afr = ssns_afr %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
+arr_afr = arr_afr %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
 tgp_afr = tgp_afr %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
-ssns_eur = ssns_eur %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
+arr_eur = arr_eur %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
 tgp_eur = tgp_eur %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
-ssns_sas = ssns_sas %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
+arr_sas = arr_sas %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
 tgp_sas = tgp_sas %>% mutate(AC = as.integer(round(ALT_FREQS * OBS_CT)))
 
 # define function input
-x1 <- cbind( ssns_afr$AC, ssns_eur$AC, ssns_sas$AC )
-n1 <- cbind( ssns_afr$OBS_CT, ssns_eur$OBS_CT, ssns_sas$OBS_CT )
+x1 <- cbind( arr_afr$AC, arr_eur$AC, arr_sas$AC )
+n1 <- cbind( arr_afr$OBS_CT, arr_eur$OBS_CT, arr_sas$OBS_CT )
 x2 <- cbind( tgp_afr$AC, tgp_eur$AC, tgp_sas$AC )
 n2 <- cbind( tgp_afr$OBS_CT, tgp_eur$OBS_CT, tgp_sas$OBS_CT )
 # p-values for forward alignment (only alignment for non-revcomp SNPs)
@@ -147,14 +91,16 @@ pvals <- af_test( x1, n1, x2, n2 )$pval
 # since all are SNPs, complements are reverse complements (i.e. no need to reverse)
 comp <- function(x) chartr("ATGC","TACG",x)
 # the "comp" rows are the same in all tables! (all datasets and ancestries) because they are aligned by construction
-indexes_comp <- ssns_afr$REF == comp( ssns_afr$ALT )
+indexes_comp <- arr_afr$REF == comp( arr_afr$ALT )
+# total starting SNPs
+nrow( arr_afr ) # 762629
 # get counts, are used later
 m_comp <- sum( indexes_comp )
 m_comp # 83708
 m_noncomp <- sum( !indexes_comp )
-m_noncomp # 678920
+m_noncomp # 678921
 # get these IDs
-ids_comp <- ssns_afr$ID[ indexes_comp ]
+ids_comp <- arr_afr$ID[ indexes_comp ]
 # get subset of "forward" p-values for "comp" cases
 pvals_comp_fwd <- pvals[ indexes_comp ]
 
@@ -194,8 +140,8 @@ ids_comp_flip <- ids_comp[ category_comp == "Flipped" ]
 # includes p-values for a separate plot, and IDs just for reference (not used by plots)
 data_comp <- tibble(
     ids = rep.int( ids_comp, 3 ),
-    WGS   = c(  tgp_afr$ALT_FREQS[ indexes_comp ],  tgp_eur$ALT_FREQS[ indexes_comp ],  tgp_sas$ALT_FREQS[ indexes_comp ] ),
-    Array = c( ssns_afr$ALT_FREQS[ indexes_comp ], ssns_eur$ALT_FREQS[ indexes_comp ], ssns_sas$ALT_FREQS[ indexes_comp ] ),
+    WGS   = c( tgp_afr$ALT_FREQS[ indexes_comp ], tgp_eur$ALT_FREQS[ indexes_comp ], tgp_sas$ALT_FREQS[ indexes_comp ] ),
+    Array = c( arr_afr$ALT_FREQS[ indexes_comp ], arr_eur$ALT_FREQS[ indexes_comp ], arr_sas$ALT_FREQS[ indexes_comp ] ),
     Category = rep.int( category_comp, 3 ),
     ancestry = c( rep.int( 'African', m_comp ), rep.int( 'European', m_comp ), rep.int( 'South Asian', m_comp ) ),
     comp = 'Reverse complement ref/alt',
@@ -213,9 +159,9 @@ pvals_noncomp <- pvals[ !indexes_comp ]
 tgp_afr <- tgp_afr[ !indexes_comp, ]
 tgp_eur <- tgp_eur[ !indexes_comp, ]
 tgp_sas <- tgp_sas[ !indexes_comp, ]
-ssns_afr <- ssns_afr[ !indexes_comp, ]
-ssns_eur <- ssns_eur[ !indexes_comp, ]
-ssns_sas <- ssns_sas[ !indexes_comp, ]
+arr_afr <- arr_afr[ !indexes_comp, ]
+arr_eur <- arr_eur[ !indexes_comp, ]
+arr_sas <- arr_sas[ !indexes_comp, ]
 
 # classify SNPs (same for all ancestries)
 category_noncomp <- ifelse( pvals_noncomp < pcut , "Removed", "Unchanged")
@@ -224,7 +170,7 @@ category_noncomp <- factor(category_noncomp, levels = c("Unchanged", "Removed"))
 # get counts
 as_tibble( table( category_noncomp ) )
 ##   category_noncomp      n
-## 1 Unchanged        677877
+## 1 Unchanged        677878
 ## 2 Removed            1043
 
 # get IDs to remove based on this analysis
@@ -233,8 +179,8 @@ ids_noncomp_remove <- tgp_afr$ID[ category_noncomp == "Removed" ]
 # prep data for big plot, as before
 data_noncomp <- tibble(
     ids = rep.int( tgp_afr$ID, 3 ),
-    WGS   = c(  tgp_afr$ALT_FREQS,  tgp_eur$ALT_FREQS,  tgp_sas$ALT_FREQS ),
-    Array = c( ssns_afr$ALT_FREQS, ssns_eur$ALT_FREQS, ssns_sas$ALT_FREQS ),
+    WGS   = c( tgp_afr$ALT_FREQS, tgp_eur$ALT_FREQS, tgp_sas$ALT_FREQS ),
+    Array = c( arr_afr$ALT_FREQS, arr_eur$ALT_FREQS, arr_sas$ALT_FREQS ),
     Category = rep.int( category_noncomp, 3 ),
     ancestry = c( rep.int( 'African', m_noncomp ), rep.int( 'European', m_noncomp ), rep.int( 'South Asian', m_noncomp ) ),
     comp = 'Non-reverse complement ref/alt',
@@ -247,10 +193,8 @@ data_noncomp <- tibble(
 
 ```{r}
 # same as originals, but order is different
-write_lines( c( ids_comp_remove, ids_noncomp_remove ), "remove_10.txt")
-write_lines( ids_comp_flip, "flip_10.txt")
-# these weren't removed before, but imputation server probably removes them due to high missingness (fully missing in TGP):
-write_lines( ids_na, "snps-missing-tgp.txt")
+write_lines( c( ids_comp_remove, ids_noncomp_remove ), "remove.txt")
+write_lines( ids_comp_flip, "flip.txt")
 ```
 
 ## Save plotting data
@@ -276,7 +220,7 @@ library(tidyverse)
 library(ochoalabtools)
 library(scales) # for a color hack
 # and make sure we're in the correct path.
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.allele_freq_0721/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/' )
 # load big tibble
 data <- read_tsv( "af-test.txt.gz", col_types = 'cddcccdd' )
 # reset plotting order (not preserved in flattened tibble)

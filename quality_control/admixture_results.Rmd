@@ -153,18 +153,24 @@ fig_end()
 ### write IDs of unadmixed individuals into files
 
 ```{r}
-write_ids <- function( data, race, name ) {
+write_ids <- function( data, race, name, controls = FALSE ) {
     # get data to output
-    x <- data$AcquisitionNumber[ data$RACE == race ]
+    indexes <- data$RACE == race
+    if ( controls )
+        indexes <- indexes & data$DIAGNOSIS == 'Control'
+    x <- data$AcquisitionNumber[ indexes ]
     x <- paste0( x, " ", x )
     # set filepath
-    file <- paste0( "ids_", name, ".txt" )
+    file <- paste0( "ids_", (if (controls) 'controls' else 'all' ), '_', name, ".txt" )
     # write it out!
     write_lines( x, file )
 }
 
-write_ids( data, 'Asian', 'sa' )
-write_ids( data, 'Black', 'black' )
-write_ids( data, 'White', 'white' )
+write_ids( data, 'Asian', 'sas' )
+write_ids( data, 'Black', 'afr' )
+write_ids( data, 'White', 'eur' )
+write_ids( data, 'Asian', 'sas', controls = TRUE )
+write_ids( data, 'Black', 'afr', controls = TRUE )
+write_ids( data, 'White', 'eur', controls = TRUE )
 ```
 

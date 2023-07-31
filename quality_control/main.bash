@@ -51,7 +51,6 @@ time plink2 \
 mkdir dedup-inds
 mv duplicated_related.* duplicate_sample_all_missingness.* duplicate_remove.txt dedup-inds/
 
-
 # recode array SNP IDs (needed to dedup positions, and for TGP merge)
 # original had rs, JHU, and other IDs; new has chr:pos format that matches TGP
 plink2 --bfile ssns_gwas_maf --set-all-var-ids '@:#' --make-just-bim --out ssns_gwas_maf_recode
@@ -74,8 +73,6 @@ wc -l array-clean.{bim,fam}
 # remove large intermediate files we can easily reproduce from the raw originals
 # left smaller logs and such behind for reference
 rm {ssns_remove_B,ssns_gwas_maf}.{bed,bim,fam} ssns_gwas_maf_original.bim
-
-# so far redone analysis replicates previous files exactly! (array-clean, formerly ssns_gwas_maf_dedup)
 
 
 ### ADMIXTURE ###
@@ -101,12 +98,6 @@ cd ..
 # create TGP intersected with array SNPs by chr:pos (format of IDs in both cases)
 time plink2 --bfile /datacommons/ochoalab/tgp/tgp-nygc-autosomes --extract array-clean.bim --make-bed --out TGP-subset
 # 1m55.455s DCC
-
-# COMPARISON TO OLD
-# fam is the same, bim now has more SNPs!
-# wc -l {,old/}TGP-subset.bim
-#   762710 TGP-subset.bim
-#   762628 old/TGP-subset.bim
 
 # reanalize array data for compatibility with tgp
 Rscript premerge-tgp-arr.R
@@ -141,46 +132,11 @@ wc -l ssns_tgp_merge.{bim,fam} old/ssns_tpg_merge.{bim,fam}
 #   4485 old/ssns_tpg_merge.fam
 
 
-### OLD MERGE ###
-
-# while recalculations complete, wanted to keep these notes around for reference
-
-# first a merge attempt was made but failed because too many SNPs disagree
-
-# then TGP was flipped (wrong side! we want array flipped and TGP to stay as original), also no --keep-allele-order here, did that mess things up further?
-# this created a huge file containing most of the TGP SNPs! (90 million!)
-## time plink --bfile /datacommons/ochoalab/tgp/tgp-nygc-autosomes --flip ssns_tpg_merge.missnp --make-bed --out tgp_flip
-
-# then the things that still didn't match are removed
-# ssns_tgp_merge_removal.missnp only has 83 SNPs, and where did it come from?
-# NOTE: this is plink1, didn't --keep-allele-order!
-## time plink --bfile tgp_flip --exclude ssns_tgp_merge_removal.missnp --make-bed --out tgp_flip_rm_
-# output still exists, is huge!  I have since deleted it, don't see much use to it relative to its absurd size
-# wc -l tgp_flip_rm_.{bim,fam}
-# 91784578 tgp_flip_rm_.bim
-#     2504 tgp_flip_rm_.fam
-
-# this finally subsets to array data
-## time plink2 --bfile tgp_flip_rm_ --extract array-clean.bim --make-bed --out TGP-subset
-# output and log exist
-# wc -l TGP-subset.{bim,fam}
-# 762628 TGP-subset.bim # matches overlap we have from af-test analysis
-#   2504 TGP-subset.fam
-
-# finalize merge
-# output exists, but has a typo!  (tpg instead of tgp, so confusing)
-## time plink --bfile array-clean --bmerge TGP-subset --keep-allele-order --out ssns_tpg_merge
-# wc -l ssns_tpg_merge.{bim,fam}
-# 833047 ssns_tpg_merge.bim
-#   4485 ssns_tpg_merge.fam
-
-
-# TODO RESUME HERE
-
-### ALELLE FREQUENCY TEST ###
+### ALLELE FREQUENCY TEST ###
 
 # AF tests
 # identify flip/remove SNPs for SSNS. Split with TGP, flip, merge with TGP, remove.
+# use --mem 16G for this job on slurm!
 AF_preprocessing.Rmd
 
 
