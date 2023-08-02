@@ -139,19 +139,57 @@ wc -l ssns_tgp_merge.{bim,fam} old/ssns_tpg_merge.{bim,fam}
 ### ALLELE FREQUENCY TEST ###
 
 # AF tests
-# identify flip/remove SNPs for SSNS. Split with TGP, flip, merge with TGP, remove.
+# identify flip/remove SNPs for SSNS
 # use --mem 16G for this job on slurm!
 AF_preprocessing.Rmd
+# creates allele_freq/{remove,flip}.txt
 
-### TODO ###
+# apply changes to data!
+module purge
+module load Plink/1.90
+time plink \
+  --keep-allele-order \
+  --bfile ssns_tgp_merge \
+  --exclude allele_freq/remove.txt \
+  --flip allele_freq/flip.txt \
+  --flip-subset array-clean.fam \
+  --make-bed --out ssns_tgp_merge_clean
+# cleanup
+rm ssns_tgp_merge_clean.nosex
 
+# redo allele frequency calculations to confirm alignment succeeded
+mkdir allele_freq2
+cd allele_freq2
+module purge
+module load Plink/2.00a2LM
+plink2 --bfile ../ssns_tgp_merge_clean --keep ../admixture/ids_controls_afr.txt --freq --out array_controls_afr
+plink2 --bfile ../ssns_tgp_merge_clean --keep ../admixture/ids_controls_eur.txt --freq --out array_controls_eur
+plink2 --bfile ../ssns_tgp_merge_clean --keep ../admixture/ids_controls_sas.txt --freq --out array_controls_sas
+plink2 --bfile ../ssns_tgp_merge_clean --keep ../allele_freq/tgp_controls_afr.fam --freq --out tgp_controls_afr
+plink2 --bfile ../ssns_tgp_merge_clean --keep ../allele_freq/tgp_controls_eur.fam --freq --out tgp_controls_eur
+plink2 --bfile ../ssns_tgp_merge_clean --keep ../allele_freq/tgp_controls_sas.fam --freq --out tgp_controls_sas
+
+# make plot that confirms data is now aligned (i.e. SNPs were correctly removed or flipped)
+# makes allele_freq2/af-test.pdf
 AF_postprocessing.Rmd
+
 
 ### IMPUTATION ###
 
+# get down from allele_freq2/ subdir
+cd ..
+# create vcfs, split by chromosome
+for i in {1..22}; do
+    plink2 --bfile ssns_tgp_merge_clean --chr ${i} --output-chr chrM --export vcf bgz id-paste=iid --out chr_${i}
+    bcftools index chr_${i}.vcf.gz
+done
+
 # Imputation on TopMed server
-# - create vcf
-# - split by chromosome
+# - Rsq filter = 0.3
+
+
+
+
 
 ### GWAS PREP ###
 
