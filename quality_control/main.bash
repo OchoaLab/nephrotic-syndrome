@@ -179,6 +179,7 @@ AF_postprocessing.Rmd
 # get down from allele_freq2/ subdir
 cd ..
 # create vcfs, split by chromosome
+module load bcftools/1.4
 for i in {1..22}; do
     plink2 --bfile ssns_tgp_merge_clean --chr ${i} --output-chr chrM --export vcf bgz id-paste=iid --out chr_${i}
     bcftools index chr_${i}.vcf.gz
@@ -186,9 +187,6 @@ done
 
 # Imputation on TopMed server
 # - Rsq filter = 0.3
-
-
-
 
 
 ### GWAS PREP ###
@@ -210,10 +208,3 @@ covariate_analysis.Rmd
 # - srns vs control: srns_ctr.txt, srns_ctr_pheno.txt, srns_ctr_covar.txt
 # - ssns vs srns: ssns_srns.txt, ssns_srns_pheno.txt, ssns_srns_covar.txt
 write_txt_files.Rmd
-
-
-# probably obsolete
-hwe_analysis.Rmd
-split_allelefreq.Rmd
-
-
