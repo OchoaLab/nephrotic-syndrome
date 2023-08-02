@@ -21,19 +21,19 @@ Then load and align demographics `data` to `fam`; `fam` is not used after this.
 Q <- read_matrix("array-clean.5.Q.gz") 
 fam <- read_fam( '../array-clean' )
 
-data <- read_csv( "../pheno_excelmerge.csv", show_col_types = FALSE )
-data <- data %>% filter(AcquisitionNumber %in% fam$id) 
-data <- data[match(fam$id, data$AcquisitionNumber),]
+data <- read_csv( "../patient-data.txt.gz", show_col_types = FALSE )
+data <- data %>% filter(id %in% fam$id) 
+data <- data[match(fam$id, data$id),]
 ```
 
 Merge minor groups, then order individuals by race:
 ```{r}
 # merge these into Other, to simplify plot only
-data$RACE[ data$RACE == 'Mixed' ] <- 'Other'
-data$RACE[ data$RACE == 'Unknown' ] <- 'Other'
+data$race[ data$race == 'Mixed' ] <- 'Other'
+data$race[ data$race == 'Unknown' ] <- 'Other'
 
 race_order <- c("Black", "White", "Asian", "Hispanic", "Other")
-indexes <- order( match( data$RACE, race_order ) )
+indexes <- order( match( data$race, race_order ) )
 # order both Q and data so they stay aligned
 Q <- Q[ indexes, ]
 data <- data[ indexes, ]
@@ -47,7 +47,7 @@ ancestry_order <- c('African', 'European', 'South Asian', 'East Asian', 'Native 
 ancestry_to_race <- c('Black', 'White', 'Asian1', 'Asian2', 'Hispanic')
 
 # get best race assignment
-anc_names <- admix_label_cols( Q, labs = data$RACE )
+anc_names <- admix_label_cols( Q, labs = data$race )
 # manually replace race with corresponding ancestry labels
 anc_names[ match( ancestry_to_race, anc_names ) ] <- ancestry_order
 # store in Q matrix now
@@ -60,7 +60,7 @@ Q <- Q[ , indexes ]
 Do some manual reordering within race groups for some main ancestry
 ```{r}
 reorder_race_anc <- function( Q, data, race, ancestry ) {
-    indexes <- which( data$RACE == race )
+    indexes <- which( data$race == race )
     indexes2 <- order( Q[ indexes, ancestry ], decreasing = TRUE )
     Q[ indexes, ] <- Q[ indexes[ indexes2 ], ]
     data[ indexes, ] <- data[ indexes[ indexes2 ], ]
@@ -81,12 +81,12 @@ This is the key filtering step that enables the ancestry subanalyses!
 ```{r}
 # threshold for ancestry subanalyses
 q_cut <- 0.8
-data$RACE[ data$RACE == 'Black' & Q[ , 'African' ] <= q_cut ] <- 'Black-Adm.'
-data$RACE[ data$RACE == 'White' & Q[ , 'European' ] <= q_cut ] <- 'White-Adm.'
-data$RACE[ data$RACE == 'Asian' & Q[ , 'South Asian' ] <= q_cut ] <- 'Asian-Adm.'
+data$race[ data$race == 'Black' & Q[ , 'African' ] <= q_cut ] <- 'Black-Adm.'
+data$race[ data$race == 'White' & Q[ , 'European' ] <= q_cut ] <- 'White-Adm.'
+data$race[ data$race == 'Asian' & Q[ , 'South Asian' ] <= q_cut ] <- 'Asian-Adm.'
 
 # for reference, race/ethnicity clusters by subclassification
-table( data$RACE, data$DIAGNOSIS )
+table( data$race, data$diagnosis )
 ##            Control NS UNCLASSIFIED SRNS SSNS
 ## Asian          248               0   14  329
 ## Asian-Adm.      67               0    2   18
@@ -96,12 +96,12 @@ table( data$RACE, data$DIAGNOSIS )
 ## Other            5               2    4   19
 ## White          274               1   75  136
 ## White-Adm.       4               0    6   23
-table( data$RACE )
+table( data$race )
 ##      Asian Asian-Adm.      Black Black-Adm.   Hispanic      Other      White 
 ##        591         87        495        200         59         30        486 
 ## White-Adm. 
 ##         33 
-table( data$DIAGNOSIS )
+table( data$diagnosis )
 ## Control NS UNCLASSIFIED            SRNS            SSNS 
 ##    1049              14             193             725 
 nrow( data ) # [1] 1981
@@ -112,7 +112,7 @@ Make structure plot!
 fig_start( 'admix-k5', mar_t = 0.5, mar_b = 4, height = 4, width = 9 )
 plot_admix(
     Q,
-    labs = data$RACE,
+    labs = data$race,
     labs_cex = 0.7,
     labs_even = TRUE,
     labs_line = 2,
@@ -131,7 +131,7 @@ obj <- read_eigenvec("../array-clean")
 pcs <- obj$eigenvec
 fam <- obj$fam
 
-indexes <- match( data$AcquisitionNumber, fam$id )
+indexes <- match( data$id, fam$id )
 fam <- fam[ indexes, ]
 pcs <- pcs[ indexes, ]
 data$PC1 <- pcs[, 1]
@@ -139,13 +139,13 @@ data$PC2 <- pcs[, 2]
 data$PC3 <- pcs[, 3]
 
 # plot looks better if race is a factor in desired order
-data <- data %>% mutate( RACE = fct_inorder( RACE ) )
+data <- data %>% mutate( race = fct_inorder( race ) )
 ```
 
 Make PCA plot!
 ```{r}
 fig_start( 'admix-k5-pca', height = 6, width = 7 )
-ggplot(data, aes(x = PC1, y = PC2, color = RACE)) + geom_point() + theme_classic() + labs(color = 'Race') +
+ggplot(data, aes(x = PC1, y = PC2, color = race)) + geom_point() + theme_classic() + labs(color = 'Race') +
     scale_color_brewer(palette = "Spectral") # Paired
 fig_end()
 ```
@@ -155,10 +155,10 @@ fig_end()
 ```{r}
 write_ids <- function( data, race, name, controls = FALSE ) {
     # get data to output
-    indexes <- data$RACE == race
+    indexes <- data$race == race
     if ( controls )
-        indexes <- indexes & data$DIAGNOSIS == 'Control'
-    x <- data$AcquisitionNumber[ indexes ]
+        indexes <- indexes & data$diagnosis == 'Control'
+    x <- data$id[ indexes ]
     x <- paste0( x, " ", x )
     # set filepath
     file <- paste0( "ids_", (if (controls) 'controls' else 'all' ), '_', name, ".txt" )

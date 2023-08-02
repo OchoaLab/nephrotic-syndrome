@@ -1,55 +1,111 @@
 ---
-title: "missingness_kin"
+title: "Merge patient phenotype and demographic data from various spreadsheets"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
+library(tidyverse)
+library(genio)
 ```
 
 Use demographic data to further filter
 ```{r}
-phenotype1 = read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", 
-               col_names  = TRUE)
-phenotype1_2 = read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", 
-               col_names  = TRUE, sheet = 2)
-phenotype1 = phenotype1 %>% select(AcquisitionNumber = `Acquisition Number`, Sex, RACE, AGE = `AGE DIAGNOSIS`, DIAGNOSIS)
-phenotype1_2 = phenotype1_2 %>% select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, DIAGNOSIS = Diagnosis, AGE = `Age at Diagnosis`)
+# raw input files are here
+setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.all.b38.n2656/' )
+# read both sheets of first file
+data1 <- read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx")
+data2 <- read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", sheet = 2)
+# load other file focused on newer samples
+data3 <- read_xlsx("PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx")
+# load genotyped data FAM table
+fam <- read_fam( 'nephrotic.syndrome.gwas.all.b38.n2656.R2' )
 
-# check for overlap ID's
-intersect(phenotype1$AcquisitionNumber, phenotype1_2$AcquisitionNumber)
-# remove repeated rows (info overlap, manually checked)
-phenotype1 = phenotype1 %>% 
-  filter(AcquisitionNumber != "19891275" & 
-           AcquisitionNumber != "19891281" & 
-           AcquisitionNumber !=  "A2008755" &
-           AcquisitionNumber != "A1024006" & 
-           AcquisitionNumber != "A1004719" &
-           AcquisitionNumber != "A1004697" &
-           AcquisitionNumber != "A1002258")
+# subset and rename columns
+data1 <- data1 %>% select(id = `Acquisition Number`, sex = Sex, race = RACE, diagnosis = DIAGNOSIS, age = `AGE DIAGNOSIS`)
+data2 <- data2 %>% select(id = `Acquisition Number`, sex = SEX_CDE, race = `Broad Race`, diagnosis = Diagnosis, age = `Age at Diagnosis`)
+data3 <- data3 %>% select(id = `Acquisition Number`, sex = SEX_CDE, race = `Broad Race`, diagnosis = Diagnosis, age = `Age at Diagnosis`)
 
-# combine phenotype data
-phenotype1_ = rbind(phenotype1, phenotype1_2)
+# fix minor issue that some ages have "YRS" suffix in first table
+data1$age <- sub( 'YRS$', '', data1$age )
+# first two tables have some exact repeats, let `unique` handle it
+data1 <- unique( data1 )
+data2 <- unique( data2 )
 
-# load other excel sheet
-phenotype2 = read_xlsx("PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx", 
-               col_names  = TRUE)
+# now all tables have unique IDs (confirm!)
+stopifnot( nrow( data1 ) == length( unique( data1$id ) ) )
+stopifnot( nrow( data2 ) == length( unique( data2$id ) ) )
+stopifnot( nrow( data3 ) == length( unique( data3$id ) ) )
 
-# check for overlap ID's
-intersect(phenotype1_$AcquisitionNumber, phenotype2$`Acquisition Number`)
+# rest of processing is to identify intersections across tables
+# identify the small number of IDs in first two tables
+ids <- intersect( data1$id, data2$id )
+# we manually found second table has one more age (NA in first), and updated diagnosis (all SSNS to SRNS)
+# so remove all overlapping individuals from first copy only
+data1 <- data1 %>% filter(! id %in% ids )
+# now combine tables, overwrite first one, don't use rest anymore
+# there is overlap between data3 and the first two, but rows are identical so `unique` handles it
+data <- bind_rows( data1, data2, data3 ) %>% unique()
+# confirm uniqueness
+stopifnot( nrow( data ) == length( unique( data$id ) ) )
 
-# remove repeated rows (information overlap from both phenotype files)
-phenotype2 = phenotype2 %>% 
-  filter(`Acquisition Number` != "19960560" & `Acquisition Number` != "19960561") %>% 
-  select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, AGE = `Age at Diagnosis`, DIAGNOSIS = Diagnosis)
+# compared to genetic data, it has more than our table because of duplicates!
+nrow( data ) # 2636
+nrow( fam )  # 2656
 
-# combine phenotype data
-phenotype_df = rbind(phenotype1_, phenotype2)
+# we don't know ahead of time which samples were duplicated, best approach is to virtually duplicate them all, using the same "d" suffix used in the genetic data, then filter to match
 
-# create duplicate
-phenotype_df$AcquisitionNumber = paste0(phenotype_df$AcquisitionNumber, "d")
-# combine
-phenotype_df = rbind(phenotype1_, phenotype2, phenotype_df)
+# create entry for duplicate
+data2 <- data
+data2$id <- paste0( data2$id, "d" )
+# combine again
+data <- bind_rows( data, data2 )
+# now intersect to samples present in genetic data
+data <- data[ data$id %in% fam$id, ]
+
+nrow( data ) # 2655
+nrow( fam )  # 2656
+
+# this is the only individual only present in genetic data 
+fam[ !fam$id %in% data$id, ]
+##   fam      id       pat   mat     sex pheno
+## 1 A1014572 A1014572 0     0         0    -9
+
+# spoiler: later we find A1014572 is a duplicate of both 19960560 and 19960560d (very high concordance), and it ends up getting removed because a different duplicate has much lower missingness, so this weird problem went away later unexpectedly!
+
+# age isn't used as a covariate, but let's attempt to clean it anyway
+# a few very common cases should be NA though they aren't properly yet:
+data$age[ data$age == 'null' ] <- NA
+data$age[ data$age == 'Not in File' ] <- NA
+data$age[ data$age == 'Unknown' ] <- NA
+# there's only one remaining case that is precise, turn that one to decimal
+data$age[ data$age == '4year 2 month' ] <- 4 + 2/12
+
+# get data that isn't already NA directly
+age1 <- data$age[ !is.na( data$age ) ]
+# try to convert to numeric, failures turn into NA
+age2 <- as.numeric( age1 )
+age_bad <- age1[ is.na( age2 ) ]
+# there are the remaining cases, we have no choice but to turn all to NA
+# [1] "?8YRS, ?16" "<32"        "<16"        "<43"        "<70"
+# numeric or bust
+data$age <- as.numeric( data$age )
+
+# there's one SNS case, we checked before and that's supposed to be SSNS, fix now!
+data$diagnosis[ data$diagnosis == 'SNS' ] <- 'SSNS'
+
+# lowercase sex (all were already good except for one Unknown)
+data$sex <- tolower( data$sex )
+
+# for some quick stats, add a "bristol" column
+data$bristol <- grepl( '^B', data$id )
+
+# save the final result!
+setwd( '../nephrotic.syndrome.gwas_proprocessing_202205/' )
+write_tsv( data, 'patient-data.txt.gz' )
+
+# generate list of Bristol IDs too, for filtering later
+x <- data$id[ data$bristol ]
+write_lines( paste0( x, ' ', x ), 'ids-bristol.txt' )
 ```
-

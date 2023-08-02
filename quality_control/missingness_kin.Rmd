@@ -5,123 +5,47 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(readxl)
+```
+
+```{r}
 library(tidyverse)
+
+# read tables
+# pair of duplicates is foundation
+data <- read_tsv("duplicated_related.kin0")
+# to keep pair with least missingness
+data_miss <- read_tsv("duplicate_sample_all_missingness.smiss")
+
+# only need these two columns from first dataset
+data_miss <- data_miss %>% select(IID, F_MISS)
+# similarly, only need list of pairs from this other table
+data <- data %>% select(ID1, ID2)
+
+# merge duplicate and missingness data
+data <- data %>% rename( IID = ID1 ) %>% left_join( data_miss, by = "IID" ) %>% rename( ID1 = IID, F_MISS1 = F_MISS ) 
+data <- data %>% rename( IID = ID2 ) %>% left_join( data_miss, by = "IID" ) %>% rename( ID2 = IID, F_MISS2 = F_MISS ) 
+# identify the individual we'd remove based on missingness alone
+data <- data %>% mutate( to_remove = ifelse( F_MISS1 > F_MISS2, ID1, ID2 ) )
+
+# Use demographic data to further filter
+# age is as character (temporary issue of no consequence in this setting)
+demog <- read_tsv( 'patient-data.txt.gz', col_types = 'ccccc' )
+
+# Add demographic data
+data <- data %>% rename( id = ID1 ) %>% left_join( demog, by = "id" ) %>% rename(ID1 = id, sex1 = sex, race1 = race, age1 = age, diagnosis1 = diagnosis) 
+data <- data %>% rename( id = ID2 ) %>% left_join( demog, by = "id" ) %>% rename(ID2 = id, sex2 = sex, race2 = race, age2 = age, diagnosis2 = diagnosis) 
+# identify rows that don't match as required
+data <- data %>% mutate( fail = sex1 != sex2 | race1 != race2 | diagnosis1 != diagnosis2 )
+# this results in 2 NAs, these are both for the individual A1014572 missing in `demog`, but gets removed by missingness alone so meh, treat as passing.
+data$fail[ is.na( data$fail ) ] <- FALSE
+remove <- data[ data$fail, ]
+# rest of data has no demographic conflicts (this keeps NAs)
+data <- data[ !data$fail, ]
+# remove both individuals when demographics don't match
+# from rest of rows, remove individual with most missingness
+# since individuals can be in multiple pairs, make list unique
+list_remove <- unique(c(remove$ID2, remove$ID1, data$to_remove))
+
+# write filter file for plink2
+write_lines( paste0(list_remove, " ", list_remove), "duplicate_remove.txt" )
 ```
-
-```{r}
-miss_df <- read.table("duplicate_sample_all_missingness.smiss", sep = "\t", stringsAsFactors=FALSE, quote = "")
-colnames(miss_df) <- c("FID", "IID", "MISSING_CT", "OBS_CT", "F_MISS")
-f_miss <- miss_df %>% select(IID, F_MISS)
-# check. make sure the merge step below is correct
-f_miss %>% filter(IID == "19891275d")
-
-kin_df <- read.table("duplicated_related.kin0", sep = "\t", stringsAsFactors=FALSE, quote = "")
-colnames(kin_df) <- c("FID1", "ID1", "FID2", "ID2", "NSNP", "HETHET", "IBS0",  "KINSHIP")
-# check. make sure the merge step below is correct
-kin_df %>% filter(ID1 == "19891275")
-```
-
-```{r}
-duplicate_df = kin_df %>% select(ID1, ID2)
-merge1 = merge(duplicate_df, f_miss, by.x = "ID1", by.y = "IID", all.x = TRUE) %>% rename(F_MISS_1 = F_MISS) 
-merge2 = merge(merge1, f_miss, by.x = "ID2", by.y = "IID", all.x = TRUE) %>% rename(F_MISS_2 = F_MISS) 
-least_miss = merge2 %>% 
-  mutate(least_missing = ifelse(F_MISS_1 > F_MISS_2, 2, 1), 
-         to_remove = ifelse(F_MISS_1 > F_MISS_2, ID1, ID2))
-```
-
-Use demographic data to further filter
-```{r}
-phenotype1 = read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", 
-               col_names  = TRUE)
-phenotype1_2 = read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", 
-               col_names  = TRUE, sheet = 2)
-phenotype1 = phenotype1 %>% select(AcquisitionNumber = `Acquisition Number`, Sex, RACE, AGE = `AGE DIAGNOSIS`, DIAGNOSIS)
-phenotype1_2 = phenotype1_2 %>% select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, DIAGNOSIS = Diagnosis, AGE = `Age at Diagnosis`)
-
-# check for overlap ID's
-acq_num_intersect <- intersect(phenotype1$AcquisitionNumber, phenotype1_2$AcquisitionNumber)
-# ensure that data agrees enough
-tmp1 <- phenotype1[ match( acq_num_intersect, phenotype1$AcquisitionNumber ), ]
-tmp2 <- phenotype1_2[ match( acq_num_intersect, phenotype1_2$AcquisitionNumber ), ]
-# exact matches
-stopifnot( all( tmp1$Sex == tmp2$Sex ) )
-stopifnot( all( tmp1$RACE == tmp2$RACE ) )
-# rest are good enough, all ages match except one has an extra NA (and one has a stupid "YRS" suffix), and 3 samples switched form SSNS to SRNS, but it's clear they're the same individuals
-# remove repeated rows (info overlap, manually checked)
-phenotype1 = phenotype1 %>% 
-  filter( !( AcquisitionNumber %in% acq_num_intersect ) )
-
-# combine phenotype data
-phenotype1_ = rbind(phenotype1, phenotype1_2)
-
-# load other excel sheet
-phenotype2 = read_xlsx("PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx", 
-               col_names  = TRUE)
-
-# check for overlap ID's
-acq_num_intersect <- intersect(phenotype1_$AcquisitionNumber, phenotype2$`Acquisition Number`)
-tmp1 <- phenotype1_[ match( acq_num_intersect, phenotype1_$AcquisitionNumber ), ]
-tmp2 <- phenotype2[ match( acq_num_intersect, phenotype2$`Acquisition Number` ), ]
-# exact matches
-stopifnot( all( tmp1$Sex == tmp2$SEX_CDE ) )
-stopifnot( all( tmp1$RACE == tmp2$`Broad Race` ) )
-# remove repeated rows (information overlap from both phenotype files)
-phenotype2 = phenotype2 %>% 
-  filter( !( `Acquisition Number` %in% acq_num_intersect ) ) %>% 
-  select(AcquisitionNumber = `Acquisition Number`, Sex = SEX_CDE, RACE = `Broad Race`, AGE = `Age at Diagnosis`, DIAGNOSIS = Diagnosis)
-
-# combine phenotype data
-phenotype_df = rbind(phenotype1_, phenotype2)
-
-# create duplicate
-phenotype_df$AcquisitionNumber = paste0(phenotype_df$AcquisitionNumber, "d")
-# combine
-phenotype_df = rbind(phenotype1_, phenotype2, phenotype_df)
-```
-```{r}
-intentional_dup = unique(c(dplyr::filter(least_miss, grepl("d",ID1)) %>% pull(ID1), dplyr::filter(least_miss, grepl("d",ID2)) %>% pull(ID2)))
-```
-
-
-
-Add demographic data to missingness/duplicate dataframe
-```{r}
-merge3 = merge(least_miss, phenotype_df, by.x = "ID1", by.y = "AcquisitionNumber", all.x = TRUE) %>% 
-  rename(Sex_1 = Sex, RACE_1 = RACE, AGE_1 = AGE, DIAGNOSIS_1 = DIAGNOSIS) 
-merge4 = merge(merge3, phenotype_df, by.x = "ID2", by.y = "AcquisitionNumber", all.x = TRUE) %>% 
-  rename(Sex_2 = Sex, RACE_2 = RACE, AGE_2 = AGE, DIAGNOSIS_2 = DIAGNOSIS) %>% select(ID1, ID2, everything())
-
-
-check_demo = merge4 %>% mutate(check_sex = ifelse(Sex_1 == Sex_2, TRUE, FALSE),
-                               check_race = ifelse(RACE_1 == RACE_2, TRUE, FALSE),
-                               #check_age = ifelse(AGE_1 == AGE_2, TRUE, FALSE),
-                               check_diag = ifelse(DIAGNOSIS_1 == DIAGNOSIS_2, TRUE, FALSE))
-
-# if NA in any of the check columns, then demographic data is incomplete for at least one of the individual
-# if FALSE in any of the check columns, then demographic data between duplicates does not match
-## get row indices of FALSE entries
-id_to_remove = unique(c(which(!check_demo$check_sex), which(!check_demo$check_race), 
-                     which(!check_demo$check_diag)))
-## subset - ID's to remove:
-remove = check_demo[id_to_remove,]
-demo_remove = c(remove$ID2, remove$ID1)
-```
-
-
-After removing demographic mismatch, need to select one individual with least missingness from each pair
-```{r}
-subset_df = check_demo[-id_to_remove,]
-list_remove = unique(c(demo_remove, subset_df$to_remove))
-# write output txt file
-fileConn<-file("duplicate_remove.txt")
-writeLines(paste0(list_remove, " ", list_remove), fileConn)
-close(fileConn)
-
-
-```
-
-
-
-

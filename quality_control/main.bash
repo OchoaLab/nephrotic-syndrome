@@ -11,12 +11,16 @@ module load R/4.0.0
 cd /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205
 
 
+# reads 2022-02-25_2PhenotypeDatafirstDataSets.xlsx, PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx, and original fam table
+# creates patient-data.txt.gz (formerly pheno_excelmerge.csv), includes Bristol!
+# creates ids-bristol.txt too
+phenotype_excel_merge.Rmd
+
+
 ### REMOVE BRISTOL ###
 
-# create bristol_remove.txt (no code available, but I think it's just all IDs that start with B)
-
 # remove bristol samples, create new bim/bed/fam files
-plink2 --bfile ../nephrotic.syndrome.gwas.all.b38.n2656/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove bristol_remove.txt --out ssns_remove_B --make-bed
+plink2 --bfile ../nephrotic.syndrome.gwas.all.b38.n2656/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove ids-bristol.txt --make-bed --out ssns_remove_B
 # creates ssns_remove_B.{bed,bim,fam}
 
 
@@ -30,9 +34,9 @@ plink2 --bfile ssns_remove_B --king-table-filter 0.354 --make-king-table --out d
 plink2 --bfile ssns_remove_B --missing sample-only --out duplicate_sample_all_missingness
 # creates duplicate_sample_all_missingness.smiss
   
-# add missingness info to the .kin0 file created in step1
+# combine dups with missingness, demographics, to decide who to remove
 missingness_kin.Rmd
-# output: list of id's to remove in duplicate_remove.txt
+# output: duplicate_remove.txt
 
 # remove individuals from duplicate_remove.txt and run various filtering steps
 time plink2 \
@@ -139,9 +143,39 @@ wc -l ssns_tgp_merge.{bim,fam} old/ssns_tpg_merge.{bim,fam}
 # use --mem 16G for this job on slurm!
 AF_preprocessing.Rmd
 
+### TODO ###
+
+AF_postprocessing.Rmd
 
 ### IMPUTATION ###
 
 # Imputation on TopMed server
 # - create vcf
 # - split by chromosome
+
+### GWAS PREP ###
+
+# reads phenotype_filtered.txt (its creation is not documented)
+# makes merge_pheno.txt, merge_pheno_race_sex.txt
+create_phenofile.Rmd
+
+# reads ssns_tgp_pheno_imp.txt (its creation is not documented), merge_pheno_race_sex.txt, patient-data.txt.gz
+# create covariate file for merged NS + TGP data `covar_ns_tgp.txt`
+# run simple trait ~ sex + race model (confirms need for these covariates)
+# obsolete: plot gcta results after incorporating covariates
+# obsolete: compare different MAC threshold results
+covariate_analysis.Rmd
+
+# reads covar_ns_tgp_new.txt, patient-data.txt.gz
+# creates binary case/control phenotype files for subanalyses:
+# - ssns vs control: ssns_ctr.txt, ssns_ctr_pheno.txt, ssns_ctr_covar.txt
+# - srns vs control: srns_ctr.txt, srns_ctr_pheno.txt, srns_ctr_covar.txt
+# - ssns vs srns: ssns_srns.txt, ssns_srns_pheno.txt, ssns_srns_covar.txt
+write_txt_files.Rmd
+
+
+# probably obsolete
+hwe_analysis.Rmd
+split_allelefreq.Rmd
+
+

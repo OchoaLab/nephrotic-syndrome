@@ -24,10 +24,10 @@ pheno_race_sex <- read.table("merge_pheno_race_sex.txt", sep = " ", stringsAsFac
 tgp = pheno_race_sex %>% filter(sex != 0) %>% rename(Sex = sex) %>% mutate(Sex = as.factor(ifelse(Sex == 2, "female", "male")),
                                                                            Group = as.factor(Group), Phenotype = as.factor(Phenotype))
 
-NS_data = read_csv("pheno_excelmerge.csv") %>% 
-  rename(famid = AcquisitionNumber) %>% 
-  mutate(Sex = as.factor(Sex), Phenotype = as.factor(ifelse(DIAGNOSIS == "Control", 0, 1)), Group = as.factor(RACE)) %>% 
-  select(famid, Sex, Group, Phenotype)
+NS_data = read_tsv('patient-data.txt.gz') %>% 
+  rename(famid = id) %>% 
+  mutate(sex = as.factor(sex), Phenotype = as.factor(ifelse(diagnosis == "Control", 0, 1)), Group = as.factor(race)) %>% 
+  select(famid, sex, Group, Phenotype)
 
 length(intersect(tgp$famid, NS_data$famid))
 pheno_combine = rbind(tgp, NS_data)
@@ -58,13 +58,14 @@ summary(g)
 
 
 ```{r}
-NS_data = read_csv("pheno_excelmerge.csv") %>% rename(famid = AcquisitionNumber)
+NS_data = read_tsv('patient-data.txt.gz') %>% 
+  rename(famid = id)
 
 merge(pheno_race_sex, NS_data, by = "famid", all.x = TRUE)
 ```
 
 ```{r}
-length(setdiff(pheno_race_sex$famid, NS_data$AcquisitionNumber))
+length(setdiff(pheno_race_sex$famid, NS_data$id))
 ```
 
 
