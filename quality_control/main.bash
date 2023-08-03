@@ -174,6 +174,32 @@ plink2 --bfile ../ssns_tgp_merge_clean --keep ../allele_freq/tgp_controls_sas.fa
 AF_postprocessing.Rmd
 
 
+### CHECK REF ###
+
+# verify that ref alleles are aligned with reference sequence!
+# download hg38 reference sequence suggested in plink2 page
+cd /datacommons/ochoalab/
+wget https://www.dropbox.com/s/xyggouv3tnamh0j/GRCh38_full_analysis_set_plus_decoy_hla.fa.zst?dl=1
+# fix stupid extension issue
+mv GRCh38_full_analysis_set_plus_decoy_hla.fa.zst?dl=1 GRCh38_full_analysis_set_plus_decoy_hla.fa.zst
+# go back to where the data is
+cd /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/
+# perform test!
+# I don't really want to make anything, but plink won't let me, specified --make-just-bim to keep it minimal
+time plink2 \
+     --bfile ssns_tgp_merge_clean \
+     --fa /datacommons/ochoalab/GRCh38_full_analysis_set_plus_decoy_hla.fa.zst \
+     --ref-from-fa \
+     --make-just-bim \
+     --out test
+# --ref-from-fa: 0 variants changed, 761366 validated.
+# 0m8.30s7 DCC
+# further confirmation, these are identical!
+diff -q test.bim ssns_tgp_merge_clean.bim
+# cleanup
+rm test.{bim,log}
+
+
 ### IMPUTATION ###
 
 # get down from allele_freq2/ subdir
