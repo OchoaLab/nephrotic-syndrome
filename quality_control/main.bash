@@ -202,17 +202,75 @@ rm test.{bim,log}
 
 ### IMPUTATION ###
 
-# get down from allele_freq2/ subdir
-cd ..
+# put imputation server inputs in this directory
+mkdir imputation-input/
+cd imputation-input/
+
 # create vcfs, split by chromosome
 module load bcftools/1.4
 for i in {1..22}; do
-    plink2 --bfile ssns_tgp_merge_clean --chr ${i} --output-chr chrM --export vcf bgz id-paste=iid --out chr_${i}
-    bcftools index chr_${i}.vcf.gz
+    plink2 --bfile ../ssns_tgp_merge_clean --chr $i --output-chr chrM --export vcf bgz id-paste=iid --out chr_$i
+    bcftools index chr_$i.vcf.gz
 done
+cd ..
 
-# Imputation on TopMed server
+# Upload those to TopMed server!
 # - Rsq filter = 0.3
+
+# place raw outputs here:
+mkdir imputation/
+cd imputation/
+mkdir raw/
+cd raw/
+
+# will merge imputation data following steps I previously used for TGP per-chr VCFs
+# https://github.com/OchoaLab/data/blob/main/tgp-nygc.bash
+
+# convert each VCF to pgen, while removing SNPs that don't "PASS"
+cd ..
+sbatch -a 1-22 vcf-chr-to-pgen.q
+# max 18m3.880s DCC
+
+# check logs, which confirm that nothing was actually removed (all "PASS"ed)
+grep -P 'variants (loaded|remaining)' chr*.log
+
+# use those new files to merge into combined pgen file
+# run interactively (default --mem 1G suffices)
+# creates list of files to merge
+for chr in {1..22}; do
+    echo chr$chr >> files-merge-list.txt
+done
+# run merge command
+# NOTE: for this case only I had to upload a newer plink2 (v2.00a5LM), none of the DCC versions support `--pmerge-list`
+time ./plink2 --pmerge-list files-merge-list.txt pfile-vzs --pmerge-output-vzs --out all
+# 5m47.951s DCC
+
+# cleanup, leaves raw data but removes new intermediates
+for chr in {1..22}; do
+    rm chr$chr.{log,pgen,psam,pvar.zst}
+done
+rm files-merge-list.txt
+
+# filter more and convert to BED (works with `--mem 16G`, requires more than 1G)
+time plink2 --pfile all vzs --max-alleles 2 --mac 1 --make-bed --out all
+# 3,873,296 variants removed due to allele frequency threshold(s) (--mac 1)
+# 3m29.408s
+
+# NOTE: instead of "all", old name was "ssns_tgp_impute"
+
+# data dimensions
+zstdcat all.pvar.zst |wc -l
+# 83,378,786 # includes header lines
+# 83,378,750 # SNPs according to plink's log
+wc -l all.{bim,fam}
+# 79,505,454 all.bim
+#      4,485 all.fam
+
+# cleanup, all pgen intermediates again are unwanted! (gmmat doesn't support them)
+rm all.{log,pgen,psam,pvar.zst}
+# remove imputation input too, no longer needed (and easy to re-create if needed from rawer data)
+cd ..
+rm -r imputation-input/
 
 
 ### GWAS PREP ###
