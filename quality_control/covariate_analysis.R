@@ -6,10 +6,10 @@
 library(tidyverse)
 
 # this is where our data is
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/imputed/' )
 
 # load covariates file
-data <- read_tsv( 'patient-data-merged-tgp.txt.gz', col_types = 'ccccdiiii' )
+data <- read_tsv( 'patient-data.txt.gz', col_types = 'ccccdiiii' )
 
 # regress ns-vs-control to covariates
 summary( glm( ns_ctrl ~ sex + race, data = data, family = binomial ) )

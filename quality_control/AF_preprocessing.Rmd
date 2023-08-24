@@ -16,7 +16,7 @@ library(scales) # for a color hack
 ## write tgp ancestry into text files
 ```{r}
 # all the data is here
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/array/' )
 fam <- read_fam( 'ssns_tgp_merge' )
 
 # put outputs in a subdirectory
@@ -53,7 +53,7 @@ Note the below tables are all aligned (each row is the same SNP in all of them) 
 
 ```{r}
 # rest of processing happens here
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/array/allele_freq/' )
 arr_afr <- read_tsv("array_controls_afr.afreq", col_types = 'icccdi')
 arr_eur <- read_tsv("array_controls_eur.afreq", col_types = 'icccdi')
 arr_sas <- read_tsv("array_controls_sas.afreq", col_types = 'icccdi')
@@ -220,7 +220,7 @@ library(tidyverse)
 library(ochoalabtools)
 library(scales) # for a color hack
 # and make sure we're in the correct path.
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/array/allele_freq/' )
 # load big tibble
 data <- read_tsv( "af-test.txt.gz", col_types = 'cddcccdd' )
 # reset plotting order (not preserved in flattened tibble)

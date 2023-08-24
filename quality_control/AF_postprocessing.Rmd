@@ -12,7 +12,7 @@ library(ochoalabtools)
 
 ```{r}
 # run from this location
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/allele_freq2/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/array/allele_freq2/' )
 
 # Read plink output files
 arr_afr <- read_tsv("array_controls_afr.afreq", col_types = 'icccdi')

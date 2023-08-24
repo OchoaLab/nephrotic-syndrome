@@ -9,7 +9,7 @@ library(readr)
 comp <- function(x) chartr("ATGC","TACG",x)
 
 # on DCC we should be here
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/array/' )
 
 # just need to compare annotations right now
 arr <- read_bim( 'ssns_gwas_maf_dedup' )

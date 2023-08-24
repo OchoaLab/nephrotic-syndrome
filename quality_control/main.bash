@@ -8,7 +8,7 @@ module load Plink/2.00a2LM
 module load R/4.0.0
 
 # Run from this location
-cd /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205
+cd /datacommons/ochoalab/ssns_gwas/array
 
 
 # reads 2022-02-25_2PhenotypeDatafirstDataSets.xlsx, PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx, and original fam table
@@ -20,7 +20,7 @@ phenotype_excel_merge.Rmd
 ### REMOVE BRISTOL ###
 
 # remove bristol samples, create new bim/bed/fam files
-plink2 --bfile ../nephrotic.syndrome.gwas.all.b38.n2656/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove ids-bristol.txt --make-bed --out ssns_remove_B
+plink2 --bfile ../raw/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove ids-bristol.txt --make-bed --out ssns_remove_B
 # creates ssns_remove_B.{bed,bim,fam}
 
 
@@ -183,7 +183,7 @@ wget https://www.dropbox.com/s/xyggouv3tnamh0j/GRCh38_full_analysis_set_plus_dec
 # fix stupid extension issue
 mv GRCh38_full_analysis_set_plus_decoy_hla.fa.zst?dl=1 GRCh38_full_analysis_set_plus_decoy_hla.fa.zst
 # go back to where the data is
-cd /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/
+cd /datacommons/ochoalab/ssns_gwas/array/
 # perform test!
 # I don't really want to make anything, but plink won't let me, specified --make-just-bim to keep it minimal
 time plink2 \
@@ -218,8 +218,8 @@ cd ..
 # - Rsq filter = 0.3
 
 # place raw outputs here:
-mkdir imputation/
-cd imputation/
+mkdir ../imputed/
+cd ../imputed/
 mkdir raw/
 cd raw/
 
@@ -270,13 +270,16 @@ wc -l all.{bim,fam}
 rm all.{log,pgen,psam,pvar.zst}
 # remove imputation input too, no longer needed (and easy to re-create if needed from rawer data)
 cd ..
-rm -r imputation-input/
+rm -r array/imputation-input/
 
 
 ### GWAS PREP ###
 
+# analysis will happen here now
+cd imputed/
+
 # merges patient data (subset to remaining genotyped data) with TGP, including full race and sex covariates, binarized traits
-# creates patient-data-merged-tgp.txt.gz, to be used with GMMAT and other analyses
+# creates imputed/patient-data.txt.gz, to be used with GMMAT and other analyses
 Rscript merge-patient-data-tgp.R
 
 # run simple trait ~ sex + race model (confirms need for these covariates)

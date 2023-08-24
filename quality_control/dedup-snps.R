@@ -10,7 +10,7 @@ library(tidyverse)
 # - if it's low, we throw away both (we have no way of knowing which one is the right/better one)
 
 # analysis occurs here
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/array/' )
 
 # read latest data, need genotypes (X) and bim table
 data <- read_plink( 'ssns_gwas_maf' )

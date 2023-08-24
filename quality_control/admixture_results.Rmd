@@ -16,7 +16,7 @@ Load admixture proportions `Q` and aligned IDs from `fam`.
 Then load and align demographics `data` to `fam`; `fam` is not used after this.
 ```{r}
 # assume we're here:
-# /datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/admixture/
+# /datacommons/ochoalab/ssns_gwas/array/admixture/
 
 Q <- read_matrix("array-clean.5.Q.gz") 
 fam <- read_fam( '../array-clean' )

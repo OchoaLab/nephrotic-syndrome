@@ -4,7 +4,7 @@ library(tidyverse)
 library(genio)
 
 # this is where our data is
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas_proprocessing_202205/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/array/' )
 
 # load fam file of merged data (can be pre-imputation, they're the same individuals as post-imputation)
 fam <- read_fam( 'ssns_tgp_merge_clean' )
@@ -114,6 +114,8 @@ table( data$diagnosis, data$ssns_srns )
 ## SSNS            725   0
 
 # save!
-write_tsv( data, 'patient-data-merged-tgp.txt.gz' )
+# place under imputed
+setwd( '../imputed/' )
+write_tsv( data, 'patient-data.txt.gz' )
 
 

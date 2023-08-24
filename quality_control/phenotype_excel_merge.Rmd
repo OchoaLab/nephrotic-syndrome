@@ -13,7 +13,7 @@ library(genio)
 Use demographic data to further filter
 ```{r}
 # raw input files are here
-setwd( '/datacommons/ochoalab/ssns_gwas/nephrotic.syndrome.gwas.all.b38.n2656/' )
+setwd( '/datacommons/ochoalab/ssns_gwas/raw/' )
 # read both sheets of first file
 data1 <- read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx")
 data2 <- read_xlsx("2022-02-25_2PhenotypeDatafirstDataSets.xlsx", sheet = 2)
@@ -102,7 +102,7 @@ data$sex <- tolower( data$sex )
 data$bristol <- grepl( '^B', data$id )
 
 # save the final result!
-setwd( '../nephrotic.syndrome.gwas_proprocessing_202205/' )
+setwd( '../array/' )
 write_tsv( data, 'patient-data.txt.gz' )
 
 # generate list of Bristol IDs too, for filtering later
