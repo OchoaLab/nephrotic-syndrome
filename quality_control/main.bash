@@ -275,20 +275,10 @@ rm -r imputation-input/
 
 ### GWAS PREP ###
 
-# reads phenotype_filtered.txt (its creation is not documented)
-# makes merge_pheno.txt, merge_pheno_race_sex.txt
-create_phenofile.Rmd
+# merges patient data (subset to remaining genotyped data) with TGP, including full race and sex covariates, binarized traits
+# creates patient-data-merged-tgp.txt.gz, to be used with GMMAT and other analyses
+Rscript merge-patient-data-tgp.R
 
-# reads ssns_tgp_pheno_imp.txt (its creation is not documented), merge_pheno_race_sex.txt, patient-data.txt.gz
-# create covariate file for merged NS + TGP data `covar_ns_tgp.txt`
 # run simple trait ~ sex + race model (confirms need for these covariates)
-# obsolete: plot gcta results after incorporating covariates
-# obsolete: compare different MAC threshold results
-covariate_analysis.Rmd
-
-# reads covar_ns_tgp_new.txt, patient-data.txt.gz
-# creates binary case/control phenotype files for subanalyses:
-# - ssns vs control: ssns_ctr.txt, ssns_ctr_pheno.txt, ssns_ctr_covar.txt
-# - srns vs control: srns_ctr.txt, srns_ctr_pheno.txt, srns_ctr_covar.txt
-# - ssns vs srns: ssns_srns.txt, ssns_srns_pheno.txt, ssns_srns_covar.txt
-write_txt_files.Rmd
+# no files are created
+Rscript covariate_analysis.R

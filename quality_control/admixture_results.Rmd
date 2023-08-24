@@ -21,7 +21,7 @@ Then load and align demographics `data` to `fam`; `fam` is not used after this.
 Q <- read_matrix("array-clean.5.Q.gz") 
 fam <- read_fam( '../array-clean' )
 
-data <- read_csv( "../patient-data.txt.gz", show_col_types = FALSE )
+data <- read_tsv( "../patient-data.txt.gz", show_col_types = FALSE )
 data <- data %>% filter(id %in% fam$id) 
 data <- data[match(fam$id, data$id),]
 ```
