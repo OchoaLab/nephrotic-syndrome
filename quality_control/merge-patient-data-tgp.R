@@ -12,6 +12,11 @@ fam <- read_fam( 'ssns_tgp_merge_clean' )
 # load patient data, which excludes TGP info
 data <- read_tsv( "patient-data.txt.gz", show_col_types = FALSE )
 
+# load admixture results, which define least admixed individuals of three largest ancestry groups
+ids_afr <- read_table( 'admixture/ids_all_afr.txt', col_names = c('fam', 'id'), col_types = 'cc' )
+ids_eur <- read_table( 'admixture/ids_all_eur.txt', col_names = c('fam', 'id'), col_types = 'cc' )
+ids_sas <- read_table( 'admixture/ids_all_sas.txt', col_names = c('fam', 'id'), col_types = 'cc' )
+
 # also load TGP assignments to superpopulations, which correspond to "race" in patient data
 tgp <- read_tsv( '/datacommons/ochoalab/tgp/pops-annot.txt', comment = '#', show_col_types = FALSE )
 
@@ -34,6 +39,16 @@ stopifnot( all( is.na( data$age[ data$diagnosis == 'Control' ] ) ) )
 mean( is.na( data$age[ data$diagnosis != 'Control' ] ) )
 # [1] 0.07403433
 
+# add ancestry clusters
+# by design only array samples get assigned, TGP will be absent for now
+# use TGP codes because they are more finegrained (distinguishes SAS from EAS)
+data$ancestry <- NA
+data$ancestry[ data$id %in% ids_afr$id ] <- 'AFR'
+data$ancestry[ data$id %in% ids_eur$id ] <- 'EUR'
+data$ancestry[ data$id %in% ids_sas$id ] <- 'SAS'
+# put ancestry next to race because visually it looks nicer to group them that way
+data <- relocate( data, ancestry, .after = race )
+
 # identify rows of FAM that are missing from patient data
 # the ones present should not have any useful information within fam, safe to exclude
 indexes <- !fam$id %in% data$id
@@ -54,11 +69,12 @@ fam$diagnosis <- 'Control'
 fam$age <- NA
 
 # only thing left is mapping to race
-# first get superpopulation from TGP metadata
+# first get superpopulation from TGP metadata, those are actually ancestry as we want to define it for least unadmixed clusters
 indexes <- match( fam$fam, tgp$pop )
-fam$race <- tgp$superpop[ indexes ]
+fam$ancestry <- tgp$superpop[ indexes ]
 # manually rename cases to races as they appear in patient data
 # note it folds South and East Asians together!
+fam$race <- fam$ancestry
 fam$race[ fam$race == 'AFR' ] <- 'Black'
 fam$race[ fam$race == 'EUR' ] <- 'White'
 fam$race[ fam$race == 'SAS' ] <- 'Asian'
@@ -70,6 +86,9 @@ fam <- select( fam, -fam )
 # merge tables!
 data <- bind_rows( data, fam )
 
+# lowercase ancestry because it looks nicer in scripts/outputs
+data$ancestry <- tolower( data$ancestry )
+
 # these are the final distributions for these covariates
 table( data$sex )
 ## female    male unknown 
@@ -77,6 +96,16 @@ table( data$sex )
 table( data$race )
 ## Asian    Black Hispanic    Other    White 
 ##  1671     1356      406       30     1022 
+table( data$ancestry, useNA = 'i' )
+##  afr  amr  eas  eur  sas <NA> 
+## 1156  347  504  989 1080  409 
+table( data$race, data$ancestry, useNA = 'i' )
+##           afr  amr  eas  eur  sas <NA>
+## Asian       0    0  504    0 1080   87
+## Black    1156    0    0    0    0  200
+## Hispanic    0  347    0    0    0   59
+## Other       0    0    0    0    0   30
+## White       0    0    0  989    0   33
 table( data$diagnosis )
 ## Control NS UNCLASSIFIED            SRNS            SSNS 
 ##    3553              14             193             725 
@@ -117,5 +146,3 @@ table( data$diagnosis, data$ssns_srns )
 # place under imputed
 setwd( '../imputed/' )
 write_tsv( data, 'patient-data.txt.gz' )
-
-

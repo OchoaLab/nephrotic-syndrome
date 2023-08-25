@@ -275,6 +275,7 @@ rm -r ../array/imputation-input/
 ### GWAS PREP ###
 
 # merges patient data (subset to remaining genotyped data) with TGP, including full race and sex covariates, binarized traits
+# also creates ancestry column, which is like race except it distinguishes SAS from EAS and for array samples uses admixture results to exclude most admixed individuals from 3 largest race groups (and all individuals of minor race groups)
 # creates imputed/patient-data.txt.gz, to be used with GMMAT and other analyses
 Rscript merge-patient-data-tgp.R
 
@@ -282,7 +283,8 @@ Rscript merge-patient-data-tgp.R
 # no files are created
 Rscript covariate_analysis.R
 
-# make temporary filter files for subanalyses
+# make temporary filter files for subanalyses (diagnosis and ancestry)
+# creates {ssns_ctrl,srns_ctrl,ssns_srns,afr,eur,sas}/ids.txt
 Rscript filter-subanalyses.R
 
 # based on original scripts/data from here
@@ -305,18 +307,28 @@ time plink2 --bfile mac20 --keep srns_ctrl/ids.txt --mac 20 --make-bed --out srn
 # 1m52.397s DCC
 time plink2 --bfile mac20 --keep ssns_srns/ids.txt --mac 20 --make-bed --out ssns_srns/mac20
 # 1m20.720s DCC
+time plink2 --bfile mac20 --keep afr/ids.txt --mac 20 --make-bed --out afr/mac20
+# 1m54.713s DCC
+time plink2 --bfile mac20 --keep eur/ids.txt --mac 20 --make-bed --out eur/mac20
+# 1m26.657s DCC
+time plink2 --bfile mac20 --keep sas/ids.txt --mac 20 --make-bed --out sas/mac20
+# 1m27.884s DCC
 
-wc -l {ssns_ctrl,srns_ctrl,ssns_srns}/mac20.{bim,fam}
+# TODO: also create combined ancestry-subtype subsets!
+
+wc -l {ssns_ctrl,srns_ctrl,ssns_srns,afr,eur,sas}/mac20.{bim,fam}
 # 20838869 ssns_ctrl/mac20.bim
 #     4278 ssns_ctrl/mac20.fam
 # 20109279 srns_ctrl/mac20.bim
 #     3746 srns_ctrl/mac20.fam
 # 12274557 ssns_srns/mac20.bim
 #      918 ssns_srns/mac20.fam
-
-# TODO:
-# - generate ancestry subanalysis filters properly, using data from admixture analysis!
-#   - add that column to annotations file patient-data.txt.gz!
+# 16098233 afr/mac20.bim
+#     1156 afr/mac20.fam
+#  8883726 eur/mac20.bim
+#      989 eur/mac20.fam
+#  9025296 sas/mac20.bim
+#     1080 sas/mac20.fam
 
 # use gcta (was already present in my path) to calculate GRM and PCs
 # used `--mem 16G` on DCC

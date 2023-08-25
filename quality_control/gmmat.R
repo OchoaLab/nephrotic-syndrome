@@ -9,7 +9,7 @@ setwd( '/datacommons/ochoalab/ssns_gwas/imputed/' )
 name <- "mac20"
 
 # load phenotype and fixed covariates file
-data <- read_tsv( 'patient-data.txt.gz', col_types = 'ccccdiiii' )
+data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdiiii' )
 # load GRM and PCs
 grm <- read_grm( name )
 eigenvec <- read_eigenvec( name )
