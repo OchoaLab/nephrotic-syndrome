@@ -3,7 +3,7 @@
 srun -p ochoalab --account ochoalab --pty bash -i
 
 # most of the work requires plink2, but we'll load/unload plink1 here too as needed
-module load Plink/2.00a2LM
+module load Plink/2.00a3LM
 # I used this R version too
 module load R/4.0.0
 
@@ -217,17 +217,17 @@ cd ..
 # Upload those to TopMed server!
 # - Rsq filter = 0.3
 
-# place raw outputs here:
+# place raw outputs here: /datacommons/ochoalab/ssns_gwas/imputed/raw/
 mkdir ../imputed/
 cd ../imputed/
 mkdir raw/
-cd raw/
 
 # will merge imputation data following steps I previously used for TGP per-chr VCFs
 # https://github.com/OchoaLab/data/blob/main/tgp-nygc.bash
 
+# pwd: /datacommons/ochoalab/ssns_gwas/imputed/
+
 # convert each VCF to pgen, while removing SNPs that don't "PASS"
-cd ..
 sbatch -a 1-22 vcf-chr-to-pgen.q
 # max 18m3.880s DCC
 
@@ -269,14 +269,10 @@ wc -l all.{bim,fam}
 # cleanup, all pgen intermediates again are unwanted! (gmmat doesn't support them)
 rm all.{log,pgen,psam,pvar.zst}
 # remove imputation input too, no longer needed (and easy to re-create if needed from rawer data)
-cd ..
-rm -r array/imputation-input/
+rm -r ../array/imputation-input/
 
 
 ### GWAS PREP ###
-
-# analysis will happen here now
-cd imputed/
 
 # merges patient data (subset to remaining genotyped data) with TGP, including full race and sex covariates, binarized traits
 # creates imputed/patient-data.txt.gz, to be used with GMMAT and other analyses
@@ -285,3 +281,61 @@ Rscript merge-patient-data-tgp.R
 # run simple trait ~ sex + race model (confirms need for these covariates)
 # no files are created
 Rscript covariate_analysis.R
+
+# make temporary filter files for subanalyses
+Rscript filter-subanalyses.R
+
+# based on original scripts/data from here
+#cd /datacommons/ochoalab/ssns_gwas/GMMAT_0418/ns_ctr
+
+# filter by minor allele count (MAC)
+# No other filters needed (there is no missingness, and HWE is not appropriate post-imputation)
+# NOTE: requires `--mem 16G` on DCC
+time plink2 --bfile all --mac 20 --make-bed --out mac20
+# 5m37.128s
+
+wc -l mac20.{bim,fam}
+# 21171018 mac20.bim
+#     4485 mac20.fam
+
+# filter subanalyses, always reapply `--mac 20` filter (removes more SNPs as sample sizes decrease)
+time plink2 --bfile mac20 --keep ssns_ctrl/ids.txt --mac 20 --make-bed --out ssns_ctrl/mac20
+# 2m6.163s DCC
+time plink2 --bfile mac20 --keep srns_ctrl/ids.txt --mac 20 --make-bed --out srns_ctrl/mac20
+# 1m52.397s DCC
+time plink2 --bfile mac20 --keep ssns_srns/ids.txt --mac 20 --make-bed --out ssns_srns/mac20
+# 1m20.720s DCC
+
+wc -l {ssns_ctrl,srns_ctrl,ssns_srns}/mac20.{bim,fam}
+# 20838869 ssns_ctrl/mac20.bim
+#     4278 ssns_ctrl/mac20.fam
+# 20109279 srns_ctrl/mac20.bim
+#     3746 srns_ctrl/mac20.fam
+# 12274557 ssns_srns/mac20.bim
+#      918 ssns_srns/mac20.fam
+
+# TODO:
+# - generate ancestry subanalysis filters properly, using data from admixture analysis!
+#   - add that column to annotations file patient-data.txt.gz!
+
+# use gcta (was already present in my path) to calculate GRM and PCs
+# used `--mem 16G` on DCC
+sbatch grm.q # edit to run each subtype
+# time gcta64 --bfile mac20 --make-grm --out mac20
+# # 113m14.189s ns_ctrl DCC
+# # 105m51.466s ssns_ctrl DCC
+# # 79m21.078s srns_ctrl DCC
+# # 3m8.423s ssns_srns DCC
+# # PCA part runs with default `--mem 1G`
+# time gcta64 --grm mac20 --pca 10 --out mac20
+# # 0m27.364s ns_ctrl DCC
+# # 0m25.056s ssns_ctrl DCC
+# # 0m16.534s srns_ctrl DCC
+# # 0m0.328s ssns_srns DCC
+# remove .out files when done
+
+# TODO: use multiple threads properly!  Manual says
+# - only applies to glmm.score and SMMAT, argument ncores (DONE)
+# - requires GDS format :( (says PDF, not R documentation; NOT TRIED YET)
+sbatch gmmat.q
+# runs: time Rscript gmmat.R 
