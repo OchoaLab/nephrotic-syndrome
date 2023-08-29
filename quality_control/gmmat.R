@@ -1,12 +1,47 @@
 library(GMMAT)
 library(genio)
 library(readr)
+library(optparse)    # for terminal options
+
+# constants
+name <- "mac20"
+
+############
+### ARGV ###
+############
+
+# define options
+option_list = list(
+    make_option(c( "-d", "--diagnosis"), type = "character", default = 'ns_ctrl', 
+                help = "Diagnosis subtype: ns_ctrl, ssns_ctrl, srns_ctrl, ssns_srns", metavar = "character"),
+    make_option(c( "-a", "--ancestry"), type = "character", default = NA, 
+                help = "Ancestry subanalysis: NA, afr, eur, sas", metavar = "character")
+)
+
+opt_parser <- OptionParser(option_list = option_list)
+opt <- parse_args(opt_parser)
+
+# get values
+diagnosis_subtype <- opt$diagnosis # 'ns_ctrl'
+ancestry_subtype <- opt$ancestry # 'eur' # set to NA if not ancestry subanalysis
+
+stop( 'diagnosis: ', diagnosis_subtype, '; ancestry: ', ancestry_subtype )
+
+### ANALYSIS ###
+
 
 # this is where our data is
 setwd( '/datacommons/ochoalab/ssns_gwas/imputed/' )
 
-# constants
-name <- "mac20"
+# load phenotype and fixed covariates file
+data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdiiii' )
+
+# go to desired subdirectories
+if ( diagnosis_subtype != 'ns_ctrl' )
+    setwd( diagnosis_subtype )
+if ( !is.na( ancestry_subtype ) )
+    setwd( ancestry_subtype )
+
 file_data <- paste0( name, '-model0.RData' )
 
 if ( file.exists( file_data ) ) {
@@ -15,8 +50,6 @@ if ( file.exists( file_data ) ) {
 } else {
     # calculate model0 for the first time
     
-    # load phenotype and fixed covariates file
-    data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdiiii' )
     # load GRM and PCs
     grm <- read_grm( name )
     eigenvec <- read_eigenvec( name )
@@ -29,6 +62,9 @@ if ( file.exists( file_data ) ) {
 
     # fit null model
     message( 'glmmkin' )
+    # TIFFANY:
+    # - change ns_ctrl to the value of diagnosis_subtype
+    # - exclude race from ancestry subanalyses
     model0 <- glmmkin(
         ns_ctrl ~ sex + race + PCs,
         data = data,
