@@ -296,10 +296,6 @@ Rscript filter-subanalyses.R
 time plink2 --bfile all --mac 20 --make-bed --out mac20
 # 5m37.128s
 
-wc -l mac20.{bim,fam}
-# 21171018 mac20.bim
-#     4485 mac20.fam
-
 # filter subanalyses, always reapply `--mac 20` filter (removes more SNPs as sample sizes decrease)
 time plink2 --bfile mac20 --keep ssns_ctrl/ids.txt --mac 20 --make-bed --out ssns_ctrl/mac20
 # 2m6.163s DCC
@@ -314,9 +310,24 @@ time plink2 --bfile mac20 --keep eur/ids.txt --mac 20 --make-bed --out eur/mac20
 time plink2 --bfile mac20 --keep sas/ids.txt --mac 20 --make-bed --out sas/mac20
 # 1m27.884s DCC
 
-# TODO: also create combined ancestry-subtype subsets!
+# also create combined ancestry-subtype subsets!
+# ns_ctrl is done above (it is bare {afr,eur,sas}/)
+# only other case is ssns_ctrl (srns_ctrl and ssns_srns do not have ancestry subanalyses due to small sample sizes)
+# create subdirectories
+mkdir ssns_ctrl/afr
+mkdir ssns_ctrl/eur
+mkdir ssns_ctrl/sas
+# create subsets with double filter
+time plink2 --bfile ssns_ctrl/mac20 --keep afr/ids.txt --mac 20 --make-bed --out ssns_ctrl/afr/mac20
+# 1m46.996s DCC
+time plink2 --bfile ssns_ctrl/mac20 --keep eur/ids.txt --mac 20 --make-bed --out ssns_ctrl/eur/mac20
+# 1m16.406s DCC
+time plink2 --bfile ssns_ctrl/mac20 --keep sas/ids.txt --mac 20 --make-bed --out ssns_ctrl/sas/mac20
+# 1m21.433s DCC
 
-wc -l {ssns_ctrl,srns_ctrl,ssns_srns,afr,eur,sas}/mac20.{bim,fam}
+wc -l {.,ssns_ctrl,srns_ctrl,ssns_srns,afr,eur,sas,ssns_ctrl/afr,ssns_ctrl/eur,ssns_ctrl/sas}/mac20.{bim,fam}
+# 21171018 ./mac20.bim
+#     4485 ./mac20.fam
 # 20838869 ssns_ctrl/mac20.bim
 #     4278 ssns_ctrl/mac20.fam
 # 20109279 srns_ctrl/mac20.bim
@@ -329,6 +340,12 @@ wc -l {ssns_ctrl,srns_ctrl,ssns_srns,afr,eur,sas}/mac20.{bim,fam}
 #      989 eur/mac20.fam
 #  9025296 sas/mac20.bim
 #     1080 sas/mac20.fam
+# 15922513 ssns_ctrl/afr/mac20.bim
+#     1110 ssns_ctrl/afr/mac20.fam
+#  8746652 ssns_ctrl/eur/mac20.bim
+#      913 ssns_ctrl/eur/mac20.fam
+#  9002149 ssns_ctrl/sas/mac20.bim
+#     1066 ssns_ctrl/sas/mac20.fam
 
 # use gcta (was already present in my path) to calculate GRM and PCs
 # used `--mem 16G` on DCC
@@ -338,6 +355,7 @@ sbatch grm.q # edit to run each subtype
 # # 105m51.466s ssns_ctrl DCC
 # # 79m21.078s srns_ctrl DCC
 # # 3m8.423s ssns_srns DCC
+# # (other runs time not saved)
 # # PCA part runs with default `--mem 1G`
 # time gcta64 --grm mac20 --pca 10 --out mac20
 # # 0m27.364s ns_ctrl DCC
@@ -346,8 +364,14 @@ sbatch grm.q # edit to run each subtype
 # # 0m0.328s ssns_srns DCC
 # remove .out files when done
 
+# this confirms all grm and eigenvec files were created
+ls {.,ssns_ctrl,srns_ctrl,ssns_srns,afr,eur,sas,ssns_ctrl/afr,ssns_ctrl/eur,ssns_ctrl/sas}/mac20.{grm.bin,eigenvec}
+
 # TODO: use multiple threads properly!  Manual says
 # - only applies to glmm.score and SMMAT, argument ncores (DONE)
-# - requires GDS format :( (says PDF, not R documentation; NOT TRIED YET)
+# - requires GDS format :( (next thing to do!)
 sbatch gmmat.q
 # runs: time Rscript gmmat.R 
+
+# (to quickly get back where we left off)
+#cd /datacommons/ochoalab/ssns_gwas/imputed
