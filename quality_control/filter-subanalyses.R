@@ -5,7 +5,7 @@ library(dplyr)
 setwd( '/datacommons/ochoalab/ssns_gwas/imputed/' )
 
 # load phenotype and fixed covariates file
-data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdiiii' )
+data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdciiii' )
 
 # do diagnosis subtypes first
 for ( type in c('ssns_ctrl', 'srns_ctrl', 'ssns_srns') ) {

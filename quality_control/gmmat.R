@@ -39,7 +39,7 @@ message( 'diagnosis: ', diagnosis_subtype, '; ancestry: ', ancestry_subtype, "; 
 setwd( '/datacommons/ochoalab/ssns_gwas/imputed/' )
 
 # load phenotype and fixed covariates file
-data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdiiii' )
+data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdciiii' )
 
 # go to desired subdirectories
 if ( diagnosis_subtype != 'ns_ctrl' )

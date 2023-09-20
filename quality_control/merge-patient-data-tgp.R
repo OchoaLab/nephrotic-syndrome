@@ -49,7 +49,7 @@ data$ancestry[ data$id %in% ids_sas$id ] <- 'SAS'
 # put ancestry next to race because visually it looks nicer to group them that way
 data <- relocate( data, ancestry, .after = race )
 
-# identify rows of FAM that are missing from patient data
+# identify rows of FAM that are missing from patient data (ought to be TGP only)
 # the ones present should not have any useful information within fam, safe to exclude
 indexes <- !fam$id %in% data$id
 fam <- fam[ indexes, ]
@@ -67,6 +67,9 @@ fam$sex[ fam$sex == 'F' ] <- 'female'
 # add trivial values
 fam$diagnosis <- 'Control'
 fam$age <- NA
+# add dataset value to both parts, to distinguish later if needed
+data$dataset <- 'array'
+fam$dataset <- 'tgp'
 
 # only thing left is mapping to race
 # first get superpopulation from TGP metadata, those are actually ancestry as we want to define it for least unadmixed clusters
@@ -109,6 +112,9 @@ table( data$race, data$ancestry, useNA = 'i' )
 table( data$diagnosis )
 ## Control NS UNCLASSIFIED            SRNS            SSNS 
 ##    3553              14             193             725 
+table( data$dataset )
+## array   tgp 
+##  1981  2504 
 
 # create binarized traits (all cases)
 data$ns_ctrl <- ifelse( data$diagnosis == 'Control', 0, 1 )

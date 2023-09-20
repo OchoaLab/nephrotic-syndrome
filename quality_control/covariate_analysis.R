@@ -9,7 +9,7 @@ library(tidyverse)
 setwd( '/datacommons/ochoalab/ssns_gwas/imputed/' )
 
 # load covariates file
-data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdiiii' )
+data <- read_tsv( 'patient-data.txt.gz', col_types = 'cccccdciiii' )
 
 # regress ns-vs-control to covariates
 summary( glm( ns_ctrl ~ sex + race, data = data, family = binomial ) )
