@@ -18,7 +18,8 @@ setwd('/datacommons/ochoalab/ssns_gwas/replication/bristol_data/GMMAT')
 name <- 'srns_ssns_mac20'
 file_phen <- 'srns_ssns.phen'
 # base summary stats
-file_sumstats <- '/datacommons/ochoalab/ssns_gwas/imputed/ssns_srns/mac20-glmm-score.txt'
+#file_sumstats <- '/datacommons/ochoalab/ssns_gwas/imputed/ssns_srns/mac20-glmm-score.txt'
+file_sumstats <- '/datacommons/ochoalab/ssns_gwas/imputed/ssns_ctrl/mac20-glmm-score.txt'
 #file_sumstats <- "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/PRS/glmm.wald_srns_ssns.txt.gz"
 # file to subset to clean array SNPs (which passed QC already)
 name_array <- '/datacommons/ochoalab/ssns_gwas/array/ssns_tgp_merge_clean'
@@ -71,6 +72,9 @@ stopifnot( all( sumstats$MISSRATE == 0 ) )
 #sumstats <- setNames( sumstats[ -c(7, 9, 10) ], c('rsid', 'chr', 'pos', 'a1', 'a0', 'n_eff', 'af', 'p', 'beta', 'beta_se') )
 sumstats <- setNames( sumstats[ -c(7, 9, 10) ], c('rsid', 'chr', 'pos', 'a0', 'a1', 'n_eff', 'af', 'p', 'beta', 'beta_se') )
 
+# if using ssns-ctrl, reverse signs!  (ssns-srns was fine though)
+sumstats$beta <- -sumstats$beta
+
 # load array SNP set
 bim <- read_bim( name_array )
 # change names to match snp_match
@@ -84,9 +88,14 @@ bim[ names( bim ) == 'posg' ] <- NULL
 bim$chr <- as.integer( bim$chr )
 # find matching subset
 sumstats2 <- snp_match( sumstats, bim )
+### ssns-srns
 ## 12,274,557 variants to be matched.
 ## 76,584 ambiguous SNPs have been removed.
 ## 635,789 variants have been matched; 0 were flipped and 0 were reversed.
+### ssns-ctrl
+## 20,838,869 variants to be matched.
+## 82,356 ambiguous SNPs have been removed.
+## 672,362 variants have been matched; 0 were flipped and 0 were reversed.
 nrow( bim ) # 761,366 # for reference
 
 # before next round, correct some funny business with snp_match's output
@@ -97,27 +106,30 @@ sumstats2[ names( sumstats2 ) == '_NUM_ID_' ] <- NULL # new column added, also d
 
 # map assuming things are largely aligned already
 df_beta <- snp_match( sumstats2, map )
+### ssns-srns
 ## 635,789 variants to be matched.
 ## 0 ambiguous SNPs have been removed.
 ## 492,982 variants have been matched; 0 were flipped and 0 were reversed.
+### ssns-ctrl
+## 672,362 variants to be matched.
+## 0 ambiguous SNPs have been removed.
+## 495,160 variants have been matched; 0 were flipped and 0 were reversed.
 
 # here processing suggests QC on sumstats, but no code is provided (there's equations and a massive repo, may have to revisit)
 
-# convert basepairs to genetic position this way
-POS2 <- snp_asGeneticPos(CHR, POS, ncores = NCORES)
-
 # corr backing file, to reload if needed
 corr_file <- paste0( name, '-corr' )
-#corr_file <- paste0( name, '-corr-TEST' )
 # NOTE: code blindly adds another .sbk extension if I specify one (leading to double '.sbk.sbk"), so don't include it
 # these ones have added extension for use internally
-#corr_file_sbk <- paste0( corr_file, '.sbk' ) # NOT USED
 corr_file_rdata <- paste0( corr_file, '.RData' )
 
 if ( file.exists( corr_file_rdata ) ) {
     # load from a different session
     load( corr_file_rdata )
 } else {
+    # convert basepairs to genetic position this way
+    POS2 <- snp_asGeneticPos(CHR, POS, ncores = NCORES)
+    
     # compute correlations (LD matrices) on the fly
     for (chr in 1:22) {
         message(chr)
@@ -141,12 +153,13 @@ if ( file.exists( corr_file_rdata ) ) {
         }
     }
     # save object, keep backing file, so we can load it in another session
-    save( corr, file = corr_file_rdata )
+    save( corr, ld, file = corr_file_rdata )
 }
 
 # size of LD data, in GB
 file.size(corr$sbk) / 1024^3  # file size in GB
-#[1] 4.118546
+#[1] 4.118546 # ssns-srns
+#[1] 4.153004 # ssns-ctrl
 
 # decide how many individuals are in each subset... example had 503 indivs total, our data has slightly fewer, 490
 # only used for LDpred2-grid and lassosum2
@@ -158,10 +171,13 @@ ind.test <- setdiff( rows_along(G), ind.val ) # example 153 (30%)
 # Estimate of h2 from LD Score regression
 ldsc <- with(df_beta, snp_ldsc(ld, length(ld), chi2 = (beta / beta_se)^2, sample_size = n_eff, blocks = NULL))
 h2_est <- ldsc[["h2"]]
+h2_est
+# [1] 1.171371 # ssns-ctrl
 beta_inf <- snp_ldpred2_inf(corr, df_beta, h2 = h2_est)
 pred_inf <- big_prodVec(G, beta_inf, ind.row = ind.test, ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred_inf, y[ind.test], NULL)
-# [1]  0.04728706 -0.11549036  0.20759114
+# [1]  0.04728706 -0.11549036  0.20759114 # ssns-srns
+# [1]  0.19839389  0.03771186  0.34907536 # ssns-ctrl
 #cor(pred_inf, y[ind.test])
 
 ### ldpred2-grid
@@ -193,6 +209,7 @@ params %>%
     arrange(desc(score)) %>%
     mutate_at(c("score", "sparsity"), round, digits = 3) %>%
     slice(1:10)
+### ssns-srns
 ##          p     h2 sparse score sparsity  id
 ## 1  1.0e-05 0.3391  FALSE 5.059    0.000   1
 ## 2  5.6e-05 0.7913   TRUE 4.930    0.921 109
@@ -204,6 +221,18 @@ params %>%
 ## 8  5.6e-05 1.1305   TRUE 4.176    0.932 130
 ## 9  3.2e-05 1.5826  FALSE 4.153    0.000  66
 ## 10 3.2e-05 1.1305  FALSE 4.150    0.000  45
+### ssns-ctrl
+##         p     h2 sparse score sparsity id
+## 1  0.0056 0.3514   TRUE 3.536    0.562 96
+## 2  0.0056 0.3514  FALSE 3.480    0.000 12
+## 3  0.0100 0.3514   TRUE 3.431    0.554 97
+## 4  0.0100 0.3514  FALSE 3.365    0.000 13
+## 5  0.0180 0.3514   TRUE 3.339    0.552 98
+## 6  0.0032 0.3514  FALSE 3.309    0.000 11
+## 7  0.0032 0.3514   TRUE 3.237    0.582 95
+## 8  0.0320 0.3514   TRUE 3.233    0.553 99
+## 9  0.0180 0.3514  FALSE 3.219    0.000 14
+## 10 0.0320 0.3514  FALSE 3.047    0.000 15
 best_beta_grid <- params %>%
     mutate(id = row_number()) %>%
     # filter(sparse) %>% 
@@ -213,15 +242,19 @@ best_beta_grid <- params %>%
     pull(id) %>% 
     beta_grid[, .]
 ##       p     h2 sparse    score id
-## 1 1e-05 0.3391  FALSE 5.059323  1
+## 1 1e-05 0.3391  FALSE 5.059323  1 # ssns-srns
+##        p     h2 sparse    score id
+## 1 0.0056 0.3514   TRUE 3.536261 96 # ssns-ctrl
 pred <- big_prodVec(G, best_beta_grid, ind.row = ind.test,
                     ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred, y[ind.test], NULL)
-# [1]  0.12688295 -0.03574459  0.28296373
+# [1]  0.12688295 -0.03574459  0.28296373 # ssns-srns
+# [1] 0.21203091 0.05191985 0.36151471    # ssns-ctrl
 #cor(pred, y[ind.test])
 
-
 ### ldpred2-auto
+
+# NOTE ssns-ctrl: not sure what happened, but this whole approach fails (all multi_auto values are NA, everything else dies subsequently)
 
 coef_shrink <- 0.95  # reduce this up to 0.4 if you have some (large) mismatch with the LD ref
 # takes less than 2 min with 4 cores
@@ -238,12 +271,9 @@ keep <- which(range > (0.95 * quantile(range, 0.95, na.rm = TRUE)))
 beta_auto <- rowMeans(sapply(multi_auto[keep], function(auto) auto$beta_est))
 pred_auto <- big_prodVec(G, beta_auto, ind.row = ind.test, ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred_auto, y[ind.test], NULL)
-# [1]  0.07659266 -0.08637162  0.23556498
+# [1]  0.07659266 -0.08637162  0.23556498 # ssns-srns
 #cor(pred_auto, y[ind.test])
 
-#save.image()
-
-############################## STOPPED HERE!!!
 
 
 ### lassosum2
@@ -283,33 +313,36 @@ best_grid_overall <-
 pred <- big_prodVec(G, best_grid_lassosum2, ind.row = ind.test,
                     ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred, y[ind.test], NULL)
-# [1]  0.10867889 -0.05416744  0.26589394
+# [1]  0.10867889 -0.05416744  0.26589394 # ssns-srns
+# [1] 0.17228611 0.01069101 0.32511140    # ssns-ctrl
 #cor(pred, y[ind.test])
 
 pred <- big_prodVec(G, best_grid_overall, ind.row = ind.test,
                     ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred, y[ind.test], NULL)
-# [1]  0.12688295 -0.03574459  0.28296373
+# [1]  0.12688295 -0.03574459  0.28296373 # ssns-srns
+# [1] 0.17228611 0.01069101 0.32511140    # ssns-ctrl
 #cor(pred, y[ind.test])
 
-#save.image()
 
 
 ### ldpred2-auto, pt 2
+
+# again, none of this worked for ssns-ctrl sumstats; nothing else was run for this case! (but it was saved)
 
 # reuses up to `keep` above
 all_h2 <- sapply(multi_auto[keep], function(auto) tail(auto$path_h2_est, 500))
 quantile(all_h2, c(0.5, 0.025, 0.975))
 ##       50%      2.5%     97.5% 
-## 0.7597156 0.1502886 1.3498973 
+## 0.7597156 0.1502886 1.3498973 # ssns-srns
 all_p <- sapply(multi_auto[keep], function(auto) tail(auto$path_p_est, 500))
 quantile(all_p, c(0.5, 0.025, 0.975))
 ##         50%        2.5%       97.5% 
-## 0.005180223 0.000555023 0.014349786 
+## 0.005180223 0.000555023 0.014349786 # ssns-srns
 all_alpha <- sapply(multi_auto[keep], function(auto) tail(auto$path_alpha_est, 500))
 quantile(all_alpha, c(0.5, 0.025, 0.975))
 ##        50%       2.5%      97.5% 
-## -1.2123923 -1.5000000 -0.5682036 
+## -1.2123923 -1.5000000 -0.5682036 # ssns-srns
 ## # this fails, unclear why, but resulting bsamp is list with "0-column" matrices
 ## bsamp <- lapply(multi_auto[keep], function(auto) auto$sample_beta)
 ## all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
@@ -324,7 +357,7 @@ quantile(all_alpha, c(0.5, 0.025, 0.975))
 beta_auto <- rowMeans(sapply(multi_auto[keep], function(auto) auto$beta_est))
 pred_auto <- big_prodVec(G, beta_auto, ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred_auto, y, NULL)^2
-## [1] 0.017651880 0.002007581 0.047902414
+## [1] 0.017651880 0.002007581 0.047902414 # ssns-srns
 ## cor(pred_auto, y)^2
 
 # skipped bits about fine-mapping, revisit when data is improved!
