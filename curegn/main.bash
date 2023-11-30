@@ -72,7 +72,6 @@ done
 # would have done with earlier step, but don't want to repeat slow steps
 # indels are a big problem, and we're really only looking at SNPs for discovery data, so let's filter the same here
 for chr in {1..22}
-for chr in {1..21}
 do
     time plink2 --pfile chr$chr vzs --snps-only just-acgt --make-pgen vzs --out snps-chr$chr --threads 1 --memory 16000
     # 0m20.588s chr1 DCC
@@ -166,16 +165,43 @@ mv $name.* ..
 # rest of the commands happen in that space
 cd ..
 
-###############
-### FIX FAM ###
-###############
+##############
+### COVARS ###
+##############
 
 # NOTE: entire original fam file is trivial except for id column
 
-# TODO: write code when CureGN variables data arrives!
+# extracts and cleans up standard covariates
+# creates patient-data.txt.gz and indiv-rm-round2.txt
+time Rscript 01-covars.R
 
-# # this script has inputs hardcoded, requires several files
-# Rscript ~/docs/ochoalab/data/fam_add_tgp-nygc_metadata.R
-# # inspect output, replace if satisfied
-# mv $name-NEW.fam $name.fam
+#####################
+### FINAL CLEANUP ###
+#####################
 
+# filter data again because 3 individuals don't have phenotypes or covariates
+time plink2 --bfile $name --remove indiv-rm-round2.txt --mac 1 --make-bed --out ${name}2
+# 2m35.296s DCC
+
+# cleanup
+# remove original pvar files, which are no longer filtered correctly (we didn't have immediate plans for them)
+rm $name.p???*
+# boring log file
+rm ${name}2.log
+# replace old with new files
+rename snps2 snps ${name}2.*
+# preserve second removal list under raw
+mv indiv-rm-round2.txt  raw/
+
+# create mac20 filtered version for GWAS
+time plink2 --bfile $name --mac 20 --make-bed --out $name-mac20
+# 2m5.449s DCC
+# cleanup
+rm $name-mac20.log
+
+wc -l $name.{bim,fam}
+# 70,436,206 curegn-autosomes-snps.bim
+#      1,852 curegn-autosomes-snps.fam
+wc -l $name-mac20.{bim,fam}
+# 13,644,129 curegn-autosomes-snps-mac20.bim
+#      1,852 curegn-autosomes-snps-mac20.fam
