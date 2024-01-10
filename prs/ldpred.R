@@ -1,4 +1,5 @@
 # start interactive shell
+# cd /datacommons/ochoalab/ssns_gwas/replication/bristol_data/imputation/post_imp/prs
 # srun --mem 16G -p ochoalab --account ochoalab --pty bash -i
 # module load R/4.1.1-rhel8
 # R
@@ -11,18 +12,22 @@ library(genio)
 library(ochoalabtools)
 library(ggplot2)
 library(dplyr)
+library(readr)
 
 # run from here
-setwd('/datacommons/ochoalab/ssns_gwas/replication/bristol_data/GMMAT')
+setwd('/datacommons/ochoalab/ssns_gwas/replication/bristol_data/imputation/post_imp/prs')
 # name of data to predict on
-name <- 'srns_ssns_mac20'
-file_phen <- 'srns_ssns.phen'
+name <- 'data'
+#file_phen <- '../../../../bristol_covar.csv'
+file_phen <- '/datacommons/ochoalab/ssns_gwas/array/patient-data.txt.gz' 
 # base summary stats
 #file_sumstats <- '/datacommons/ochoalab/ssns_gwas/imputed/ssns_srns/mac20-glmm-score.txt'
 file_sumstats <- '/datacommons/ochoalab/ssns_gwas/imputed/ssns_ctrl/mac20-glmm-score.txt'
-#file_sumstats <- "/datacommons/ochoalab/ssns_gwas/GMMAT_0418/PRS/glmm.wald_srns_ssns.txt.gz"
 # file to subset to clean array SNPs (which passed QC already)
 name_array <- '/datacommons/ochoalab/ssns_gwas/array/ssns_tgp_merge_clean'
+
+# Tiffany said this PCs file is updated
+# '/datacommons/ochoalab/ssns_gwas/replication/bristol_data/GMMAT/ssns_srns/ssns_srns_mac20.eigenvec'
 
 # load validation dataset
 # generate this if it doesn't exist
@@ -34,17 +39,42 @@ if ( !file.exists( rds ) )
 obj.bigSNP <- snp_attach( rds )
 
 # read phen, only file with actual trait
-phen <- read_phen( file_phen )
-## table( phen$pheno )
-##   0   1 
-## 327 163 
+# load patient data, which excludes TGP info
+data <- read_tsv( file_phen, show_col_types = FALSE )
+#phen <- read_csv( file_phen )
+#phen <- read_phen( file_phen )
 
-# these match in number, not order
-indexes <- match( obj.bigSNP$fam$sample.ID, phen$id )
+stopifnot( all( obj.bigSNP$fam$sample.ID %in% data$id ) )
+
+## # these two are perfectly aligned!
+## stopifnot( all( phen$id == obj.bigSNP$fam$sample.ID ) )
+
+# subset and reorder
+indexes <- match( obj.bigSNP$fam$sample.ID, data$id )
 # reorder phen
-phen <- phen[ indexes, ]
-stopifnot( all( obj.bigSNP$fam$sample.ID == phen$id ) )
-obj.bigSNP$fam$affection <- phen$pheno
+data <- data[ indexes, ]
+stopifnot( all( obj.bigSNP$fam$sample.ID == data$id ) )
+
+# make numerical version
+data$pheno <- NA
+data$pheno[ data$diagnosis == 'SRNS' ] <- 1
+data$pheno[ data$diagnosis == 'SSNS' ] <- 0
+
+## table( phen$pheno ) # oldest stuff, which is obsolete; it appears to have some bug, all other versions agree with each other but not this one
+##   0   1 
+## 327 163
+## table( phen$diagnosis ) # file Tiffany actually wanted me to use most recently
+## NS UNCLASSIFIED             SNS            SRNS            SSNS 
+##              70               1             149             364 
+## table( data$diagnosis ) # my re-cleaned up data, after subsetting
+## NS UNCLASSIFIED            SRNS            SSNS 
+##              70             149             365 
+## table( data$pheno ) # numerical version of above
+##   0   1 
+## 365 149 
+
+# transfer to this other object
+obj.bigSNP$fam$affection <- data$pheno
 
 # Get aliases for useful slots
 G   <- obj.bigSNP$genotypes
@@ -92,7 +122,7 @@ sumstats2 <- snp_match( sumstats, bim )
 ## 12,274,557 variants to be matched.
 ## 76,584 ambiguous SNPs have been removed.
 ## 635,789 variants have been matched; 0 were flipped and 0 were reversed.
-### ssns-ctrl
+### ssns-ctrl OLD and NEWEST
 ## 20,838,869 variants to be matched.
 ## 82,356 ambiguous SNPs have been removed.
 ## 672,362 variants have been matched; 0 were flipped and 0 were reversed.
@@ -110,10 +140,11 @@ df_beta <- snp_match( sumstats2, map )
 ## 635,789 variants to be matched.
 ## 0 ambiguous SNPs have been removed.
 ## 492,982 variants have been matched; 0 were flipped and 0 were reversed.
-### ssns-ctrl
+### ssns-ctrl OLD and NEWEST
 ## 672,362 variants to be matched.
 ## 0 ambiguous SNPs have been removed.
-## 495,160 variants have been matched; 0 were flipped and 0 were reversed.
+## 495,160 variants have been matched; 0 were flipped and 0 were reversed. # OLD
+## 508,082 variants have been matched; 0 were flipped and 0 were reversed. # NEWEST
 
 # here processing suggests QC on sumstats, but no code is provided (there's equations and a massive repo, may have to revisit)
 
@@ -159,12 +190,18 @@ if ( file.exists( corr_file_rdata ) ) {
 # size of LD data, in GB
 file.size(corr$sbk) / 1024^3  # file size in GB
 #[1] 4.118546 # ssns-srns
-#[1] 4.153004 # ssns-ctrl
+#[1] 4.153004 # ssns-ctrl OLD
+#[1] 4.373985 # ssns-ctrl NEWEST
 
 # decide how many individuals are in each subset... example had 503 indivs total, our data has slightly fewer, 490
 # only used for LDpred2-grid and lassosum2
+set.seed(1)
 ind.val <- sample( nrow(G), nrow(G) * 0.7 )   # example 350 (70%)
 ind.test <- setdiff( rows_along(G), ind.val ) # example 153 (30%)
+# NEWEST:
+length(ind.val)  # [1] 408
+length(ind.test) # [1] 176
+
 
 ### ldpred2-inf
 
@@ -172,17 +209,23 @@ ind.test <- setdiff( rows_along(G), ind.val ) # example 153 (30%)
 ldsc <- with(df_beta, snp_ldsc(ld, length(ld), chi2 = (beta / beta_se)^2, sample_size = n_eff, blocks = NULL))
 h2_est <- ldsc[["h2"]]
 h2_est
-# [1] 1.171371 # ssns-ctrl
+# [1] 1.171371 # ssns-ctrl OLD
+# [1] 1.245419 # ssns-ctrl NEWEST
+# NEWEST only, this is BS, let's set heritability to something on the high end but not above 1 when this happens
+if ( h2_est > 1 )
+    h2_est <- 0.8
 beta_inf <- snp_ldpred2_inf(corr, df_beta, h2 = h2_est)
 pred_inf <- big_prodVec(G, beta_inf, ind.row = ind.test, ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred_inf, y[ind.test], NULL)
 # [1]  0.04728706 -0.11549036  0.20759114 # ssns-srns
-# [1]  0.19839389  0.03771186  0.34907536 # ssns-ctrl
+# [1]  0.19839389  0.03771186  0.34907536 # ssns-ctrl OLD
+# [1]  0.10088376 -0.05563708  0.25256512 # ssns-ctrl NEWEST
 #cor(pred_inf, y[ind.test])
 
 ### ldpred2-grid
 
-h2_seq <- round(h2_est * c(0.3, 0.7, 1, 1.4), 4)
+#h2_seq <- round(h2_est * c(0.3, 0.7, 1, 1.4), 4) # OLD
+h2_seq <- c(0.1, 0.3, 0.5, 0.7, 0.9)
 p_seq <- signif(seq_log(1e-5, 1, length.out = 21), 2)
 params <- expand.grid(p = p_seq, h2 = h2_seq, sparse = c(FALSE, TRUE))
 beta_grid <- snp_ldpred2_grid(corr, df_beta, params, ncores = NCORES)
@@ -221,7 +264,7 @@ params %>%
 ## 8  5.6e-05 1.1305   TRUE 4.176    0.932 130
 ## 9  3.2e-05 1.5826  FALSE 4.153    0.000  66
 ## 10 3.2e-05 1.1305  FALSE 4.150    0.000  45
-### ssns-ctrl
+### ssns-ctrl OLD
 ##         p     h2 sparse score sparsity id
 ## 1  0.0056 0.3514   TRUE 3.536    0.562 96
 ## 2  0.0056 0.3514  FALSE 3.480    0.000 12
@@ -233,6 +276,19 @@ params %>%
 ## 8  0.0320 0.3514   TRUE 3.233    0.553 99
 ## 9  0.0180 0.3514  FALSE 3.219    0.000 14
 ## 10 0.0320 0.3514  FALSE 3.047    0.000 15
+### ssns-ctrl NEWEST
+##          p  h2 sparse score sparsity  id
+## 1  0.00100 0.1   TRUE 4.036    0.645 114
+## 2  0.00100 0.1  FALSE 4.017    0.000   9
+## 3  0.00180 0.1   TRUE 3.976    0.625 115
+## 4  0.00180 0.1  FALSE 3.973    0.000  10
+## 5  0.00320 0.1  FALSE 3.892    0.000  11
+## 6  0.00320 0.1   TRUE 3.868    0.613 116
+## 7  0.00560 0.1   TRUE 3.800    0.608 117
+## 8  0.00560 0.1  FALSE 3.758    0.000  12
+## 9  0.00056 0.1  FALSE 3.756    0.000   8
+## 10 0.00056 0.1   TRUE 3.685    0.676 113
+
 best_beta_grid <- params %>%
     mutate(id = row_number()) %>%
     # filter(sparse) %>% 
@@ -244,17 +300,23 @@ best_beta_grid <- params %>%
 ##       p     h2 sparse    score id
 ## 1 1e-05 0.3391  FALSE 5.059323  1 # ssns-srns
 ##        p     h2 sparse    score id
-## 1 0.0056 0.3514   TRUE 3.536261 96 # ssns-ctrl
+## 1 0.0056 0.3514   TRUE 3.536261 96 # ssns-ctrl OLD
+##       p  h2 sparse    score  id
+## 1 0.001 0.1   TRUE 4.035512 114 # ssns-ctrl NEWEST
+
 pred <- big_prodVec(G, best_beta_grid, ind.row = ind.test,
                     ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred, y[ind.test], NULL)
 # [1]  0.12688295 -0.03574459  0.28296373 # ssns-srns
-# [1] 0.21203091 0.05191985 0.36151471    # ssns-ctrl
+# [1] 0.21203091 0.05191985 0.36151471    # ssns-ctrl OLD
+# [1] 0.17061100 0.01537199 0.31781850    # ssns-ctrl NEWEST
 #cor(pred, y[ind.test])
+
+
 
 ### ldpred2-auto
 
-# NOTE ssns-ctrl: not sure what happened, but this whole approach fails (all multi_auto values are NA, everything else dies subsequently)
+# NOTE ssns-ctrl: not sure what happened, but this whole approach fails (all multi_auto values are NA, everything else dies subsequently).  Ditto OLD and NEWEST
 
 coef_shrink <- 0.95  # reduce this up to 0.4 if you have some (large) mismatch with the LD ref
 # takes less than 2 min with 4 cores
@@ -314,16 +376,19 @@ pred <- big_prodVec(G, best_grid_lassosum2, ind.row = ind.test,
                     ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred, y[ind.test], NULL)
 # [1]  0.10867889 -0.05416744  0.26589394 # ssns-srns
-# [1] 0.17228611 0.01069101 0.32511140    # ssns-ctrl
+# [1] 0.17228611 0.01069101 0.32511140    # ssns-ctrl OLD
+# [1] 0.17373439 0.01858988 0.32070922    # ssns-ctrl NEWEST
 #cor(pred, y[ind.test])
 
 pred <- big_prodVec(G, best_grid_overall, ind.row = ind.test,
                     ind.col = df_beta[["_NUM_ID_"]])
 pcor(pred, y[ind.test], NULL)
 # [1]  0.12688295 -0.03574459  0.28296373 # ssns-srns
-# [1] 0.17228611 0.01069101 0.32511140    # ssns-ctrl
+# [1] 0.17228611 0.01069101 0.32511140    # ssns-ctrl OLD
+# [1] 0.17061100 0.01537199 0.31781850    # ssns-ctrl NEWEST
 #cor(pred, y[ind.test])
 
+save.image()
 
 
 ### ldpred2-auto, pt 2
@@ -362,4 +427,3 @@ pcor(pred_auto, y, NULL)^2
 
 # skipped bits about fine-mapping, revisit when data is improved!
 
-save.image()

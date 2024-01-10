@@ -211,16 +211,6 @@ time ~/bin/PRSice_linux/PRSice.R \
      -f srns_ssns.phen \
      -o prsice
 
-
-
-
-
-
-
-
-
-
-
 # add after assessing if results depend too much on this, and runtime, only active if --perm <n> is used
 #    --logit-perm
 
@@ -234,3 +224,20 @@ time ~/bin/PRSice_linux/PRSice.R \
 # 1   chr1:17948129:A:G            0  17948129 G  A            918 0.7908496732026143 -0.6442018520772689 0.16264308957822604 7.468926446101956e-5  TRUE
 # 1   chr1:18888482:A:G            0  18888482 G  A            918 0.982570806100218  -1.6106168821651532 0.4346107919473915  2.106552723113269e-4  TRUE
 # 1   chr1:19533450:G:A            0  19533450 A  G            918 0.9842047930283224 -1.937307174485691  0.5269969683580391  2.3680274313231243e-4 TRUE
+
+
+###############
+### LDPRED2 ###
+###############
+
+# go where the data is
+cd /datacommons/ochoalab/ssns_gwas/replication/bristol_data/imputation/post_imp
+# make working dir for this project, to keep things separate, since many temp files are created by ldpred
+mkdir prs
+cd prs
+ln -s ../bristol_impute_mac20.bed data.bed
+ln -s ../bristol_impute_mac20.bim data.bim
+ln -s ../bristol_impute_mac20.fam data.fam
+
+# for reruns
+cd /datacommons/ochoalab/ssns_gwas/replication/bristol_data/imputation/post_imp/prs
