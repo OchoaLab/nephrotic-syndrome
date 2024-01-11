@@ -19,7 +19,9 @@ setwd('/datacommons/ochoalab/ssns_gwas/replication/bristol_data/imputation/post_
 # name of data to predict on
 name <- 'data'
 #file_phen <- '../../../../bristol_covar.csv'
-file_phen <- '/datacommons/ochoalab/ssns_gwas/array/patient-data.txt.gz' 
+file_phen <- '/datacommons/ochoalab/ssns_gwas/array/patient-data.txt.gz'
+# for a better effective sample size estimate
+file_phen_base <- '/datacommons/ochoalab/ssns_gwas/imputed/patient-data.txt.gz'
 # base summary stats
 #file_sumstats <- '/datacommons/ochoalab/ssns_gwas/imputed/ssns_srns/mac20-glmm-score.txt'
 file_sumstats <- '/datacommons/ochoalab/ssns_gwas/imputed/ssns_ctrl/mac20-glmm-score.txt'
@@ -102,6 +104,12 @@ stopifnot( all( sumstats$MISSRATE == 0 ) )
 #sumstats <- setNames( sumstats[ -c(7, 9, 10) ], c('rsid', 'chr', 'pos', 'a1', 'a0', 'n_eff', 'af', 'p', 'beta', 'beta_se') )
 sumstats <- setNames( sumstats[ -c(7, 9, 10) ], c('rsid', 'chr', 'pos', 'a0', 'a1', 'n_eff', 'af', 'p', 'beta', 'beta_se') )
 
+# read base gwas data, to calculate better effective sample size
+data_base <- read_tsv( file_phen_base, show_col_types = FALSE )
+counts <- table( data_base$ssns_ctrl ) # NOTE: for ssns_ctrl!  Adapt if needed for ssns_srns!!!
+# overwrite original with new estimate, which is about half as much!
+sumstats$n_eff <- 4 / ( 1 / counts[[ '0' ]] + 1 / counts[[ '1' ]] )
+
 # if using ssns-ctrl, reverse signs!  (ssns-srns was fine though)
 sumstats$beta <- -sumstats$beta
 
@@ -160,7 +168,7 @@ if ( file.exists( corr_file_rdata ) ) {
 } else {
     # convert basepairs to genetic position this way
     POS2 <- snp_asGeneticPos(CHR, POS, ncores = NCORES)
-    
+
     # compute correlations (LD matrices) on the fly
     for (chr in 1:22) {
         message(chr)
@@ -196,8 +204,8 @@ file.size(corr$sbk) / 1024^3  # file size in GB
 # decide how many individuals are in each subset... example had 503 indivs total, our data has slightly fewer, 490
 # only used for LDpred2-grid and lassosum2
 set.seed(1)
-ind.val <- sample( nrow(G), nrow(G) * 0.7 )   # example 350 (70%)
-ind.test <- setdiff( rows_along(G), ind.val ) # example 153 (30%)
+ind.val <- sample( nrow(G), nrow(G) * 0.7 )   # example 350 (70%) # really "training" set
+ind.test <- setdiff( rows_along(G), ind.val ) # example 153 (30%) # testing set
 # NEWEST:
 length(ind.val)  # [1] 408
 length(ind.test) # [1] 176
@@ -205,13 +213,16 @@ length(ind.test) # [1] 176
 
 ### ldpred2-inf
 
+# NOTE: trait isn't used to train, so in that sense there's no training involving the training data, except indirectly through its LD (but not the trait).  There's a sort of bad training to estimate the heritability, but uses base data only.
+
 # Estimate of h2 from LD Score regression
 ldsc <- with(df_beta, snp_ldsc(ld, length(ld), chi2 = (beta / beta_se)^2, sample_size = n_eff, blocks = NULL))
 h2_est <- ldsc[["h2"]]
 h2_est
 # [1] 1.171371 # ssns-ctrl OLD
 # [1] 1.245419 # ssns-ctrl NEWEST
-# NEWEST only, this is BS, let's set heritability to something on the high end but not above 1 when this happens
+# [1] 2.212095 # ssns-ctrl neff
+# since NEWEST only, this is BS, let's set heritability to something on the high end but not above 1 when this happens
 if ( h2_est > 1 )
     h2_est <- 0.8
 beta_inf <- snp_ldpred2_inf(corr, df_beta, h2 = h2_est)
@@ -220,7 +231,9 @@ pcor(pred_inf, y[ind.test], NULL)
 # [1]  0.04728706 -0.11549036  0.20759114 # ssns-srns
 # [1]  0.19839389  0.03771186  0.34907536 # ssns-ctrl OLD
 # [1]  0.10088376 -0.05563708  0.25256512 # ssns-ctrl NEWEST
+# [1]  0.11808405 -0.03826647  0.26879103 # ssns-ctrl neff
 #cor(pred_inf, y[ind.test])
+
 
 ### ldpred2-grid
 
@@ -288,6 +301,18 @@ params %>%
 ## 8  0.00560 0.1  FALSE 3.758    0.000  12
 ## 9  0.00056 0.1  FALSE 3.756    0.000   8
 ## 10 0.00056 0.1   TRUE 3.685    0.676 113
+### ssns-ctrl neff
+##          p  h2 sparse score sparsity  id
+## 1  0.00056 0.1   TRUE 4.089    0.665 113
+## 2  0.00056 0.1  FALSE 4.082    0.000   8
+## 3  0.00100 0.1  FALSE 4.048    0.000   9
+## 4  0.00100 0.1   TRUE 4.009    0.643 114
+## 5  0.00032 0.1   TRUE 3.966    0.697 112
+## 6  0.00180 0.1   TRUE 3.939    0.631 115
+## 7  0.00180 0.1  FALSE 3.932    0.000  10
+## 8  0.00032 0.1  FALSE 3.930    0.000   7
+## 9  0.00180 0.3   TRUE 3.900    0.620 136
+## 10 0.00320 0.3   TRUE 3.884    0.603 137
 
 best_beta_grid <- params %>%
     mutate(id = row_number()) %>%
@@ -303,6 +328,8 @@ best_beta_grid <- params %>%
 ## 1 0.0056 0.3514   TRUE 3.536261 96 # ssns-ctrl OLD
 ##       p  h2 sparse    score  id
 ## 1 0.001 0.1   TRUE 4.035512 114 # ssns-ctrl NEWEST
+##         p  h2 sparse    score  id
+## 1 0.00056 0.1   TRUE 4.088804 113 # ssns-ctrl neff
 
 pred <- big_prodVec(G, best_beta_grid, ind.row = ind.test,
                     ind.col = df_beta[["_NUM_ID_"]])
@@ -310,13 +337,13 @@ pcor(pred, y[ind.test], NULL)
 # [1]  0.12688295 -0.03574459  0.28296373 # ssns-srns
 # [1] 0.21203091 0.05191985 0.36151471    # ssns-ctrl OLD
 # [1] 0.17061100 0.01537199 0.31781850    # ssns-ctrl NEWEST
+# [1] 0.16610876 0.01073921 0.31364683    # ssns-ctrl neff
 #cor(pred, y[ind.test])
-
 
 
 ### ldpred2-auto
 
-# NOTE ssns-ctrl: not sure what happened, but this whole approach fails (all multi_auto values are NA, everything else dies subsequently).  Ditto OLD and NEWEST
+# NOTE ssns-ctrl: not sure what happened, but this whole approach fails (all multi_auto values are NA, everything else dies subsequently).  Ditto OLD and NEWEST, didn't even test neff
 
 coef_shrink <- 0.95  # reduce this up to 0.4 if you have some (large) mismatch with the LD ref
 # takes less than 2 min with 4 cores
@@ -335,7 +362,6 @@ pred_auto <- big_prodVec(G, beta_auto, ind.row = ind.test, ind.col = df_beta[["_
 pcor(pred_auto, y[ind.test], NULL)
 # [1]  0.07659266 -0.08637162  0.23556498 # ssns-srns
 #cor(pred_auto, y[ind.test])
-
 
 
 ### lassosum2
@@ -378,6 +404,7 @@ pcor(pred, y[ind.test], NULL)
 # [1]  0.10867889 -0.05416744  0.26589394 # ssns-srns
 # [1] 0.17228611 0.01069101 0.32511140    # ssns-ctrl OLD
 # [1] 0.17373439 0.01858988 0.32070922    # ssns-ctrl NEWEST
+# [1] 0.17608537 0.02101409 0.32288325    # ssns-ctrl neff
 #cor(pred, y[ind.test])
 
 pred <- big_prodVec(G, best_grid_overall, ind.row = ind.test,
@@ -386,10 +413,10 @@ pcor(pred, y[ind.test], NULL)
 # [1]  0.12688295 -0.03574459  0.28296373 # ssns-srns
 # [1] 0.17228611 0.01069101 0.32511140    # ssns-ctrl OLD
 # [1] 0.17061100 0.01537199 0.31781850    # ssns-ctrl NEWEST
+# [1] 0.16610876 0.01073921 0.31364683    # ssns-ctrl neff
 #cor(pred, y[ind.test])
 
 save.image()
-
 
 ### ldpred2-auto, pt 2
 
