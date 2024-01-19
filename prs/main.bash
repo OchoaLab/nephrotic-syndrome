@@ -241,3 +241,35 @@ ln -s ../bristol_impute_mac20.fam data.fam
 
 # for reruns
 cd /datacommons/ochoalab/ssns_gwas/replication/bristol_data/imputation/post_imp/prs
+
+# first reformat stuff, filter sumstats, estimate LD ...
+sbatch ldpred.q
+
+# then run ldpred-inf version, test a grid of heritabilities to determine quickly which one appears more promising
+sbatch ldpred-01-inf.q
+# 1m51.782s DCC
+
+# run grid version, which is more computationally intensive
+sbatch ldpred-03-grid.q
+# 22m40.426s DCC
+
+# fit parameters using training data (grid version)
+time Rscript ldpred-04-grid-fit.R
+# ran interactively on DCC
+
+# run auto version
+sbatch ldpred-05-auto.q 
+# 3m10.090s DCC
+
+# run lassosum version
+sbatch ldpred-06-lassosum.q
+# 2m37.939s DCC
+
+# fit parameters using training data (lassosum version)
+sbatch ldpred-07-lassosum-fit.q
+# 2m24.622s DCC
+
+# get correlation values that actually reveal which value was best
+sbatch ldpred-02-score.q
+# 1m10.088s DCC
+
