@@ -1,7 +1,5 @@
 #!/bin/bash
 #SBATCH -p ochoalab --account=ochoalab
-#SBATCH --job-name=ldpred-06-lassosum
-#SBATCH --output=ldpred-06-lassosum.out
 #SBATCH --mem=16G
 #SBATCH --ntasks-per-node=10
 ##SBATCH --mail-user=alejandro.ochoa@duke.edu
@@ -9,6 +7,7 @@
 
 module load R/4.1.1-rhel8
 
-time Rscript ldpred-06-lassosum.R 
+# $type: selects base data subtype (for old cases only): NOTE: must be defined outside!!!
+time Rscript ldpred-06-lassosum.R $type
 
 module unload R/4.1.1-rhel8

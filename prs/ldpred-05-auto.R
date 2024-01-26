@@ -1,5 +1,6 @@
 library(bigsnpr)
 library(readr)
+library(ochoalabtools)
 
 # constants
 # best value from ldpred2-inf scan, and also other previous ldpred2-grid tests.  this isn't single value tested, but tests are centered around it
@@ -9,18 +10,23 @@ NCORES <- 10
 coef_shrink <- 0.95
 p_seq <- seq_log(1e-4, 0.2, length.out = 30)
 
-# load filtered sumstats `df_beta`!
-df_beta <- read_tsv( 'betas-ssns_ctrl-array.txt.gz', show_col_types = FALSE )
+# determine which type to run
+type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type: ssns_ctrl or ssns_srns>' )
 
-# load `corr` data/backing file, matching SNPs in betas
-load( 'data-corr.RData' )
+# load filtered sumstats `df_beta`!
+df_beta <- read_tsv( paste0( 'betas-', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
+
+# load `ld` data/backing file, matching SNPs in betas
+load( paste0( 'ld-', type, '.RData' ) )
 
 # this is random, make it reproducible
 set.seed(1)
 
 # actual run
 multi_auto <- snp_ldpred2_auto(
-    corr,
+    ld,
     df_beta,
     h2_init = h2_est,
     vec_p_init = p_seq,
@@ -42,7 +48,7 @@ indexes_keep <- which( range_corr > ( 0.95 * quantile( range_corr, 0.95, na.rm =
 betas <- rowMeans( sapply( multi_auto[ indexes_keep ], function( auto ) auto$beta_est ) )
 
 # store results
-file_out <- paste0( 'betas-ldpred2-auto-h', h2_est, '.txt.gz' )
+file_out <- paste0( 'betas-', type, '-ldpred2-auto-h', h2_est, '.txt.gz' )
 write_lines( betas, file_out )
 
 
@@ -71,7 +77,7 @@ write_lines( betas, file_out )
 ## ## all_r2 <- do.call("cbind", lapply(seq_along(bsamp), function(ic) {
 ## ##     b1 <- bsamp[[ic]]
 ## ##     Rb1 <- apply(b1, 2, function(x)
-## ##         coef_shrink * bigsparser::sp_prodVec(corr, x) + (1 - coef_shrink) * x)
+## ##         coef_shrink * bigsparser::sp_prodVec(ld, x) + (1 - coef_shrink) * x)
 ## ##     b2 <- do.call("cbind", bsamp[-ic])
 ## ##     b2Rb1 <- as.matrix(Matrix::crossprod(b2, Rb1))
 ## ## }))

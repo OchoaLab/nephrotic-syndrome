@@ -1,28 +1,37 @@
 library(bigsnpr)
 library(readr)
+library(genio)
+library(ochoalabtools)
 
 # constants
 # sequence of heritabilities to consider
-herits <- (1:9)/10
+# run a finer grid for smaller values after seeing that the perform best
+# (doing it now is best because this method is much faster than the following ones)
+herits <- c( (1:9)/100, (1:9)/10 )
+
+# determine which type to run
+type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type: ssns_ctrl or ssns_srns>' )
 
 # load filtered sumstats `df_beta`!
-df_beta <- read_tsv( 'betas-ssns_ctrl-array.txt.gz', show_col_types = FALSE )
+df_beta <- read_tsv( paste0( 'betas-', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
 
-# load `corr` data/backing file, matching SNPs in betas
-load( 'data-corr.RData' )
+# load `ld` data/backing file, matching SNPs in betas
+load( paste0( 'ld-', type, '.RData' ) )
 
-# this is fast, just scan a grid of heritability values to pick a decent one!
-for ( h2 in herits ) {
-    message( h2 )
+# let's gather output into a single matrix for several heritabilities
+betas_grid <- matrix( NA, nrow = nrow( df_beta ), ncol = length( herits ) )
     
+# this is fast, just scan a grid of heritability values to pick a decent one!
+for ( i in 1 : length( herits ) ) {
     # not sure if this is random, just in case
     set.seed(1)
 
     # key calculation!
-    betas <- snp_ldpred2_inf( corr, df_beta, h2 = h2 )
-
-    # save betas!
-    # this is a simple vector
-    file_out <- paste0( 'betas-ldpred2-inf-h', h2, '.txt.gz' )
-    write_lines( betas, file_out )
+    betas_grid[ , i ] <- snp_ldpred2_inf( ld, df_beta, h2 = herits[ i ] )
 }
+
+# store results
+write_matrix( paste0( 'betas-', type, '-ldpred2-inf' ), betas_grid, ext = 'txt.gz' )
+# in this case the heritability values are so trivial we don't save them
