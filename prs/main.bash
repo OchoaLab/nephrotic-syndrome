@@ -321,9 +321,10 @@ time Rscript ldpred-04-grid-fit.R ssns_srns
 # 3m19.394s DCC
 
 # run auto version
-type=ssns_ctrl; sbatch -J ldpred-05-auto-$type -o ldpred-05-auto-$type.out --export=type=$type ldpred-05-auto.q 
-type=ssns_srns; sbatch -J ldpred-05-auto-$type -o ldpred-05-auto-$type.out --export=type=$type ldpred-05-auto.q 
-# 3m10.090s DCC OLD
+type=ssns_ctrl; sbatch -J ldpred-05-auto-$type -o ldpred-05-auto-$type.out --export=type=$type ldpred-05-auto.q
+# 4m47.136s DCC
+type=ssns_srns; sbatch -J ldpred-05-auto-$type -o ldpred-05-auto-$type.out --export=type=$type ldpred-05-auto.q
+# 7m0.724s DCC
 
 # run lassosum version
 type=ssns_ctrl; sbatch -J ldpred-06-lassosum-$type -o ldpred-06-lassosum-$type.out --export=type=$type ldpred-06-lassosum.q
@@ -342,6 +343,12 @@ type=ssns_ctrl; sbatch -J ldpred-02-score-$type -o ldpred-02-score-$type.out --e
 # 0m52.456s DCC
 type=ssns_srns; sbatch -J ldpred-02-score-$type -o ldpred-02-score-$type.out --export=type=$type ldpred-02-score.q
 # 0m52.168s DCC
+
+# make nice plot that summarize testing results
+time Rscript ldpred-08-test-plot.R ssns_ctrl
+# 0m7.229s DCC
+time Rscript ldpred-08-test-plot.R ssns_srns
+# 0m6.639s DCC
 
 # TODO: include PCs in all evaluations!
 # '/datacommons/ochoalab/ssns_gwas/replication/bristol_data/GMMAT/ssns_srns/ssns_srns_mac20.eigenvec'
@@ -439,6 +446,49 @@ time Rscript prs-new-06-sumstats-match.R
 sbatch -J ld -o ld.out prs-new-07-ld-matched-snps.q
 # 6m17.402s/86m49.116s DCC
 
+# before scoring, new pipeline requires alignment between training and testing data
+time Rscript prs-new-08-match-train-test.R
+# 528,964 variants to be matched.
+# 0 ambiguous SNPs have been removed.
+# 466,208 variants have been matched; 0 were flipped and 0 were reversed.
+# 1m32.168s DCC
+
+# then run ldpred-inf version, test a grid of heritabilities to determine quickly what is more promising
+sbatch -J ldpred-01-inf -o ldpred-01-inf.out ldpred-01-inf.q
+# 2m53.340s DCC
+
+# fit parameters using training data (inf version)
+time Rscript ldpred-01-inf-fit.R
+# 1m31.065s DCC
+
+# run grid version, which is more computationally intensive
+sbatch -J ldpred-03-grid -o ldpred-03-grid.out ldpred-03-grid.q
+# 22m10.058s DCC
+
+# fit parameters using training data (grid version)
+time Rscript ldpred-04-grid-fit.R
+# 3m25.275s DCC
+
+# run auto version
+sbatch -J ldpred-05-auto -o ldpred-05-auto.out ldpred-05-auto.q 
+# 3m4.668s DCC
+
+# run lassosum version
+sbatch -J ldpred-06-lassosum -o ldpred-06-lassosum.out ldpred-06-lassosum.q
+# 2m17.116s DCC
+
+# fit parameters using training data (lassosum version)
+sbatch -J ldpred-07-lassosum-fit -o ldpred-07-lassosum-fit.out ldpred-07-lassosum-fit.q
+# 2m36.789s DCC
+
+# get correlation values that actually reveal which value was best
+sbatch -J ldpred-02-score -o ldpred-02-score.out ldpred-02-score.q
+# 1m1.827s DCC
+
+# make nice plot that summarize testing results
+time Rscript ldpred-08-test-plot.R
 
 
+# TODO:
+# - consider using LD of base data instead of training data
 

@@ -9,8 +9,21 @@ h2_est <- 0.1
 
 # determine which type to run
 type <- args_cli()[1]
-if ( is.na( type ) )
-    stop( 'Usage: <type: ssns_ctrl or ssns_srns>' )
+
+# handle old and new cases!
+if ( is.na( type ) ) {
+    # new setup, type isn't used, this will interpolate fine in all cases below
+    type <- ''
+    # all processing happens in subdirectory
+    setwd( 'train' )
+    name_data <- 'mac20'
+} else {
+    # add a dash to separate parts of path as needed
+    type <- paste0( '-', type )
+    name_data <- 'data'
+    # load indexes of training individuals
+    ind_train <- as.numeric( read_lines( 'ind-train.txt.gz' ) )
+}
 
 # start by loading several previous calculations and other needed data
 
@@ -19,17 +32,19 @@ name_in <- paste0( type, '-ldpred2-grid-h', h2_est )
 
 # load training dataset
 # Attach the "bigSNP" object in R session
-obj.bigSNP <- snp_attach( 'data.rds' )
+obj.bigSNP <- snp_attach( paste0( name_data, '.rds' ) )
 G <- obj.bigSNP$genotypes
 y <- obj.bigSNP$fam$affection
 y[ y == 0 ] <- NA # in plink format, zeros are missing, translate appropriately here!
-# load indexes of training individuals
-ind_train <- as.numeric( read_lines( 'ind-train.txt.gz' ) )
+if ( type == '' ) {
+    # in new setup, we haven't defined ind_train, do it now that we know the number of individuals (use all)
+    ind_train <- 1L : length( y )
+}
 # load filtered sumstats `df_beta`!
-df_beta <- read_tsv( paste0( 'betas-', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
+df_beta <- read_tsv( paste0( 'betas', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
 # load previously calculated results
-betas_grid <- read_matrix( paste0( 'betas-', name_in ), ext = 'txt.gz' )
-params <- read_tsv( paste0( 'params-', name_in, '.txt.gz' ), show_col_types = FALSE )
+betas_grid <- read_matrix( paste0( 'betas', name_in ), ext = 'txt.gz' )
+params <- read_tsv( paste0( 'params', name_in, '.txt.gz' ), show_col_types = FALSE )
 
 # calculate PRS for training individuals only
 pred_grid <- big_prodMat( G, betas_grid, ind.row = ind_train, ind.col = df_beta[["_NUM_ID_"]] )
@@ -43,14 +58,14 @@ params <- params %>%
     arrange( desc( cor ) )
 
 # save this table of results!
-name_out <- paste0( 'eval-', name_in )
+name_out <- paste0( 'eval', name_in )
 write_tsv( params, paste0( name_out, '.txt.gz' ) )
 
 # pick out the best set of parameters, to use and score out of sample later!
 betas <- betas_grid[, params$id[1] ]
 # save betas!
 # this is a simple vector
-file_out <- paste0( 'betas-', name_in, '-best.txt.gz' )
+file_out <- paste0( 'betas', name_in, '-best.txt.gz' )
 write_lines( betas, file_out )
 
 # plot results

@@ -12,14 +12,23 @@ p_seq <- seq_log(1e-4, 0.2, length.out = 30)
 
 # determine which type to run
 type <- args_cli()[1]
-if ( is.na( type ) )
-    stop( 'Usage: <type: ssns_ctrl or ssns_srns>' )
+
+# handle old and new cases!
+if ( is.na( type ) ) {
+    # new setup, type isn't used, this will interpolate fine in all cases below
+    type <- ''
+    # all processing happens in subdirectory
+    setwd( 'train' )
+} else {
+    # add a dash to separate parts of path as needed
+    type <- paste0( '-', type )
+}
 
 # load filtered sumstats `df_beta`!
-df_beta <- read_tsv( paste0( 'betas-', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
+df_beta <- read_tsv( paste0( 'betas', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
 
 # load `ld` data/backing file, matching SNPs in betas
-load( paste0( 'ld-', type, '.RData' ) )
+load( paste0( 'ld', type, '.RData' ) )
 
 # this is random, make it reproducible
 set.seed(1)
@@ -48,7 +57,7 @@ indexes_keep <- which( range_corr > ( 0.95 * quantile( range_corr, 0.95, na.rm =
 betas <- rowMeans( sapply( multi_auto[ indexes_keep ], function( auto ) auto$beta_est ) )
 
 # store results
-file_out <- paste0( 'betas-', type, '-ldpred2-auto-h', h2_est, '.txt.gz' )
+file_out <- paste0( 'betas', type, '-ldpred2-auto-h', h2_est, '.txt.gz' )
 write_lines( betas, file_out )
 
 
