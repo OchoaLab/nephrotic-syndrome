@@ -40,6 +40,8 @@ if ( type == '' ) {
     # in new setup, we haven't defined ind_train, do it now that we know the number of individuals (use all)
     ind_train <- 1L : length( y )
 }
+# load PCs, to condition on when scoring with R2
+PCs <- read_eigenvec( name_data )$eigenvec
 # load filtered sumstats `df_beta`!
 df_beta <- read_tsv( paste0( 'betas', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
 # load previously calculated results
@@ -49,8 +51,8 @@ params <- read_tsv( paste0( 'params', name_in, '.txt.gz' ), show_col_types = FAL
 # calculate PRS for training individuals only
 pred_grid <- big_prodMat( G, betas_grid, ind.row = ind_train, ind.col = df_beta[["_NUM_ID_"]] )
 
-# use training individuals to score grid values using correlation, determine which is best
-params$cor <- apply( pred_grid, 2, function(x) pcor(x, y[ ind_train ], NULL)[1] )
+# use training individuals to score grid values using correlation, adjusting for PCs, determine which is best
+params$cor <- apply( pred_grid, 2, function( x ) pcor( x, y[ ind_train ], PCs[ ind_train, ] )[1] )
 
 # add more info, sort by correlation
 params <- params %>%

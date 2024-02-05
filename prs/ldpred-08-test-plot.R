@@ -63,6 +63,6 @@ fig_start( name_out, width = 6 )
 ggplot( data, aes( x = model, y = R2 ) ) + 
     geom_errorbar( aes( ymin = lower, ymax = upper ), width = .5 ) +
     geom_point( ) +
-    ylim(0, NA) + 
+    expand_limits( y = 0 ) + 
     theme_classic()
 fig_end()

@@ -1,5 +1,6 @@
 library(bigsnpr)
 library(readr)
+library(genio)
 library(ochoalabtools)
 
 # determine which type to run
@@ -40,6 +41,8 @@ if ( type == '' ) {
     # in new setup, we haven't defined ind_test, do it now that we know the number of individuals (use all)
     ind_test <- 1L : length( y )
 }
+# load PCs, to condition on when scoring with R2
+PCs <- read_eigenvec( name_data )$eigenvec
 
 # names of cases to score in testing data
 names <- paste0( type, '-ldpred2-', c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' ) )
@@ -67,7 +70,7 @@ for ( name in names ) {
     
     # calculate PRS for test individuals now
     preds <- big_prodVec( G, betas, ind.row = ind_test, ind.col = df_beta[["_NUM_ID_"]] )
-    # calculate and save only correlation coefficient to truth
-    cor <- pcor( preds, y[ ind_test ], NULL )
+    # calculate and save only correlation coefficient to truth, adjusting for PCs
+    cor <- pcor( preds, y[ ind_test ], PCs[ ind_test, ] )
     write_lines( cor, file_out )
 }

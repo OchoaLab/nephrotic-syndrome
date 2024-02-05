@@ -256,6 +256,12 @@ time Rscript ldpred-00-fix-pheno-fam.R
 time Rscript bim-add-posg.R data 38
 # 1m20.104s DCC
 
+# calculate PCs using GCTA (for concistency with rest of project)
+time gcta64 --bfile data --make-grm --out data
+# 1m8.820s DCC
+time gcta64 --grm data --pca 10 --out data
+# 0m0.122s DCC
+
 # create RDS versions of train+test data (here merged)
 time Rscript prs-new-04-make-rds.R data
 # 2m12.065s DCC
@@ -349,9 +355,6 @@ time Rscript ldpred-08-test-plot.R ssns_ctrl
 # 0m7.229s DCC
 time Rscript ldpred-08-test-plot.R ssns_srns
 # 0m6.639s DCC
-
-# TODO: include PCs in all evaluations!
-# '/datacommons/ochoalab/ssns_gwas/replication/bristol_data/GMMAT/ssns_srns/ssns_srns_mac20.eigenvec'
 
 
 #######################
@@ -487,6 +490,7 @@ sbatch -J ldpred-02-score -o ldpred-02-score.out ldpred-02-score.q
 
 # make nice plot that summarize testing results
 time Rscript ldpred-08-test-plot.R
+# 0m6.584s DCC
 
 
 # TODO:
