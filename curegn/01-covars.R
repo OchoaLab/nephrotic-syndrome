@@ -175,5 +175,20 @@ data$RaceCat[ data$RaceCat == 'Native American' ] <- 'NatAmr'
 # select colums of interest now only
 data2 <- select( data, id = WGS_ID, sex = PAT_Sex, race = RaceCat, age = AgeAtBiopYr, diagnosis = DiagnosisPath, ns )
 
+# add another kind of diagnosis inferred by Rasheed
+data2$diagnosis_rasheed <- NA
+data2$diagnosis_rasheed[ data2$diagnosis == 'MCD' & data2$age <= 21 ] <- 'SSNS'
+data2$diagnosis_rasheed[ data2$diagnosis == 'FSGS' & data2$age <= 21 ] <- 'SRNS'
+
+# confirm counts and distribution
+table( data2$diagnosis_rasheed, data2$diagnosis, useNA='i' )
+##      FSGS IgAN MCD  MN
+## SRNS  170    0   0   0
+## SSNS    0    0 250   0
+## <NA>  308  517 165 442
+
+# turn into binary variable, as done earlier for discovery dataset
+data2$ssns_srns <- ifelse( data2$diagnosis_rasheed == 'SSNS', 0, ifelse( data2$diagnosis_rasheed == 'SRNS', 1, NA ) )
+
 # write covariates table
 write_tsv( data2, 'patient-data.txt.gz' )
