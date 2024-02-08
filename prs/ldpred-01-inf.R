@@ -8,19 +8,23 @@ library(ochoalabtools)
 # run a finer grid for smaller values after seeing that the perform best
 # (doing it now is best because this method is much faster than the following ones)
 herits <- c( (1:9)/100, (1:9)/10 )
+# support old data for now
+types_old <- c('ssns_ctrl', 'ssns_srns')
 
 # determine which type to run
 type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type>' )
 
 # handle old and new cases!
-if ( is.na( type ) ) {
-    # new setup, type isn't used, this will interpolate fine in all cases below
-    type <- ''
-    # all processing happens in subdirectory
-    setwd( 'train' )
-} else {
+if ( type %in% types_old ) {
     # add a dash to separate parts of path as needed
     type <- paste0( '-', type )
+} else {
+    # all processing happens in subdirectory
+    setwd( type )
+    # type isn't used afterwads, this will interpolate fine in all cases below
+    type <- ''
 }
 
 # load filtered sumstats `df_beta`!

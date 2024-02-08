@@ -3,33 +3,39 @@ library(readr)
 library(genio)
 library(ochoalabtools)
 
+# constants
+# support old data for now
+types_old <- c('ssns_ctrl', 'ssns_srns')
+
 # determine which type to run
 type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type>' )
 
 # handle old and new cases!
-if ( is.na( type ) ) {
-    # new setup, type isn't used, this will interpolate fine in all cases below
-    type <- ''
-    # all processing happens in subdirectory
-    setwd( 'test' )
-    name_data <- 'mac20'
-    # location of PRSs is training!
-    dir_in <- '../train/'
-} else {
+if ( type %in% types_old ) {
     # add a dash to separate parts of path as needed
-    type <- paste0( '-', type )
+    type_in <- paste0( '-', type )
     name_data <- 'data'
     # load indexes of testing individuals
     ind_test <- as.numeric( read_lines( 'ind-test.txt.gz' ) )
     # location of PRSs is local
     dir_in <- ''
+} else {
+    # new setup, type isn't used, this will interpolate fine in all cases below
+    type_in <- ''
+    # all processing happens in subdirectory
+    setwd( 'test' )
+    name_data <- 'mac20'
+    # location of PRSs is training!
+    dir_in <- '../train/'
 }
 
 message( 'Loading testing dataset' )
 
-# TODO: need to map SNPs from 'train' into 'test' here!
+# need to map SNPs from 'train' into 'test' here!
 # load filtered sumstats `df_beta`!
-df_beta <- read_tsv( paste0( 'betas', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
+df_beta <- read_tsv( paste0( 'betas', type_in, '-clean-matched.txt.gz' ), show_col_types = FALSE )
 
 # load testing dataset
 # Attach the "bigSNP" object in R session
@@ -37,7 +43,7 @@ obj.bigSNP <- snp_attach( paste0( name_data, '.rds' ) )
 G <- obj.bigSNP$genotypes
 y <- obj.bigSNP$fam$affection
 y[ y == 0 ] <- NA # in plink format, zeros are missing, translate appropriately here!
-if ( type == '' ) {
+if ( type_in == '' ) {
     # in new setup, we haven't defined ind_test, do it now that we know the number of individuals (use all)
     ind_test <- 1L : length( y )
 }
@@ -45,7 +51,11 @@ if ( type == '' ) {
 PCs <- read_eigenvec( name_data )$eigenvec
 
 # names of cases to score in testing data
-names <- paste0( type, '-ldpred2-', c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' ) )
+names <- paste0( type_in, '-ldpred2-', c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' ) )
+
+# also prepend to "names" to denote this alternative origin of data, which from here on is only used in outputs!
+if ( type == 'base' )
+    names <- paste0( '-', type, names )
 
 # process preexisting results
 for ( name in names ) {
@@ -63,7 +73,7 @@ for ( name in names ) {
     # load input
     betas <- as.numeric( read_lines( file_in ) )
 
-    if ( type == '' ) {
+    if ( type_in == '' ) {
         # for new pipeline only, subset betas using precalculated map of SNPs from 'train' into 'test'!
         betas <- betas[ df_beta[["_NUM_ID_.ss"]] ]
     }

@@ -430,6 +430,9 @@ time Rscript prs-new-04-make-rds.R train/mac20
 # 1m42.520s DCC
 time Rscript prs-new-04-make-rds.R test/mac20
 # 1m38.067s DCC
+# do base too, to calculate LD in it
+time Rscript prs-new-04-make-rds.R base/mac20
+# 16m13.505s DCC
 
 # clean summary stats (convert scores to betas, subset to array)
 time Rscript prs-new-05-sumstats-clean.R
@@ -440,14 +443,23 @@ time Rscript prs-new-05-sumstats-clean.R
 # 2m10.932s DCC
 
 # subset again to match to training data
-time Rscript prs-new-06-sumstats-match.R
+time Rscript prs-new-06-sumstats-match.R train
 # 672,360 variants to be matched.
 # 0 ambiguous SNPs have been removed.
 # 528,964 variants have been matched; 0 were flipped and 0 were reversed.
+# make a dummy version for base data, needed to get base's LD
+time Rscript prs-new-06-sumstats-match.R base
+# 672,360 variants to be matched.
+# 0 ambiguous SNPs have been removed.
+# 672,360 variants have been matched; 0 were flipped and 0 were reversed.
+# 2m44.363s DCC
 
-# calculate LD matrix for training data (check that it works if $type is left undefined, as it should be here!)
-sbatch -J ld -o ld.out prs-new-07-ld-matched-snps.q
+# calculate LD matrix for training data
+type=train; sbatch -J ld-$type -o ld-$type.out --export=type=$type prs-new-07-ld-matched-snps.q
 # 6m17.402s/86m49.116s DCC
+# try experiment where LD is from base data instead
+type=base; sbatch -J ld-$type -o ld-$type.out --export=type=$type prs-new-07-ld-matched-snps.q
+# 80m57.891s/1240m14.603s DCC
 
 # before scoring, new pipeline requires alignment between training and testing data
 time Rscript prs-new-08-match-train-test.R
@@ -457,42 +469,61 @@ time Rscript prs-new-08-match-train-test.R
 # 1m32.168s DCC
 
 # then run ldpred-inf version, test a grid of heritabilities to determine quickly what is more promising
-sbatch -J ldpred-01-inf -o ldpred-01-inf.out ldpred-01-inf.q
+#sbatch -J ldpred-01-inf -o ldpred-01-inf.out ldpred-01-inf.q
+type=train; sbatch -J ldpred-01-inf-$type -o ldpred-01-inf-$type.out --export=type=$type ldpred-01-inf.q
 # 2m53.340s DCC
+# use base for alternative version
+type=base; sbatch -J ldpred-01-inf-$type -o ldpred-01-inf-$type.out --export=type=$type ldpred-01-inf.q
+# 3m58.094s DCC
 
 # fit parameters using training data (inf version)
-time Rscript ldpred-01-inf-fit.R
+time Rscript ldpred-01-inf-fit.R train
 # 1m31.065s DCC
+time Rscript ldpred-01-inf-fit.R base
+# 1m22.593s DCC
 
 # run grid version, which is more computationally intensive
-sbatch -J ldpred-03-grid -o ldpred-03-grid.out ldpred-03-grid.q
+type=train; sbatch -J ldpred-03-grid-$type -o ldpred-03-grid-$type.out --export=type=$type ldpred-03-grid.q
 # 22m10.058s DCC
+type=base; sbatch -J ldpred-03-grid-$type -o ldpred-03-grid-$type.out --export=type=$type ldpred-03-grid.q
+# 34m41.436s DCC
 
 # fit parameters using training data (grid version)
-time Rscript ldpred-04-grid-fit.R
+time Rscript ldpred-04-grid-fit.R train
 # 3m25.275s DCC
+time Rscript ldpred-04-grid-fit.R base
+# 3m6.011s DCC
 
 # run auto version
-sbatch -J ldpred-05-auto -o ldpred-05-auto.out ldpred-05-auto.q 
+type=train; sbatch -J ldpred-05-auto-$type -o ldpred-05-auto-$type.out --export=type=$type ldpred-05-auto.q
 # 3m4.668s DCC
+type=base; sbatch -J ldpred-05-auto-$type -o ldpred-05-auto-$type.out --export=type=$type ldpred-05-auto.q
+# 8m8.392s DCC
+
+# base version needs one more step to map data to training SNOs
+time Rscript ldpred-05-auto-map-base-to-train.R
+# 0m12.843s DCC
 
 # run lassosum version
-sbatch -J ldpred-06-lassosum -o ldpred-06-lassosum.out ldpred-06-lassosum.q
+type=train; sbatch -J ldpred-06-lassosum-$type -o ldpred-06-lassosum-$type.out --export=type=$type ldpred-06-lassosum.q
 # 2m17.116s DCC
+type=base; sbatch -J ldpred-06-lassosum-$type -o ldpred-06-lassosum-$type.out --export=type=$type ldpred-06-lassosum.q
+# 4m3.944s DCC
 
 # fit parameters using training data (lassosum version)
-sbatch -J ldpred-07-lassosum-fit -o ldpred-07-lassosum-fit.out ldpred-07-lassosum-fit.q
+type=train; sbatch -J ldpred-07-lassosum-fit-$type -o ldpred-07-lassosum-fit-$type.out --export=type=$type ldpred-07-lassosum-fit.q
 # 2m36.789s DCC
+type=base; sbatch -J ldpred-07-lassosum-fit-$type -o ldpred-07-lassosum-fit-$type.out --export=type=$type ldpred-07-lassosum-fit.q
+# 2m13.012s DCC
 
 # get correlation values that actually reveal which value was best
-sbatch -J ldpred-02-score -o ldpred-02-score.out ldpred-02-score.q
+type=train; sbatch -J ldpred-02-score-$type -o ldpred-02-score-$type.out --export=type=$type ldpred-02-score.q
 # 1m1.827s DCC
+type=base; sbatch -J ldpred-02-score-$type -o ldpred-02-score-$type.out --export=type=$type ldpred-02-score.q
+# 1m1.389s DCC
 
 # make nice plot that summarize testing results
-time Rscript ldpred-08-test-plot.R
+time Rscript ldpred-08-test-plot.R train
 # 0m6.584s DCC
-
-
-# TODO:
-# - consider using LD of base data instead of training data
-
+time Rscript ldpred-08-test-plot.R base
+# 0m8.598s DCC

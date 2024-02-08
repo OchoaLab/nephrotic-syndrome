@@ -9,16 +9,23 @@ library(ochoalabtools)
 names_short <- c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' )
 # for plot, and combines with names_short to make names_long
 name_out <- 'ldpred2'
+# support old data for now
+types_old <- c('ssns_ctrl', 'ssns_srns')
 
 # determine which type to run
 type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type>' )
 
 # handle old and new cases!
-if ( is.na( type ) ) {
+if ( type %in% types_old ) {
+    name_out <- paste0( type, '-', name_out )
+} else {
     # all processing happens in subdirectory
     setwd( 'test' )
-} else {
-    name_out <- paste0( type, '-', name_out )
+    # also prepend to "names" to denote this alternative origin of data, which from here on is only used in outputs!
+    if ( type == 'base' )
+        name_out <- paste0( type, '-', name_out )
 }
 
 # in all cases, output name will match inputs in saying it's about correlations
@@ -64,5 +71,6 @@ ggplot( data, aes( x = model, y = R2 ) ) +
     geom_errorbar( aes( ymin = lower, ymax = upper ), width = .5 ) +
     geom_point( ) +
     expand_limits( y = 0 ) + 
-    theme_classic()
+    theme_classic()+
+    labs( x = 'Model', y = "Correlation to trait" )
 fig_end()

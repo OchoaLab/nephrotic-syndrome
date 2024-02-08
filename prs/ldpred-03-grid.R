@@ -7,19 +7,23 @@ library(ochoalabtools)
 # best value from ldpred2-inf scan, and also other previous ldpred2-grid tests.  this isn't single value tested, but tests are centered around it
 h2_est <- 0.1
 NCORES <- 10
+# support old data for now
+types_old <- c('ssns_ctrl', 'ssns_srns')
 
 # determine which type to run
 type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type>' )
 
 # handle old and new cases!
-if ( is.na( type ) ) {
-    # new setup, type isn't used, this will interpolate fine in all cases below
-    type <- ''
-    # all processing happens in subdirectory
-    setwd( 'train' )
-} else {
+if ( type %in% types_old ) {
     # add a dash to separate parts of path as needed
     type <- paste0( '-', type )
+} else {
+    # all processing happens in subdirectory
+    setwd( type )
+    # type isn't used afterwads, this will interpolate fine in all cases below
+    type <- ''
 }
 
 # load filtered sumstats `df_beta`!

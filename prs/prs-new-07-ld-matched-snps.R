@@ -9,21 +9,26 @@ library(readr)
 NCORES <- 30
 # window size suggested in ldpred vignette, not sure if there's more typical values to consider!
 size_cM <- 3 / 1000
+# support old data for now
+types_old <- c('ssns_ctrl', 'ssns_srns')
 
-# support old data for now, expect ssns_ctrl or ssns_srns
-old_type <- args_cli()[1]
+type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type>' )
 
 # load precalculated data
 # either way assume script is run from correct local path
-if ( !is.na( old_type ) ) {
+if ( type %in% types_old ) {
     name <- 'data'
-    file_betas_matched <- paste0( 'betas-', old_type, '-clean-matched.txt.gz' )
+    file_betas_matched <- paste0( 'betas-', type, '-clean-matched.txt.gz' )
     # LD backing file base (sbk extension gets added automatically)
-    file_ld <- paste0( 'ld-', old_type )
+    file_ld <- paste0( 'ld-', type )
 } else {
-    name <- 'train/mac20'
-    file_betas_matched <- 'train/betas-clean-matched.txt.gz'
-    file_ld <- 'train/ld'
+    # work in desired subdirectory (usually base, train, or test)
+    setwd( type )
+    name <- 'mac20'
+    file_betas_matched <- 'betas-clean-matched.txt.gz'
+    file_ld <- 'ld'
 }
 
 # to save LD object too

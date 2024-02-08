@@ -9,26 +9,30 @@ NCORES <- 10
 # reduce this up to 0.4 if you have some (large) mismatch with the LD ref
 coef_shrink <- 0.95
 p_seq <- seq_log(1e-4, 0.2, length.out = 30)
+# support old data for now
+types_old <- c('ssns_ctrl', 'ssns_srns')
 
 # determine which type to run
 type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type>' )
 
 # handle old and new cases!
-if ( is.na( type ) ) {
-    # new setup, type isn't used, this will interpolate fine in all cases below
-    type <- ''
-    # all processing happens in subdirectory
-    setwd( 'train' )
-} else {
+if ( type %in% types_old ) {
     # add a dash to separate parts of path as needed
-    type <- paste0( '-', type )
+    type_in <- paste0( '-', type )
+} else {
+    # all processing happens in subdirectory
+    setwd( type )
+    # new setup, type isn't used, this will interpolate fine in all cases below
+    type_in <- ''
 }
 
 # load filtered sumstats `df_beta`!
-df_beta <- read_tsv( paste0( 'betas', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
+df_beta <- read_tsv( paste0( 'betas', type_in, '-clean-matched.txt.gz' ), show_col_types = FALSE )
 
 # load `ld` data/backing file, matching SNPs in betas
-load( paste0( 'ld', type, '.RData' ) )
+load( paste0( 'ld', type_in, '.RData' ) )
 
 # this is random, make it reproducible
 set.seed(1)
