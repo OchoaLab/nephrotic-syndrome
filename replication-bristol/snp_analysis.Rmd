@@ -1,0 +1,196 @@
+```{r}
+library(tidyverse)
+library(readr)
+```
+
+
+```{r}
+af_results = read.table("af_test_summary_allsnps_ssns_ctrl.txt", sep = "\t", header = TRUE) %>% 
+  filter(snp_test == "imputation bias" & Bristol_sig == "excludechr6:FALSE")
+af_results_snp_list = af_results$ID
+```
+
+```{r}
+dir = '/datacommons/ochoalab/ssns_gwas/replication/bristol_data/AF/'
+setwd( dir )
+disease_subtype = "ssns_ctrl"
+ancestry = "all"
+
+## control vs control
+gnomad_AC <- read.table(paste0(dir, "gnomad/outfile_new/gnomad-genome_", disease_subtype, "_", ancestry, ".txt"), sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+discovery_AC <- read.table(paste0(dir, disease_subtype, "/discovery_AC_ancestry_combined.txt"), 
+                           header = TRUE, sep = " ")
+AC_df = merge(gnomad_AC, discovery_AC, by = c("CHROM", "POS", "REF", "ALT")) %>% 
+  filter(ID %in% af_results$ID)
+
+```
+
+## split by tgp and calculate
+```{r}
+# # step 2: run allele_freq_discovery.q on NS data to remove false positive SNPs
+# # load phenotype and fixed covariates file
+# # write id files to calculate AC per ancestry
+data <- read_tsv( '/datacommons/ochoalab/ssns_gwas/imputed/patient-data.txt.gz', col_types = 'cccccdciiii' )
+sas_id = data %>% filter(diagnosis == "Control" & ancestry == "sas" & dataset == "array") %>% select(id)
+afr_id = data %>% filter(diagnosis == "Control" & ancestry == "afr" & dataset == "array") %>% select(id)
+eur_id = data %>% filter(diagnosis == "Control" & ancestry == "eur" & dataset == "array") %>% select(id)
+all_id = data %>% filter(diagnosis == "Control"  & dataset == "array") %>% select(id)
+data_control = data %>% filter(diagnosis == "Control")
+table(data_control$ancestry, data_control$dataset)
+write.table(cbind(0, sas_id), paste0(dir, disease_subtype, "/array_ctrl_sas_id.txt"),
+            row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, afr_id), paste0(dir, disease_subtype, "/array_ctrl_afr_id.txt"),
+            row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, eur_id), paste0(dir, disease_subtype, "/array_ctrl_eur_id.txt"),
+            row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, all_id), paste0(dir, disease_subtype, "/array_ctrl_all_id.txt"),
+            row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+# tgp
+sas_id = data %>% filter(diagnosis == "Control" & ancestry == "sas" & dataset == "tgp") %>% select(id)
+afr_id = data %>% filter(diagnosis == "Control" & ancestry == "afr" & dataset == "tgp") %>% select(id)
+eur_id = data %>% filter(diagnosis == "Control" & ancestry == "eur" & dataset == "tgp") %>% select(id)
+all_id = data %>% filter(diagnosis == "Control"  & dataset == "tgp") %>% select(id)
+data_control = data %>% filter(diagnosis == "Control")
+table(data_control$ancestry, data_control$dataset)
+write.table(cbind(0, sas_id), paste0(dir, disease_subtype, "/tgp_ctrl_sas_id.txt"),
+            row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, afr_id), paste0(dir, disease_subtype, "/tgp_ctrl_afr_id.txt"),
+            row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, eur_id), paste0(dir, disease_subtype, "/tgp_ctrl_eur_id.txt"),
+            row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, all_id), paste0(dir, disease_subtype, "/tgp_ctrl_all_id.txt"),
+            row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+# step 3: run AC_processing.q (discovery_AC_processing.R)
+## array
+sas_ac <- read.table(paste0(dir, disease_subtype, "/array_discoveryAC_sas_gnomadsnps.acount"))
+colnames(sas_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+sas_ac_clean = sas_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(disc_AC_sas = ALT_FREQS, disc_AN_sas = OBS_CT)
+
+eur_ac <- read.table(paste0(dir, disease_subtype, "/array_discoveryAC_eur_gnomadsnps.acount"))
+colnames(eur_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+eur_ac_clean = eur_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(disc_AC_eur = ALT_FREQS, disc_AN_eur = OBS_CT)
+
+afr_ac <- read.table(paste0(dir, disease_subtype, "/array_discoveryAC_sas_gnomadsnps.acount"))
+colnames(afr_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+afr_ac_clean = afr_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(disc_AC_afr = ALT_FREQS, disc_AN_afr = OBS_CT)
+
+merge1 = merge(sas_ac_clean, eur_ac_clean, by = c("CHROM", "POS", "REF", "ALT"), all = TRUE)
+merge2 = merge(merge1, afr_ac_clean, by = c("CHROM", "POS", "REF", "ALT"), all = TRUE) %>% 
+  rename(array_disc_AC_sas = disc_AC_sas,
+         array_disc_AN_sas = disc_AN_sas,
+         array_disc_AC_eur = disc_AC_eur,
+         array_disc_AN_eur = disc_AN_eur,
+         array_disc_AC_afr = disc_AC_afr,
+         array_disc_AN_afr = disc_AN_afr)
+
+write.table(merge2, paste0(dir, disease_subtype, "/array_discovery_AC_ancestry_combined.txt"),
+            row.names=FALSE, quote=FALSE, col.names = TRUE)
+## tgp
+sas_ac <- read.table(paste0(dir, disease_subtype, "/tgp_discoveryAC_sas_gnomadsnps.acount"))
+colnames(sas_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+sas_ac_clean = sas_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(disc_AC_sas = ALT_FREQS, disc_AN_sas = OBS_CT)
+
+eur_ac <- read.table(paste0(dir, disease_subtype, "/tgp_discoveryAC_eur_gnomadsnps.acount"))
+colnames(eur_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+eur_ac_clean = eur_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(disc_AC_eur = ALT_FREQS, disc_AN_eur = OBS_CT)
+
+afr_ac <- read.table(paste0(dir, disease_subtype, "/tgp_discoveryAC_sas_gnomadsnps.acount"))
+colnames(afr_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+afr_ac_clean = afr_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(disc_AC_afr = ALT_FREQS, disc_AN_afr = OBS_CT)
+
+merge1 = merge(sas_ac_clean, eur_ac_clean, by = c("CHROM", "POS", "REF", "ALT"), all = TRUE)
+merge2 = merge(merge1, afr_ac_clean, by = c("CHROM", "POS", "REF", "ALT"), all = TRUE) %>% 
+    rename(tgp_disc_AC_sas = disc_AC_sas,
+         tgp_disc_AN_sas = disc_AN_sas,
+         tgp_disc_AC_eur = disc_AC_eur,
+         tgp_disc_AN_eur = disc_AN_eur,
+         tgp_disc_AC_afr = disc_AC_afr,
+         tgp_disc_AN_afr = disc_AN_afr)
+
+write.table(merge2, paste0(dir, disease_subtype, "/tgp_discovery_AC_ancestry_combined.txt"),
+            row.names=FALSE, quote=FALSE, col.names = TRUE)
+
+# Bristol AC (case vs control)
+sas_ac <- read.table(paste0(dir, disease_subtype, "/bristolAC_sas_all.acount")) 
+colnames(sas_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+sas_ac_clean = sas_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(bristol_AC_sas = ALT_FREQS, bristol_AN_sas = OBS_CT)
+
+eur_ac <- read.table(paste0(dir, disease_subtype, "/bristolAC_eur_all.acount")) 
+colnames(eur_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+eur_ac_clean = eur_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(bristol_AC_eur = ALT_FREQS, bristol_AN_eur = OBS_CT)
+
+afr_ac <- read.table(paste0(dir, disease_subtype, "/bristolAC_afr_all.acount")) 
+colnames(afr_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+afr_ac_clean = afr_ac  %>%
+  separate(ID, c("CHROM", "POS", "A1", "A2")) %>% select(-A1, -A2) %>% dplyr::rename(bristol_AC_afr = ALT_FREQS, bristol_AN_afr = OBS_CT)
+# 7075
+merge1 = merge(sas_ac_clean, eur_ac_clean, by = c("CHROM", "POS", "REF", "ALT"), all = TRUE)
+merge2 = merge(merge1, afr_ac_clean, by = c("CHROM", "POS", "REF", "ALT"), all = TRUE) 
+
+write.table(merge2, paste0(dir, disease_subtype, "/Bristol_AC_ancestry_combined.txt"),
+            row.names=FALSE, quote=FALSE, col.names = TRUE)
+
+
+# step 4: Merge discovery AC and gnomad AC
+array_discovery_AC <- read.table(paste0(dir, disease_subtype, "/array_discovery_AC_ancestry_combined.txt"), 
+                           header = TRUE, sep = " ")
+tgp_discovery_AC <- read.table(paste0(dir, disease_subtype, "/tgp_discovery_AC_ancestry_combined.txt"), 
+                           header = TRUE, sep = " ")
+disc_AC_df = merge(array_discovery_AC, tgp_discovery_AC, by = c("CHROM", "POS", "REF", "ALT"))
+
+Bristol_AC <- read.table(paste0(dir, disease_subtype, "/Bristol_AC_ancestry_combined.txt"), 
+                           header = TRUE, sep = " ")
+disc_Bristol_AC_df = merge(disc_AC_df, Bristol_AC, by = c("CHROM", "POS", "REF", "ALT"))
+
+# merge with selected SNPS
+selected_snps = merge(AC_df, disc_Bristol_AC_df, by = c("CHROM", "POS", "REF", "ALT")) %>% 
+  mutate(AF_eur_gnomad = AC_nfe/AN_nfe,
+         AF_afr_gnomad = AC_afr/AN_afr,
+         AF_sas_gnomad = AC_sas/AN_sas,
+         AF_eur_disc = disc_AC_eur/disc_AN_eur,
+         AF_afr_disc = disc_AC_afr/disc_AN_afr,
+         AF_sas_disc = disc_AC_sas/disc_AN_sas,
+         AF_eur_array = array_disc_AC_eur/array_disc_AN_eur,
+         AF_afr_array = array_disc_AC_afr/array_disc_AN_afr,
+         AF_sas_array = array_disc_AC_sas/array_disc_AN_sas,
+         AF_eur_tgp = tgp_disc_AC_eur/tgp_disc_AN_eur,
+         AF_afr_tgp = tgp_disc_AC_afr/tgp_disc_AN_afr,
+         AF_sas_tgp = tgp_disc_AC_sas/tgp_disc_AN_sas,
+         AF_eur_bristol = bristol_AC_eur/bristol_AN_eur,
+         AF_afr_bristol = bristol_AC_afr/bristol_AN_afr,
+         AF_sas_bristol = bristol_AC_sas/bristol_AN_sas)
+
+selected_snps_AF = selected_snps %>% select(ID, AF_eur_gnomad, AF_afr_gnomad, AF_sas_gnomad,
+                                            AF_eur_disc, AF_afr_disc, AF_sas_disc,
+                                            AF_eur_array, AF_afr_array, AF_sas_array,
+                                            AF_eur_tgp, AF_afr_tgp, AF_sas_tgp, AF_eur_bristol,
+                                            AF_afr_bristol, AF_sas_bristol) 
+
+selected_snps_plot = gather(selected_snps_AF, key = "source", value = "AF", -ID) %>% 
+  separate(source, c("stat", "ancestry", "dataset")) %>% select(-stat) %>% 
+  spread(key = dataset, value = AF) %>% mutate(ancestry = as.factor(ancestry))
+
+write.table(selected_snps, paste0(dir, disease_subtype, "/selected_snps_AF_rawdata.txt"),
+            row.names=FALSE, quote=FALSE, col.names = TRUE)
+
+library(ggplot2)
+ggplot(selected_snps_plot, aes(x = ancestry, y = AF)) + geom_boxplot() + facet_wrap(~dataset)
+```
+
+
+```{r, fig.height = 4, fig.width=9}
+ggplot(selected_snps_plot, aes(x = bristol, y = gnomad)) +
+  geom_point() + facet_wrap(~ancestry) + xlab('Bristol AF') + ylab("gnomad AF") + theme_bw() +
+  ggtitle('AF: Bristol cases vs gnomad controls')
+```
+
