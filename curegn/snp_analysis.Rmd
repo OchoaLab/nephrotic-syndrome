@@ -1,0 +1,99 @@
+```{r}
+library(tidyverse)
+library(readr)
+```
+
+
+```{r}
+dir = '/datacommons/ochoalab/ssns_gwas/replication/curegn/'
+setwd( dir )
+#############################
+disease_subtype = "ns_ctrl"
+ancestry = "all"
+#############################
+# merge gnomad and curegn
+gnomad_AC <- read.table(paste0(dir, "gnomad/outfile/gnomad-genome_", disease_subtype, "_all_new.txt"), sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+curegn_AC <- read.table(paste0(dir, "AF/ns/curegn_AC_ns.txt"), header = TRUE) 
+
+cases_vs_control = merge(gnomad_AC, curegn_AC %>% mutate(CHROM = paste0("chr", CHR)), by = c("CHROM", "POS", "REF", "ALT"))
+ #%>% 
+  #select(-REF.y, -ALT.y) %>% dplyr::rename(REF = REF.x, ALT = ALT.x)
+
+```
+
+```{r}
+# merge with selected SNPS
+snps_list = cases_vs_control %>% 
+  mutate(AF_eur_gnomad = AC_nfe/AN_nfe,
+         AF_afr_gnomad = AC_afr/AN_afr,
+         AF_sas_gnomad = AC_sas/AN_sas,
+         AF_eas_gnomad = AC_eas/AN_eas,
+         AF_eur_curegn = curegn_AC_eur/curegn_AN_eur,
+         AF_afr_curegn = curegn_AC_afr/curegn_AN_afr,
+         AF_sas_curegn = curegn_AC_sas/curegn_AN_sas,
+         AF_eas_curegn = curegn_AC_eas/curegn_AN_eas)
+
+snps_AF = snps_list %>% select(ID, AF_eur_gnomad, AF_afr_gnomad, AF_sas_gnomad, AF_eas_gnomad,
+                                            AF_eur_curegn, AF_afr_curegn, AF_sas_curegn, AF_eas_curegn) 
+
+snps_plot = gather(snps_AF, key = "source", value = "AF", -ID) %>% 
+  separate(source, c("stat", "ancestry", "dataset")) %>% select(-stat) %>% 
+  spread(key = dataset, value = AF) %>% mutate(ancestry = as.factor(ancestry))
+
+write.table(snps_AF, "/datacommons/ochoalab/ssns_gwas/replication/curegn/ns_curegn_gnomad_AF_rawdata_flipped.txt",
+            row.names=FALSE, quote=FALSE, col.names = TRUE)
+
+library(ggplot2)
+ggplot(snps_plot, aes(x = ancestry, y = AF)) + geom_boxplot() + facet_wrap(~dataset)
+```
+
+
+```{r, fig.height = 6, fig.width=9}
+ggplot(snps_plot, aes(x = curegn, y = gnomad)) +
+  geom_point() + facet_wrap(~ancestry) + xlab('curegn AF') + ylab("gnomad AF") + theme_bw() +
+  ggtitle('AF: curegn ns cases vs gnomad controls (flipped ref/alt)')
+```
+NS EUR
+```{r}
+dir = '/datacommons/ochoalab/ssns_gwas/replication/curegn/'
+setwd( dir )
+disease_subtype = "ns_ctrl"
+ancestry = "eur"
+gnomad_AC <- read.table(paste0(dir, "gnomad/outfile/gnomad-genome_ns_ctrl_eur_only.txt"), sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+eur_ac <- read.table(paste0(dir, "AF/ns/eur/curegnAC_eur_sub.acount")) 
+colnames(eur_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+eur_ac_clean = eur_ac  %>%
+  separate(ID, c("CHROM", "POS"))  %>% dplyr::rename(curegn_AC_eur = ALT_FREQS, curegn_AN_eur = OBS_CT)
+
+cases_vs_control = merge(gnomad_AC, eur_ac_clean %>% mutate(CHROM = paste0("chr", CHROM)), by = c("CHROM", "POS", "REF", "ALT"))# %>% 
+test = merge(gnomad_AC, eur_ac_clean %>% mutate(CHROM = paste0("chr", CHROM)), by = c("CHROM", "POS"))
+
+test %>% filter(!ID %in% cases_vs_control$ID)
+```
+
+
+```{r}
+# merge with selected SNPS
+snps_list = cases_vs_control %>% 
+  mutate(AF_eur_gnomad = AC_nfe/AN_nfe,
+         AF_eur_curegn = curegn_AC_eur/curegn_AN_eur)
+
+snps_AF = snps_list %>% select(ID, AF_eur_gnomad, 
+                                            AF_eur_curegn) 
+
+snps_plot = gather(snps_AF, key = "source", value = "AF", -ID) %>% 
+  separate(source, c("stat", "ancestry", "dataset")) %>% select(-stat) %>% 
+  spread(key = dataset, value = AF) %>% mutate(ancestry = as.factor(ancestry))
+
+#write.table(snps_AF, "/datacommons/ochoalab/ssns_gwas/replication/curegn/ns_curegn_gnomad_AF_rawdata_flipped.txt",
+#            row.names=FALSE, quote=FALSE, col.names = TRUE)
+
+library(ggplot2)
+
+```
+
+```{r, fig.height = 6, fig.width=9}
+ggplot(snps_plot, aes(x = curegn, y = gnomad)) +
+  geom_point() + facet_wrap(~ancestry) + xlab('curegn AF') + ylab("gnomad AF") + theme_bw() +
+  ggtitle('AF: curegn ns cases vs gnomad controls (EUR) (ref/alt loss)')
+```
