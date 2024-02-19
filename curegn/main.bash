@@ -193,6 +193,18 @@ rename snps2 snps ${name}2.*
 # preserve second removal list under raw
 mv indiv-rm-round2.txt  raw/
 
+# add missingness filters.  No samples were removed, but 2.5M variants are removed!
+time plink2 --bfile $name --geno 0.1 --mind 0.1 --make-bed --out ${name}2
+# 4m37.029s DCC
+
+# cleanup
+# remove unfiltered copy
+rm $name.{bed,bim,fam}
+# boring log file
+rm ${name}2.log
+# replace old with new files
+rename snps2 snps ${name}2.*
+
 # create mac20 filtered version for GWAS
 time plink2 --bfile $name --mac 20 --make-bed --out $name-mac20
 # 2m5.449s DCC
@@ -200,8 +212,8 @@ time plink2 --bfile $name --mac 20 --make-bed --out $name-mac20
 rm $name-mac20.log
 
 wc -l $name.{bim,fam}
-# 70,436,206 curegn-autosomes-snps.bim
+# 67,888,429 curegn-autosomes-snps.bim
 #      1,852 curegn-autosomes-snps.fam
 wc -l $name-mac20.{bim,fam}
-# 13,644,129 curegn-autosomes-snps-mac20.bim
+# 12,994,000 curegn-autosomes-snps-mac20.bim
 #      1,852 curegn-autosomes-snps-mac20.fam
