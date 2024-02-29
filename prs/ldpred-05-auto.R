@@ -12,27 +12,31 @@ p_seq <- seq_log(1e-4, 0.2, length.out = 30)
 # support old data for now
 types_old <- c('ssns_ctrl', 'ssns_srns')
 
-# determine which type to run
-type <- args_cli()[1]
-if ( is.na( type ) )
+# support old data for now, expect ssns_ctrl or ssns_srns
+args <- args_cli()
+type_base <- args[1]
+type_train <- args[2]
+if ( is.na( type_base ) )
     stop( 'Usage: <type>' )
 
-# handle old and new cases!
-if ( type %in% types_old ) {
-    # add a dash to separate parts of path as needed
-    type_in <- paste0( '-', type )
-} else {
+# extra step for new cases only
+if ( ! type_base %in% types_old ) {
+    if ( is.na( type_train ) )
+        stop( 'Usage: <type_base> <type_train>' )
     # all processing happens in subdirectory
-    setwd( type )
-    # new setup, type isn't used, this will interpolate fine in all cases below
-    type_in <- ''
+    setwd( type_train )
 }
 
+# paths
+file_in <- paste0( 'betas-', type_base, '-clean-matched.txt.gz' )
+file_ld <- paste0( 'ld-', type_base, '.RData' )
+file_out <- paste0( 'betas-', type_base, '-ldpred2-auto-h', h2_est, '.txt.gz' )
+
 # load filtered sumstats `df_beta`!
-df_beta <- read_tsv( paste0( 'betas', type_in, '-clean-matched.txt.gz' ), show_col_types = FALSE )
+df_beta <- read_tsv( file_in, show_col_types = FALSE )
 
 # load `ld` data/backing file, matching SNPs in betas
-load( paste0( 'ld', type_in, '.RData' ) )
+load( file_ld )
 
 # this is random, make it reproducible
 set.seed(1)
@@ -61,7 +65,6 @@ indexes_keep <- which( range_corr > ( 0.95 * quantile( range_corr, 0.95, na.rm =
 betas <- rowMeans( sapply( multi_auto[ indexes_keep ], function( auto ) auto$beta_est ) )
 
 # store results
-file_out <- paste0( 'betas', type, '-ldpred2-auto-h', h2_est, '.txt.gz' )
 write_lines( betas, file_out )
 
 

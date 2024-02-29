@@ -1,18 +1,27 @@
 library(bigsnpr)
 library(genio)
 library(readr)
+library(ochoalabtools)
 
 # loads SNPs from training set, matches them with test set (because of MAC filters and differing populations, they are not identical)
 # NOTE: this is for new pipeline only!
 
-# data to align to
-name <- 'test/mac20'
-file_betas_shared <- '/betas-clean-matched.txt.gz'
-file_betas_in <- paste0( 'train', file_betas_shared ) # data to align
-file_betas_out <- paste0( 'test', file_betas_shared )
+# support old data for now, expect ssns_ctrl or ssns_srns
+args <- args_cli()
+type_base <- args[1]
+type_train <- args[2]
+type_test <- args[3]
+if ( is.na( type_test ) )
+    stop( 'Usage: <base> <train> <test>' )
 
-# load SNP set for training dataset
-bim <- read_bim( name )
+# data to align to
+name_test <- paste0( type_test, '/mac20' )
+file_betas_in <- paste0( type_train, '/betas-', type_base, '-clean-matched.txt.gz' )
+# output should always specify base and training data being aligned
+file_betas_out <- paste0( type_test, '/betas-', type_base, '-', type_train, '-clean-matched.txt.gz' )
+
+# load SNP set for test dataset
+bim <- read_bim( name_test )
 # change names to match snp_match
 names( bim )[ names( bim ) == 'id' ] <- 'rsid'
 names( bim )[ names( bim ) == 'alt' ] <- 'a1'

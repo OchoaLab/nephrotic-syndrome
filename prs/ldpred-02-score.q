@@ -7,7 +7,7 @@
 
 module load R/4.1.1-rhel8
 
-# $type: selects base data subtype (for old cases only): NOTE: must be defined outside!!!
-time Rscript ldpred-02-score.R $type
+# $base $train $test: selects base, training, testing data types: NOTE: must be defined outside!!!
+time Rscript ldpred-02-score.R $base $train $test
 
 module unload R/4.1.1-rhel8

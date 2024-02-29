@@ -11,27 +11,31 @@ herits <- c( (1:9)/100, (1:9)/10 )
 # support old data for now
 types_old <- c('ssns_ctrl', 'ssns_srns')
 
-# determine which type to run
-type <- args_cli()[1]
-if ( is.na( type ) )
+# support old data for now, expect ssns_ctrl or ssns_srns
+args <- args_cli()
+type_base <- args[1]
+type_train <- args[2]
+if ( is.na( type_base ) )
     stop( 'Usage: <type>' )
 
-# handle old and new cases!
-if ( type %in% types_old ) {
-    # add a dash to separate parts of path as needed
-    type <- paste0( '-', type )
-} else {
+# extra step for new cases only
+if ( ! type_base %in% types_old ) {
+    if ( is.na( type_train ) )
+        stop( 'Usage: <type_base> <type_train>' )
     # all processing happens in subdirectory
-    setwd( type )
-    # type isn't used afterwads, this will interpolate fine in all cases below
-    type <- ''
+    setwd( type_train )
 }
 
+# paths
+file_in <- paste0( 'betas-', type_base, '-clean-matched.txt.gz' )
+file_ld <- paste0( 'ld-', type_base, '.RData' )
+name_out <- paste0( 'betas-', type_base, '-ldpred2-inf' )
+
 # load filtered sumstats `df_beta`!
-df_beta <- read_tsv( paste0( 'betas', type, '-clean-matched.txt.gz' ), show_col_types = FALSE )
+df_beta <- read_tsv( file_in, show_col_types = FALSE )
 
 # load `ld` data/backing file, matching SNPs in betas
-load( paste0( 'ld', type, '.RData' ) )
+load( file_ld )
 
 # let's gather output into a single matrix for several heritabilities
 betas_grid <- matrix( NA, nrow = nrow( df_beta ), ncol = length( herits ) )
@@ -46,5 +50,5 @@ for ( i in 1 : length( herits ) ) {
 }
 
 # store results
-write_matrix( paste0( 'betas', type, '-ldpred2-inf' ), betas_grid, ext = 'txt.gz' )
+write_matrix( name_out, betas_grid, ext = 'txt.gz' )
 # in this case the heritability values are so trivial we don't save them

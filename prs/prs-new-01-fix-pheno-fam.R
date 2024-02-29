@@ -3,7 +3,10 @@ library(genio)
 
 # constants
 name <- 'mac20'
-datasets <- c('base', 'train', 'test')
+# datasets to process
+datasets <- c('train-curegn') #, 'base-ssns_ctrl', 'base-ssns_srns', 'base', 'train', 'test')
+# these are based on ssns_ctrl trait
+datasets_ssns_ctrl <- c('base-ssns_ctrl', 'base')
 
 # start by splitting discovery data
 setwd( '/datacommons/ochoalab/ssns_gwas/imputed/prs-new/' )
@@ -12,6 +15,8 @@ setwd( '/datacommons/ochoalab/ssns_gwas/imputed/prs-new/' )
 data_dis <- read_tsv( '../patient-data.txt.gz', show_col_types = FALSE )
 # bristol data is separate, load it now too
 data_bri <- read_tsv( '../../array/patient-data.txt.gz', show_col_types = FALSE )
+# curegn is also separate!
+data_cgn <- read_tsv( '../../../curegn/patient-data.txt.gz', show_col_types = FALSE )
 
 # the bristol data wasn't encoded with the ssns_srns column, construct it here same as for discovery
 data_bri$ssns_srns <- ifelse( data_bri$diagnosis == 'SSNS', 0, ifelse( data_bri$diagnosis == 'SRNS', 1, NA ) )
@@ -19,8 +24,8 @@ data_bri$ssns_srns <- ifelse( data_bri$diagnosis == 'SSNS', 0, ifelse( data_bri$
 # process each case
 for ( dataset in datasets ) {
     # decide which data to use
-    # only test uses bristol, the rest are based on discovery
-    data <- if ( dataset == 'test' ) data_bri else data_dis
+    # only test uses bristol, only curegn uses curegn, the rest are based on discovery
+    data <- if ( dataset == 'test' ) data_bri else if ( dataset == 'train-curegn' ) data_cgn else data_dis
     
     # processing happens in subdirectory of the same name as dataset
     setwd( dataset )
@@ -33,12 +38,15 @@ for ( dataset in datasets ) {
     # data only has IDs, nothing else, populate a bit more just cause it's nice (sex may not be actually used)
     fam$sex <- data$sex
     # translate sex a bit further until it's standardized
-    fam <- fam %>% mutate( sex = ifelse( sex == 'male', 'M', ifelse( sex == 'female', 'F', 'U' ) ) )
-    fam$sex <- sex_to_int( fam$sex )
+    # only curegn already had numerical version (skip since applying this would result in all missing cases)
+    if ( dataset != 'train-curegn' ) {
+        fam <- fam %>% mutate( sex = ifelse( sex == 'male', 'M', ifelse( sex == 'female', 'F', 'U' ) ) )
+        fam$sex <- sex_to_int( fam$sex )
+    }
     # finally, phenotype, actually the key thing we wanted!
     # make sure in all cases SSNS is coded as 1, rest are zero (existing ssns_srns is backwards, gets fixed below)
     # use plink format, so all get shifted by 1 (1=control, 2=case) https://www.cog-genomics.org/plink/1.9/formats#fam
-    fam$pheno <- 1 + if ( dataset == 'base' ) data$ssns_ctrl else 1 - data$ssns_srns
+    fam$pheno <- 1 + if ( dataset %in% datasets_ssns_ctrl ) data$ssns_ctrl else 1 - data$ssns_srns
     # if we did this right, all values are 1 or 2 (no missing cases)
     stopifnot( all( fam$pheno %in% 1:2 ) )
     

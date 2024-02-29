@@ -12,24 +12,30 @@ name_out <- 'ldpred2'
 # support old data for now
 types_old <- c('ssns_ctrl', 'ssns_srns')
 
-# determine which type to run
-type <- args_cli()[1]
-if ( is.na( type ) )
+# support old data for now, expect ssns_ctrl or ssns_srns
+args <- args_cli()
+type_base <- args[1]
+type_train <- args[2]
+type_test <- args[3]
+if ( is.na( type_base ) )
     stop( 'Usage: <type>' )
 
 # handle old and new cases!
-if ( type %in% types_old ) {
-    name_out <- paste0( type, '-', name_out )
+if ( type_base %in% types_old ) {
+    # base is only parameter here
+    type_in <- type_base
 } else {
+    if ( is.na( type_test ) )
+        stop( 'Usage: <type_base> <type_train> <type_test>' )
     # all processing happens in subdirectory
-    setwd( 'test' )
-    # also prepend to "names" to denote this alternative origin of data, which from here on is only used in outputs!
-    if ( type == 'base' )
-        name_out <- paste0( type, '-', name_out )
+    setwd( type_test )
+    # combine base and train in new setup
+    type_in <- paste0( type_base, '-', type_train )
 }
 
 # in all cases, output name will match inputs in saying it's about correlations
-name_out <- paste0( 'cor-', name_out )
+# also prepend to "names" to denote this alternative origin of data, which from here on is only used in outputs!
+name_out <- paste0( 'cor-', type_in, '-', name_out )
 
 # output tibble
 data <- NULL

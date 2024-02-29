@@ -9,27 +9,38 @@ library(readr)
 # - subsets to array SNPs (to reduce total numbers)
 # - renames columns
 
+# constants
+# support old data for now
+types_old <- c('ssns_ctrl', 'ssns_srns')
+
 # support old data for now, expect ssns_ctrl or ssns_srns
-old_type <- args_cli()[1]
+type <- args_cli()[1]
+if ( is.na( type ) )
+    stop( 'Usage: <type>' )
 
 # either way assume script is run from correct local path
-if ( !is.na( old_type ) ) {
+if ( type %in% types_old ) {
     # consider two input types
-    file_sumstats <- paste0( '/datacommons/ochoalab/ssns_gwas/imputed/', old_type, '/mac20-glmm-score.txt' )
-    file_out <- paste0( 'betas-', old_type, '-clean.txt.gz' )
+    file_sumstats <- paste0( '/datacommons/ochoalab/ssns_gwas/imputed/', type, '/mac20-glmm-score.txt' )
+    file_out <- paste0( 'betas-', type, '-clean.txt.gz' )
     
     # get sample size from this data
     # NOTE: coding is symmetric to which is 0 or 1, counts just get averaged into harmonic mean
     data_base <- read_tsv( '/datacommons/ochoalab/ssns_gwas/imputed/patient-data.txt.gz', show_col_types = FALSE )
-    counts <- table( data_base[[ old_type ]] )
+    counts <- table( data_base[[ type ]] )
 } else {
+    # work in desired subdirectory (usually base, train, or test)
+    setwd( type )
     # use these paths instead
     # this analysis requires ssns_ctrl input only!
-    file_sumstats <- 'base/mac20-glmm-score.txt.gz'
-    file_out <- 'base/mac20-glmm-score-clean.txt.gz'
+    file_sumstats <- 'mac20-glmm-score.txt.gz'
+    # one tiny hiccup is some of these cases are uncompressed...
+    if ( !file.exists( file_sumstats ) )
+        file_sumstats <- 'mac20-glmm-score.txt'
+    file_out <- 'mac20-glmm-score-clean.txt.gz'
     
     # get sample size a different way
-    fam <- read_fam( 'base/mac20.fam' )
+    fam <- read_fam( 'mac20' )
     counts <- table( fam$pheno - 1 ) # counts zeros and ones
 }
 
@@ -50,7 +61,7 @@ sumstats <- setNames( sumstats[ -c(7, 9, 10) ], c('rsid', 'chr', 'pos', 'a0', 'a
 sumstats$n_eff <- 4 / ( 1 / counts[[ '0' ]] + 1 / counts[[ '1' ]] )
 
 # if using ssns-srns, reverse signs!  (ssns-ctrl was fine though)
-if ( !is.na( old_type ) && old_type == 'ssns_srns' )
+if ( grepl( 'ssns_srns', type ) )
     sumstats$beta <- -sumstats$beta
 
 message( 'Intersecting with array SNPs' )

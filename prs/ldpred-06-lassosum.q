@@ -7,7 +7,7 @@
 
 module load R/4.1.1-rhel8
 
-# $type: selects base data subtype (for old cases only): NOTE: must be defined outside!!!
-time Rscript ldpred-06-lassosum.R $type
+# $base $train: selects base and training data types: NOTE: must be defined outside!!!
+time Rscript ldpred-06-lassosum.R $base $train
 
 module unload R/4.1.1-rhel8

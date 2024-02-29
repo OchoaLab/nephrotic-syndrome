@@ -10,49 +10,47 @@ h2_est <- 0.1
 types_old <- c('ssns_ctrl', 'ssns_srns')
 
 # determine which type to run
-type <- args_cli()[1]
-if ( is.na( type ) )
+args <- args_cli()
+type_base <- args[1]
+type_train <- args[2]
+if ( is.na( type_base ) )
     stop( 'Usage: <type>' )
 
 # handle old and new cases!
-if ( type %in% types_old ) {
-    # add a dash to separate parts of path as needed
-    type_in <- paste0( '-', type )
+if ( type_base %in% types_old ) {
     name_data <- 'data'
     # load indexes of training individuals
     ind_train <- as.numeric( read_lines( 'ind-train.txt.gz' ) )
 } else {
-    # start in this subdirectory
-    setwd( type )
-    # new setup, type isn't used, this will interpolate fine in all cases below
-    type_in <- ''
+    if ( is.na( type_train ) )
+        stop( 'Usage: <type_base> <type_train>' )
+    # start at base
+    setwd( type_base )
     name_data <- 'mac20'
 }
 
 # start by loading several previous calculations and other needed data
 
 # suffix shared by several in/out files
-name_in <- paste0( type_in, '-ldpred2-grid-h', h2_est )
+name_in <- paste0( type_base, '-ldpred2-grid-h', h2_est )
 
 # load previously calculated results
 # (could be in train or base)
-betas_grid <- read_matrix( paste0( 'betas', name_in ), ext = 'txt.gz' )
-params <- read_tsv( paste0( 'params', name_in, '.txt.gz' ), show_col_types = FALSE )
+betas_grid <- read_matrix( paste0( 'betas-', name_in ), ext = 'txt.gz' )
+params <- read_tsv( paste0( 'params-', name_in, '.txt.gz' ), show_col_types = FALSE )
 
-# rest always happens in training set
-# (if type == 'train', then we're already there, and for old types we don't move either)
-if ( type == 'base' )
-    setwd( '../train' )
+# in new setup, rest always happens in training set
+# (for old types we don't move)
+if ( ! type_base %in% types_old )
+    setwd( paste0( '../', type_train ) )
 
 # load filtered sumstats `df_beta`!
-df_beta <- read_tsv( paste0( 'betas', type_in, '-clean-matched.txt.gz' ), show_col_types = FALSE )
+df_beta <- read_tsv( paste0( 'betas-', type_base, '-clean-matched.txt.gz' ), show_col_types = FALSE )
 
-if ( type == 'base' ) {
-    # if betas came from base, we need to subset them to what we actually have in training data
+if ( ! type_base %in% types_old ) {
+    # if betas came from base (always true in new setup), we need to subset them to what we actually have in training data
     # subset betas using precalculated map of SNPs from 'base' into 'train'!
     betas_grid <- betas_grid[ df_beta[["_NUM_ID_.ss"]], ]
-    # also prepend to "name_in" to denote this alternative origin of data, which from here on is only used in outputs!
-    name_in <- paste0( '-', type, name_in )
 }
 
 # load training dataset
@@ -61,10 +59,9 @@ obj.bigSNP <- snp_attach( paste0( name_data, '.rds' ) )
 G <- obj.bigSNP$genotypes
 y <- obj.bigSNP$fam$affection
 y[ y == 0 ] <- NA # in plink format, zeros are missing, translate appropriately here!
-if ( type_in == '' ) {
+if ( ! type_base %in% types_old )
     # in new setup, we haven't defined ind_train, do it now that we know the number of individuals (use all)
     ind_train <- 1L : length( y )
-}
 # load PCs, to condition on when scoring with R2
 PCs <- read_eigenvec( name_data )$eigenvec
 
@@ -80,14 +77,14 @@ params <- params %>%
     arrange( desc( cor ) )
 
 # save this table of results!
-name_out <- paste0( 'eval', name_in )
+name_out <- paste0( 'eval-', name_in )
 write_tsv( params, paste0( name_out, '.txt.gz' ) )
 
 # pick out the best set of parameters, to use and score out of sample later!
 betas <- betas_grid[, params$id[1] ]
 # save betas!
 # this is a simple vector
-file_out <- paste0( 'betas', name_in, '-best.txt.gz' )
+file_out <- paste0( 'betas-', name_in, '-best.txt.gz' )
 write_lines( betas, file_out )
 
 # plot results
