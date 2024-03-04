@@ -2,8 +2,6 @@
 #SBATCH -p ochoalab --account=ochoalab
 #SBATCH --mem=16G
 #SBATCH --ntasks-per-node=6
-##SBATCH --mail-user=tiffany.tu@duke.edu
-##SBATCH --mail-type=END,FAIL
 
 # $dir: selects dataset/subtype: NOTE: must be defined outside!!!
 

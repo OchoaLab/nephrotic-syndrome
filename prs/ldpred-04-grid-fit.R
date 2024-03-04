@@ -24,7 +24,6 @@ setwd( base )
 name_in <- paste0( base, '-ldpred2-grid-h', h2_est )
 
 # load previously calculated results
-# (could be in train or base)
 betas_grid <- read_matrix( paste0( 'betas-', name_in ), ext = 'txt.gz' )
 params <- read_tsv( paste0( 'params-', name_in, '.txt.gz' ), show_col_types = FALSE )
 

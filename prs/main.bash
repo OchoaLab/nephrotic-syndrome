@@ -10,7 +10,8 @@ srun --mem 16G -p ochoalab --account ochoalab --pty bash -i
 module load R/4.1.1-rhel8 
 module load Plink/2.00a3LM
 
-# define subsets (lists of individuals in each set, */ids.txt below)
+# define subsets to split Discovery mainly, but also cleans up Bristol minimally
+# (lists of individuals in each set, */ids.txt below)
 time Rscript prs-new-00-create-subsets.R
 
 # actually create data
@@ -19,7 +20,7 @@ time plink2 --bfile ../mac20 --keep base/ids.txt --mac 20 --make-bed --out base/
 # 2m11.571s DCC
 time plink2 --bfile ../mac20 --keep train/ids.txt --mac 20 --make-bed --out train/mac20
 # 1m14.038s DCC
-# onl testing data comes from Bristol, which is in a totally different, awkward path
+# only testing data comes from Bristol, which is in a totally different, awkward path
 time plink2 --bfile ../../replication/bristol_data/imputation/post_imp/bristol_impute_mac20 --keep test/ids.txt --mac 20 --make-bed --out test/mac20
 # 0m13.507s DCC
 
@@ -147,12 +148,11 @@ time Rscript prs-new-05-sumstats-clean.R base-ssns_srns
 # 635,789 variants have been matched; 0 were flipped and 0 were reversed.
 # 1m25.307s DCC
 
-# subset again to match to training data
+# subset again to match to training data, and to self-base in all cases to get LD in base
 time Rscript prs-new-06-sumstats-match.R base train
 # 672,360 variants to be matched.
 # 0 ambiguous SNPs have been removed.
 # 528,964 variants have been matched; 0 were flipped and 0 were reversed.
-# make a dummy version for base data, needed to get base's LD
 time Rscript prs-new-06-sumstats-match.R base base
 # 672,360 variants to be matched.
 # 0 ambiguous SNPs have been removed.
@@ -181,11 +181,11 @@ time Rscript prs-new-06-sumstats-match.R base-ssns_srns train-curegn
 # 1m25.505s DCC
 
 # calculate LD matrix
-base=base; train=$base; sbatch -J ld-$base-$train -o ld-$base-$train.out --export=base=$base,train=$train prs-new-07-ld-matched-snps.q
+base=base; sbatch -J ld-$base -o ld-$base.out --export=base=$base prs-new-07-ld-matched-snps.q
 # 80m57.891s/1240m14.603s DCC
-base=base-ssns_ctrl; train=$base; sbatch -J ld-$base-$train -o ld-$base-$train.out --export=base=$base,train=$train prs-new-07-ld-matched-snps.q
+base=base-ssns_ctrl; sbatch -J ld-$base -o ld-$base.out --export=base=$base prs-new-07-ld-matched-snps.q
 # 149m20.374s/1265m22.475s DCC
-base=base-ssns_srns; train=$base; sbatch -J ld-$base-$train -o ld-$base-$train.out --export=base=$base,train=$train prs-new-07-ld-matched-snps.q
+base=base-ssns_srns; sbatch -J ld-$base -o ld-$base.out --export=base=$base prs-new-07-ld-matched-snps.q
 # 15m27.211s/233m21.564s DCC
 
 # before scoring, align training and testing data
@@ -206,11 +206,11 @@ time Rscript prs-new-08-match-train-test.R base-ssns_srns train-curegn test
 # 1m27.549s DCC
 
 # then run ldpred-inf version, test a grid of heritabilities to determine quickly what is more promising
-base=base; train=$base; sbatch -J ldpred-01-inf-$base-$train -o ldpred-01-inf-$base-$train.out --export=base=$base,train=$train ldpred-01-inf.q
+base=base; sbatch -J ldpred-01-inf-$base -o ldpred-01-inf-$base.out --export=base=$base ldpred-01-inf.q
 # 3m58.094s DCC
-base=base-ssns_ctrl; train=$base; sbatch -J ldpred-01-inf-$base-$train -o ldpred-01-inf-$base-$train.out --export=base=$base,train=$train ldpred-01-inf.q
+base=base-ssns_ctrl; sbatch -J ldpred-01-inf-$base -o ldpred-01-inf-$base.out --export=base=$base ldpred-01-inf.q
 # 4m6.373s DCC
-base=base-ssns_srns; train=$base; sbatch -J ldpred-01-inf-$base-$train -o ldpred-01-inf-$base-$train.out --export=base=$base,train=$train ldpred-01-inf.q
+base=base-ssns_srns; sbatch -J ldpred-01-inf-$base -o ldpred-01-inf-$base.out --export=base=$base ldpred-01-inf.q
 # 3m14.548s DCC
 
 # fit parameters using training data (inf version)
@@ -222,11 +222,11 @@ time Rscript ldpred-01-inf-fit.R base-ssns_srns train-curegn
 # 1m18.862s DCC
 
 # run grid version, which is more computationally intensive
-base=base; train=$base; sbatch -J ldpred-03-grid-$base-$train -o ldpred-03-grid-$base-$train.out --export=base=$base,train=$train ldpred-03-grid.q
+base=base; sbatch -J ldpred-03-grid-$base -o ldpred-03-grid-$base.out --export=base=$base ldpred-03-grid.q
 # 34m41.436s DCC
-base=base-ssns_ctrl; train=$base; sbatch -J ldpred-03-grid-$base-$train -o ldpred-03-grid-$base-$train.out --export=base=$base,train=$train ldpred-03-grid.q
+base=base-ssns_ctrl; sbatch -J ldpred-03-grid-$base -o ldpred-03-grid-$base.out --export=base=$base ldpred-03-grid.q
 # 35m23.125s DCC
-base=base-ssns_srns; train=$base; sbatch -J ldpred-03-grid-$base-$train -o ldpred-03-grid-$base-$train.out --export=base=$base,train=$train ldpred-03-grid.q
+base=base-ssns_srns; sbatch -J ldpred-03-grid-$base -o ldpred-03-grid-$base.out --export=base=$base ldpred-03-grid.q
 # 31m46.973s DCC
 
 # fit parameters using training data (grid version)
@@ -238,11 +238,11 @@ time Rscript ldpred-04-grid-fit.R base-ssns_srns train-curegn
 # 2m52.887s DCC
 
 # run auto version
-base=base; train=$base; sbatch -J ldpred-05-auto-$base-$train -o ldpred-05-auto-$base-$train.out --export=base=$base,train=$train ldpred-05-auto.q
+base=base; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out --export=base=$base ldpred-05-auto.q
 # 8m8.392s DCC
-base=base-ssns_ctrl; train=$base; sbatch -J ldpred-05-auto-$base-$train -o ldpred-05-auto-$base-$train.out --export=base=$base,train=$train ldpred-05-auto.q
+base=base-ssns_ctrl; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out --export=base=$base ldpred-05-auto.q
 # 7m58.486s DCC
-base=base-ssns_srns; train=$base; sbatch -J ldpred-05-auto-$base-$train -o ldpred-05-auto-$base-$train.out --export=base=$base,train=$train ldpred-05-auto.q
+base=base-ssns_srns; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out --export=base=$base ldpred-05-auto.q
 # 6m53.674s DCC
 
 # base version needs one more step to map data to training SNOs
@@ -254,11 +254,11 @@ time Rscript ldpred-05-auto-map-base-to-train.R base-ssns_srns train-curegn
 # 0m11.622s DCC
 
 # run lassosum version
-base=base; train=$base; sbatch -J ldpred-06-lassosum-$base-$train -o ldpred-06-lassosum-$base-$train.out --export=base=$base,train=$train ldpred-06-lassosum.q
+base=base; sbatch -J ldpred-06-lassosum-$base -o ldpred-06-lassosum-$base.out --export=base=$base ldpred-06-lassosum.q
 # 4m3.944s DCC
-base=base-ssns_ctrl; train=$base; sbatch -J ldpred-06-lassosum-$base-$train -o ldpred-06-lassosum-$base-$train.out --export=base=$base,train=$train ldpred-06-lassosum.q
+base=base-ssns_ctrl; sbatch -J ldpred-06-lassosum-$base -o ldpred-06-lassosum-$base.out --export=base=$base ldpred-06-lassosum.q
 # 3m41.389s DCC
-base=base-ssns_srns; train=$base; sbatch -J ldpred-06-lassosum-$base-$train -o ldpred-06-lassosum-$base-$train.out --export=base=$base,train=$train ldpred-06-lassosum.q
+base=base-ssns_srns; sbatch -J ldpred-06-lassosum-$base -o ldpred-06-lassosum-$base.out --export=base=$base ldpred-06-lassosum.q
 # 5m3.267s DCC
 
 # fit parameters using training data (lassosum version)

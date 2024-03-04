@@ -11,12 +11,11 @@ herits <- c( (1:9)/100, (1:9)/10 )
 
 args <- args_cli()
 base <- args[1]
-train <- args[2]
-if ( is.na( train ) )
-    stop( 'Usage: <base> <train>' )
+if ( is.na( base ) )
+    stop( 'Usage: <base>' )
 
 # all processing happens in subdirectory
-setwd( train )
+setwd( base )
 
 # paths
 file_in <- paste0( 'betas-', base, '-clean-matched.txt.gz' )

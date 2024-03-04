@@ -4,24 +4,20 @@ library(readr)
 
 # script calculates LD matrix only at positions we're going to use!
 
-# NOTE: newest data only uses train=base, though here it's allowed to be different
-
 # constants
 # set to 1 for local runs, but DCC accepts >1
 NCORES <- 30
 # window size suggested in ldpred vignette, not sure if there's more typical values to consider!
 size_cM <- 3 / 1000
-name_train <- 'mac20'
 
 args <- args_cli()
 base <- args[1]
-train <- args[2]
-if ( is.na( train ) )
-    stop( 'Usage: <base> <train>' )
+if ( is.na( base ) )
+    stop( 'Usage: <base>' )
 
 # load precalculated data
-# work in desired training subdirectory
-setwd( train )
+# work in desired subdirectory
+setwd( base )
 
 # specify base used in inputs and outputs
 file_betas_matched <- paste0( 'betas-', base, '-clean-matched.txt.gz' )
@@ -37,9 +33,9 @@ file_ld_rdata <- paste0( file_ld, '.RData' )
 message( 'Reading: ', file_betas_matched )
 df_beta <- read_tsv( file_betas_matched, show_col_types = FALSE )
 
-# load training dataset
+# load LD dataset
 # Attach the "bigSNP" object in R session
-rds <- paste0( name_train, '.rds' )
+rds <- 'mac20.rds'
 message( 'Reading: ', rds )
 obj.bigSNP <- snp_attach( rds )
 # Get aliases for useful slots

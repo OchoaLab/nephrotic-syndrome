@@ -24,7 +24,6 @@ setwd( base )
 name_in <- paste0( base, '-ldpred2-inf' )
 
 # load previously calculated results
-# (could be in train or base)
 betas_grid <- read_matrix( paste0( 'betas-', name_in ), ext = 'txt.gz' )
 
 # rest always happens in training set
