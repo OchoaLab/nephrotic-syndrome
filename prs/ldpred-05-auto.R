@@ -9,28 +9,20 @@ NCORES <- 10
 # reduce this up to 0.4 if you have some (large) mismatch with the LD ref
 coef_shrink <- 0.95
 p_seq <- seq_log(1e-4, 0.2, length.out = 30)
-# support old data for now
-types_old <- c('ssns_ctrl', 'ssns_srns')
 
-# support old data for now, expect ssns_ctrl or ssns_srns
 args <- args_cli()
-type_base <- args[1]
-type_train <- args[2]
-if ( is.na( type_base ) )
-    stop( 'Usage: <type>' )
+base <- args[1]
+train <- args[2]
+if ( is.na( train ) )
+    stop( 'Usage: <base> <train>' )
 
-# extra step for new cases only
-if ( ! type_base %in% types_old ) {
-    if ( is.na( type_train ) )
-        stop( 'Usage: <type_base> <type_train>' )
-    # all processing happens in subdirectory
-    setwd( type_train )
-}
+# all processing happens in subdirectory
+setwd( train )
 
 # paths
-file_in <- paste0( 'betas-', type_base, '-clean-matched.txt.gz' )
-file_ld <- paste0( 'ld-', type_base, '.RData' )
-file_out <- paste0( 'betas-', type_base, '-ldpred2-auto-h', h2_est, '.txt.gz' )
+file_in <- paste0( 'betas-', base, '-clean-matched.txt.gz' )
+file_ld <- paste0( 'ld-', base, '.RData' )
+file_out <- paste0( 'betas-', base, '-ldpred2-auto-h', h2_est, '.txt.gz' )
 
 # load filtered sumstats `df_beta`!
 df_beta <- read_tsv( file_in, show_col_types = FALSE )

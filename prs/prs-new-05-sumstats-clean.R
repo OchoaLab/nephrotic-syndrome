@@ -10,39 +10,24 @@ library(readr)
 # - renames columns
 
 # constants
-# support old data for now
-types_old <- c('ssns_ctrl', 'ssns_srns')
+# each base has only one base dataset:
+file_sumstats <- 'mac20-glmm-score.txt.gz'
+file_out <- 'mac20-glmm-score-clean.txt.gz'
 
-# support old data for now, expect ssns_ctrl or ssns_srns
-type <- args_cli()[1]
-if ( is.na( type ) )
-    stop( 'Usage: <type>' )
+base <- args_cli()[1]
+if ( is.na( base ) )
+    stop( 'Usage: <base>' )
 
-# either way assume script is run from correct local path
-if ( type %in% types_old ) {
-    # consider two input types
-    file_sumstats <- paste0( '/datacommons/ochoalab/ssns_gwas/imputed/', type, '/mac20-glmm-score.txt' )
-    file_out <- paste0( 'betas-', type, '-clean.txt.gz' )
-    
-    # get sample size from this data
-    # NOTE: coding is symmetric to which is 0 or 1, counts just get averaged into harmonic mean
-    data_base <- read_tsv( '/datacommons/ochoalab/ssns_gwas/imputed/patient-data.txt.gz', show_col_types = FALSE )
-    counts <- table( data_base[[ type ]] )
-} else {
-    # work in desired subdirectory (usually base, train, or test)
-    setwd( type )
-    # use these paths instead
-    # this analysis requires ssns_ctrl input only!
-    file_sumstats <- 'mac20-glmm-score.txt.gz'
-    # one tiny hiccup is some of these cases are uncompressed...
-    if ( !file.exists( file_sumstats ) )
-        file_sumstats <- 'mac20-glmm-score.txt'
-    file_out <- 'mac20-glmm-score-clean.txt.gz'
-    
-    # get sample size a different way
-    fam <- read_fam( 'mac20' )
-    counts <- table( fam$pheno - 1 ) # counts zeros and ones
-}
+# work in desired subdirectory (usually base, train, or test)
+setwd( base )
+
+# one tiny hiccup is some of these cases are uncompressed...
+if ( !file.exists( file_sumstats ) )
+    file_sumstats <- 'mac20-glmm-score.txt'
+
+# get sample size a different way
+fam <- read_fam( 'mac20' )
+counts <- table( fam$pheno - 1 ) # counts zeros and ones
 
 # load summary statistics (big file because it's from imputed data)
 message( 'Reading: ', file_sumstats )
@@ -61,7 +46,7 @@ sumstats <- setNames( sumstats[ -c(7, 9, 10) ], c('rsid', 'chr', 'pos', 'a0', 'a
 sumstats$n_eff <- 4 / ( 1 / counts[[ '0' ]] + 1 / counts[[ '1' ]] )
 
 # if using ssns-srns, reverse signs!  (ssns-ctrl was fine though)
-if ( grepl( 'ssns_srns', type ) )
+if ( grepl( 'ssns_srns', base ) )
     sumstats$beta <- -sumstats$beta
 
 message( 'Intersecting with array SNPs' )

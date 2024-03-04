@@ -4,7 +4,6 @@ library(simfam)
 
 # script adds genetic distance, useful for informing relevant/dynamic window sizes for LD calculations
 
-# support old data for now, expect ssns_ctrl or ssns_srns
 args <- args_cli()
 name <- args[1]
 hgv <- args[2]

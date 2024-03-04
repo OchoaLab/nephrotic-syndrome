@@ -4,9 +4,7 @@ library(readr)
 library(ochoalabtools)
 
 # loads SNPs from training set, matches them with test set (because of MAC filters and differing populations, they are not identical)
-# NOTE: this is for new pipeline only!
 
-# support old data for now, expect ssns_ctrl or ssns_srns
 args <- args_cli()
 type_base <- args[1]
 type_train <- args[2]

@@ -7,28 +7,20 @@ library(ochoalabtools)
 # best value from ldpred2-inf scan, and also other previous ldpred2-grid tests.  this isn't single value tested, but tests are centered around it
 h2_est <- 0.1
 NCORES <- 10
-# support old data for now
-types_old <- c('ssns_ctrl', 'ssns_srns')
 
-# support old data for now, expect ssns_ctrl or ssns_srns
 args <- args_cli()
-type_base <- args[1]
-type_train <- args[2]
-if ( is.na( type_base ) )
-    stop( 'Usage: <type>' )
+base <- args[1]
+train <- args[2]
+if ( is.na( train ) )
+    stop( 'Usage: <base> <train>' )
 
-# extra step for new cases only
-if ( ! type_base %in% types_old ) {
-    if ( is.na( type_train ) )
-        stop( 'Usage: <type_base> <type_train>' )
-    # all processing happens in subdirectory
-    setwd( type_train )
-}
+# all processing happens in subdirectory
+setwd( train )
 
 # paths
-file_in <- paste0( 'betas-', type_base, '-clean-matched.txt.gz' )
-file_ld <- paste0( 'ld-', type_base, '.RData' )
-name <- paste0( type_base, '-ldpred2-grid-h', h2_est )
+file_in <- paste0( 'betas-', base, '-clean-matched.txt.gz' )
+file_ld <- paste0( 'ld-', base, '.RData' )
+name <- paste0( base, '-ldpred2-grid-h', h2_est )
 name_out <- paste0( 'betas-', name )
 file_params <- paste0( 'params-', name, '.txt.gz' )
 

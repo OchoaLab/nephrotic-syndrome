@@ -4,37 +4,29 @@ library(readr)
 
 # script calculates LD matrix only at positions we're going to use!
 
+# NOTE: newest data only uses train=base, though here it's allowed to be different
+
 # constants
 # set to 1 for local runs, but DCC accepts >1
 NCORES <- 30
 # window size suggested in ldpred vignette, not sure if there's more typical values to consider!
 size_cM <- 3 / 1000
-# support old data for now
-types_old <- c('ssns_ctrl', 'ssns_srns')
+name_train <- 'mac20'
 
-# support old data for now, expect ssns_ctrl or ssns_srns
 args <- args_cli()
-type_base <- args[1]
-type_train <- args[2]
-if ( is.na( type_base ) )
-    stop( 'Usage: <type>' )
+base <- args[1]
+train <- args[2]
+if ( is.na( train ) )
+    stop( 'Usage: <base> <train>' )
 
 # load precalculated data
-# either way assume script is run from correct local path
-if ( type_base %in% types_old ) {
-    name_train <- 'data'
-} else {
-    if ( is.na( type_train ) )
-        stop( 'Usage: <type_base> <type_train>' )
-    # work in desired training subdirectory
-    setwd( type_train )
-    name_train <- 'mac20'
-}
+# work in desired training subdirectory
+setwd( train )
 
 # specify base used in inputs and outputs
-file_betas_matched <- paste0( 'betas-', type_base, '-clean-matched.txt.gz' )
+file_betas_matched <- paste0( 'betas-', base, '-clean-matched.txt.gz' )
 # LD backing file base (sbk extension gets added automatically)
-file_ld <- paste0( 'ld-', type_base )
+file_ld <- paste0( 'ld-', base )
 # to save LD object too
 file_ld_rdata <- paste0( file_ld, '.RData' )
 

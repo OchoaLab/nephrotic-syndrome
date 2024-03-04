@@ -8,28 +8,20 @@ library(ochoalabtools)
 # run a finer grid for smaller values after seeing that the perform best
 # (doing it now is best because this method is much faster than the following ones)
 herits <- c( (1:9)/100, (1:9)/10 )
-# support old data for now
-types_old <- c('ssns_ctrl', 'ssns_srns')
 
-# support old data for now, expect ssns_ctrl or ssns_srns
 args <- args_cli()
-type_base <- args[1]
-type_train <- args[2]
-if ( is.na( type_base ) )
-    stop( 'Usage: <type>' )
+base <- args[1]
+train <- args[2]
+if ( is.na( train ) )
+    stop( 'Usage: <base> <train>' )
 
-# extra step for new cases only
-if ( ! type_base %in% types_old ) {
-    if ( is.na( type_train ) )
-        stop( 'Usage: <type_base> <type_train>' )
-    # all processing happens in subdirectory
-    setwd( type_train )
-}
+# all processing happens in subdirectory
+setwd( train )
 
 # paths
-file_in <- paste0( 'betas-', type_base, '-clean-matched.txt.gz' )
-file_ld <- paste0( 'ld-', type_base, '.RData' )
-name_out <- paste0( 'betas-', type_base, '-ldpred2-inf' )
+file_in <- paste0( 'betas-', base, '-clean-matched.txt.gz' )
+file_ld <- paste0( 'ld-', base, '.RData' )
+name_out <- paste0( 'betas-', base, '-ldpred2-inf' )
 
 # load filtered sumstats `df_beta`!
 df_beta <- read_tsv( file_in, show_col_types = FALSE )
