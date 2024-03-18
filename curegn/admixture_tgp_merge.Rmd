@@ -145,3 +145,115 @@ time plink --keep-allele-order --bfile ../curegn_tgp_merge_NS --keep curegn_ns_e
 time plink --keep-allele-order --bfile ../curegn_tgp_merge_NS --keep curegn_ns_sas.txt --make-bed --out curegn_tgp_NS_sas
 time plink --keep-allele-order --bfile ../curegn_tgp_merge_NS --keep curegn_ns_eas.txt --make-bed --out curegn_tgp_NS_eas
 module unload Plink/1.90
+
+```{r}
+# write table for curegn NS patients
+curegn_ns = read.table('/datacommons/ochoalab/curegn/merge_tgp/admixture/curegn_covar.txt', header = TRUE) %>% filter(diagnosis == TRUE)
+write.table(cbind(0, curegn_ns$id), "/datacommons/ochoalab/curegn/merge_tgp/admixture/curegn_ns_cases_id.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+# write table for curegn SSNS / SRNS patients
+curegn_data = read.table("/datacommons/ochoalab/curegn/merge_tgp/admixture/curegn_covar_diseasesubtype.txt", header = TRUE) 
+curegn_ssns = curegn_data %>% 
+  select(id, ssns) %>% drop_na() %>% filter(ssns == 'TRUE') 
+write.table(cbind(0, curegn_ssns$id), "/datacommons/ochoalab/curegn/merge_tgp/admixture/curegn_ssns_cases_id.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+curegn_srns = curegn_data %>% 
+  select(id, srns) %>% drop_na() %>% filter(srns == 'TRUE') 
+write.table(cbind(0, curegn_srns$id), "/datacommons/ochoalab/curegn/merge_tgp/admixture/curegn_srns_cases_id.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+# write id's of unadmixed individuals into files
+ssns_eur = curegn_data %>% select(id, ssns, ancestry) %>% drop_na() %>% filter(ssns == "TRUE" & ancestry == "EUR") %>% pull(id)
+ssns_afr = curegn_data %>% select(id, ssns, ancestry) %>% drop_na() %>% filter(ssns == "TRUE" & ancestry == "AFR") %>% pull(id)
+srns_eur = curegn_data %>% select(id, srns, ancestry) %>% drop_na() %>% filter(srns == "TRUE" & ancestry == "EUR") %>% pull(id)
+srns_afr = curegn_data %>% select(id, srns, ancestry) %>% drop_na() %>% filter(srns == "TRUE" & ancestry == "AFR") %>% pull(id)
+
+
+write.table(cbind(0, ssns_eur), "/datacommons/ochoalab/curegn/imputed/curegn_ssns_eur.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, ssns_afr), "/datacommons/ochoalab/curegn/imputed/curegn_ssns_afr.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, srns_eur), "/datacommons/ochoalab/curegn/imputed/curegn_srns_eur.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, srns_afr), "/datacommons/ochoalab/curegn/imputed/curegn_srns_afr.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+```
+
+```{r}
+curegn_covar = read.table("/datacommons/ochoalab/curegn/merge_tgp/admixture/curegn_covar_diseasesubtype.txt", header = TRUE) 
+
+ssns_srns_id = curegn_covar %>% select(id, ssns, srns) %>% drop_na() %>% pull(id)
+write.table(cbind(0, ssns_srns_id), "/datacommons/ochoalab/curegn/imputed/curegn_ssns_srns.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+curegn_patient_data = read.table("/datacommons/ochoalab/curegn/patient-data.txt.gz", header = TRUE)
+table(curegn_patient_data$diagnosis)
+test = curegn_covar %>% filter(ns == TRUE)
+table(test$ancestry)
+```
+
+```{r}
+# remove two patients: KO0939 and KO1059
+curegn_covar_new = read.table("/datacommons/ochoalab/curegn/merge_tgp/admixture/curegn_covar_diseasesubtype.txt", header = TRUE) %>% filter(!id %in% c("KO0939", "KO1059"))
+
+# complete covar list
+write.table(curegn_covar_new, "/datacommons/ochoalab/curegn/curegn_covar.txt",
+            sep = "\t", row.names=FALSE, quote=FALSE, col.names = TRUE)
+
+####################################
+# write table for curegn NS patients
+curegn_ns = read.table('/datacommons/ochoalab/curegn/curegn_covar.txt', header = TRUE) %>% filter(ns == TRUE)
+write.table(cbind(0, curegn_ns$id), "/datacommons/ochoalab/curegn/subanalysis/curegn_ns_cases_id.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+# write table for curegn SSNS / SRNS patients
+curegn_data = read.table("/datacommons/ochoalab/curegn/curegn_covar.txt", header = TRUE) 
+curegn_ssns = curegn_data %>% 
+  select(id, ssns) %>% drop_na() %>% filter(ssns == 'TRUE') 
+write.table(cbind(0, curegn_ssns$id), "/datacommons/ochoalab/curegn/subanalysis/curegn_ssns_cases_id.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+curegn_srns = curegn_data %>% 
+  select(id, srns) %>% drop_na() %>% filter(srns == 'TRUE') 
+write.table(cbind(0, curegn_srns$id), "/datacommons/ochoalab/curegn/subanalysis/curegn_srns_cases_id.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+# write id's of unadmixed individuals into files
+ns_eur = curegn_data %>% select(id, ns, ancestry) %>% drop_na() %>% filter(ns == "TRUE" & ancestry == "EUR") %>% pull(id) #495
+ns_afr = curegn_data %>% select(id, ns, ancestry) %>% drop_na() %>% filter(ns == "TRUE" & ancestry == "AFR") %>% pull(id) # 110
+ns_sas = curegn_data %>% select(id, ns, ancestry) %>% drop_na() %>% filter(ns == "TRUE" & ancestry == "SAS") %>% pull(id) # 21
+ns_eas = curegn_data %>% select(id, ns, ancestry) %>% drop_na() %>% filter(ns == "TRUE" & ancestry == "EAS") %>% pull(id) # 28
+
+ssns_eur = curegn_data %>% select(id, ssns, ancestry) %>% drop_na() %>% filter(ssns == "TRUE" & ancestry == "EUR") %>% pull(id) #140
+ssns_afr = curegn_data %>% select(id, ssns, ancestry) %>% drop_na() %>% filter(ssns == "TRUE" & ancestry == "AFR") %>% pull(id) # 35
+ssns_sas = curegn_data %>% select(id, ssns, ancestry) %>% drop_na() %>% filter(ssns == "TRUE" & ancestry == "SAS") %>% pull(id) # 6
+ssns_eas = curegn_data %>% select(id, ssns, ancestry) %>% drop_na() %>% filter(ssns == "TRUE" & ancestry == "EAS") %>% pull(id) # 8
+
+srns_eur = curegn_data %>% select(id, srns, ancestry) %>% drop_na() %>% filter(srns == "TRUE" & ancestry == "EUR") %>% pull(id) # 78
+srns_afr = curegn_data %>% select(id, srns, ancestry) %>% drop_na() %>% filter(srns == "TRUE" & ancestry == "AFR") %>% pull(id) # 29
+
+write.table(cbind(0, ns_eur), "/datacommons/ochoalab/curegn/subanalysis/curegn_ns_eur.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, ns_afr), "/datacommons/ochoalab/curegn/subanalysis/curegn_ns_afr.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, ns_sas), "/datacommons/ochoalab/curegn/subanalysis/curegn_ns_sas.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, ns_eas), "/datacommons/ochoalab/curegn/subanalysis/curegn_ns_eas.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+write.table(cbind(0, ssns_eur), "/datacommons/ochoalab/curegn/subanalysis/curegn_ssns_eur.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, ssns_afr), "/datacommons/ochoalab/curegn/subanalysis/curegn_ssns_afr.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, srns_eur), "/datacommons/ochoalab/curegn/subanalysis/curegn_srns_eur.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+write.table(cbind(0, srns_afr), "/datacommons/ochoalab/curegn/subanalysis/curegn_srns_afr.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+ssns_srns_id = curegn_data %>% select(id, ssns, srns) %>% drop_na() %>% pull(id) # 419
+write.table(cbind(0, ssns_srns_id), "/datacommons/ochoalab/curegn/subanalysis/curegn_ssns_srns.txt",
+            sep = " ", row.names=FALSE, quote=FALSE, col.names = FALSE)
+
+```
+
