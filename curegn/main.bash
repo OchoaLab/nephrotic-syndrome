@@ -33,12 +33,11 @@ scp indiv-keep.txt $dcc:/datacommons/ochoalab/curegn/raw/
 # - reencode to compact plink2 format (loses likelihoods and other VCF-specific info, keeps hard calls only)
 # - ignores X and Y chrs, though we have them
 
-for chr in {1..22}
-do
+for chr in {1..22}; do
     time plink2 --vcf curegn.wgs.freeze1.chr$chr.vcf.gz --keep indiv-keep.txt --var-filter --mac 1 --make-pgen vzs --out chr$chr --threads 1 --memory 16000
 done
 # all DCC runs
-# files had 1869 individuals, 1855 are kept (14 removed)
+# files had 1869 individuals, 1855 are kept (14 removed) # OLD, didn't rerun here, but should have removed two more
 # about half of SNPs were removed with the above filters!
 
 # chr  real_time    input  output
@@ -71,8 +70,7 @@ done
 
 # would have done with earlier step, but don't want to repeat slow steps
 # indels are a big problem, and we're really only looking at SNPs for discovery data, so let's filter the same here
-for chr in {1..22}
-do
+for chr in {1..22}; do
     time plink2 --pfile chr$chr vzs --snps-only just-acgt --make-pgen vzs --out snps-chr$chr --threads 1 --memory 16000
     # 0m20.588s chr1 DCC
 done
@@ -90,8 +88,7 @@ done
 name=curegn-autosomes-snps
 
 # creates list of files to merge
-for chr in {1..22}
-do
+for chr in {1..22}; do
     echo snps-chr$chr >> files-merge-list.txt
 done
 
@@ -116,8 +113,7 @@ du -hs $name.*
 # 3.1G	curegn-autosomes-snps.pvar.zst
 
 # cleanup, can toss per-chr copies and other stuff
-for chr in {1..22}
-do
+for chr in {1..22}; do
     rm {,snps-}chr$chr.{log,pgen,psam,pvar.zst}
 done
 rm files-merge-list.txt
@@ -205,15 +201,21 @@ rm ${name}2.log
 # replace old with new files
 rename snps2 snps ${name}2.*
 
+# remove two additional individuals, redo SNP filters: 47371 variats were removed due to --mac only
+time plink2 --bfile $name --keep raw/indiv-keep.txt --mac 1 --geno 0.1 --make-bed --out ${name}2
+# 2m48.763s DCC
+# when done and checked, repeat cleanup just above!
+
 # create mac20 filtered version for GWAS
 time plink2 --bfile $name --mac 20 --make-bed --out $name-mac20
-# 2m5.449s DCC
+# 1m45.938s DCC
 # cleanup
 rm $name-mac20.log
 
+
 wc -l $name.{bim,fam}
-# 67,888,429 curegn-autosomes-snps.bim
-#      1,852 curegn-autosomes-snps.fam
+# 67,841,058 curegn-autosomes-snps.bim
+#      1,850 curegn-autosomes-snps.fam
 wc -l $name-mac20.{bim,fam}
-# 12,994,000 curegn-autosomes-snps-mac20.bim
-#      1,852 curegn-autosomes-snps-mac20.fam
+# 12,978,623 curegn-autosomes-snps-mac20.bim
+#      1,850 curegn-autosomes-snps-mac20.fam

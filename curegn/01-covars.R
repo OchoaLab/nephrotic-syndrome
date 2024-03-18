@@ -43,7 +43,7 @@ data <- remove_constant( data, quiet = FALSE )
 # only two standard values
 table( data$PAT_Sex, useNA = 'i' )
 ## 1:Male 2:Female 
-##   1047      805 
+##   1047      803 
 # simplify to just the standard numerical encoding
 data$PAT_Sex <- sapply( strsplit( data$PAT_Sex, ':' ), function(x) x[1] )
 
@@ -51,21 +51,21 @@ data$PAT_Sex <- sapply( strsplit( data$PAT_Sex, ':' ), function(x) x[1] )
 
 ## table( data$LocalDiagnosis, useNA = 'i' )
 ## 1: MCD (includes IgM Nephropathy)                           2: FSGS 
-##                               402                               485 
+##                               402                               483 
 ##                             3: MN            4: IgAN (includes HSP) 
 ##                               442                               507 
 ##                            5: C1Q                          6: Other 
 ##                                14                                 2 
 ## table( data$DiagnosisPath, useNA = 'i' )
 ## 1: MCD (includes IgM Nephropathy)                           2: FSGS 
-##                               415                               478 
+##                               415                               476 
 ##                             3: MN            4: IgAN (includes HSP) 
 ##                               442                               517 
 
 ## table( data$LocalDiagnosis, data$DiagnosisPath, useNA = 'i' )
 ##                                   1: MCD (includes IgM Nephropathy) 2: FSGS 3: MN 4: IgAN (includes HSP)
 ## 1: MCD (includes IgM Nephropathy)                               379      12     3                      8
-## 2: FSGS                                                          22     455     2                      6
+## 2: FSGS                                                          22     453     2                      6
 ## 3: MN                                                             4       0   437                      1
 ## 4: IgAN (includes HSP)                                            4       1     0                    502
 ## 5: C1Q                                                            5       9     0                      0
@@ -88,7 +88,7 @@ data$ns <- grepl( 'FSGS|MCD', data$DiagnosisPath )
 # confirm it worked:
 ## table( data$DiagnosisPath, data$ns ) 
 ##                                FALSE TRUE
-## FSGS                               0  478
+## FSGS                               0  476
 ## IgAN (includes HSP)              517    0
 ## MCD (includes IgM Nephropathy)     0  415
 ## MN                               442    0
@@ -96,7 +96,7 @@ data$ns <- grepl( 'FSGS|MCD', data$DiagnosisPath )
 # final counts
 table( data$ns, useNA = 'i' )
 ## FALSE  TRUE 
-##   959   893
+##   959   891
 
 ### AGE ###
 
@@ -129,7 +129,7 @@ data$RaceCat[ data$RaceCat == 'Native American' ] <- 'NatAmr'
 ## table( data$RaceCat, data$RaceAsian )
 ##                  0: No 1: Yes
 ## Asian                0    154
-## Black              278      0
+## Black              276      0
 ## Multiracial         40      8
 ## Native American     11      0
 ## Pacific Islander     7      0
@@ -138,7 +138,7 @@ data$RaceCat[ data$RaceCat == 'Native American' ] <- 'NatAmr'
 ## table( data$RaceCat, data$RaceBlack )
 ##                    0: No 1: Yes
 ##   Asian              154      0
-##   Black                0    278
+##   Black                0    276
 ##   Multiracial         23     25
 ##   Native American     11      0
 ##   Pacific Islander     7      0
@@ -147,7 +147,7 @@ data$RaceCat[ data$RaceCat == 'Native American' ] <- 'NatAmr'
 ## table( data$RaceCat, data$RaceNativAm )
 ##                    0: No 1: Yes
 ##   Asian              154      0
-##   Black              278      0
+##   Black              276      0
 ##   Multiracial         26     22
 ##   Native American      0     11
 ##   Pacific Islander     7      0
@@ -156,7 +156,7 @@ data$RaceCat[ data$RaceCat == 'Native American' ] <- 'NatAmr'
 ## table( data$RaceCat, data$RacePacific )
 ##                    0: No 1: Yes
 ##   Asian              154      0
-##   Black              278      0
+##   Black              276      0
 ##   Multiracial         46      2
 ##   Native American     11      0
 ##   Pacific Islander     0      7
@@ -165,7 +165,7 @@ data$RaceCat[ data$RaceCat == 'Native American' ] <- 'NatAmr'
 ## table( data$RaceCat, data$RaceWhite )
 ##                    0: No 1: Yes
 ##   Asian              154      0
-##   Black              278      0
+##   Black              276      0
 ##   Multiracial          7     41
 ##   Native American     11      0
 ##   Pacific Islander     7      0
@@ -183,9 +183,9 @@ data2$diagnosis_rasheed[ data2$diagnosis == 'FSGS' & data2$age <= 21 ] <- 'SRNS'
 # confirm counts and distribution
 table( data2$diagnosis_rasheed, data2$diagnosis, useNA='i' )
 ##      FSGS IgAN MCD  MN
-## SRNS  170    0   0   0
+## SRNS  169    0   0   0
 ## SSNS    0    0 250   0
-## <NA>  308  517 165 442
+## <NA>  307  517 165 442
 
 # turn into binary variable, as done earlier for discovery dataset
 data2$ssns_srns <- ifelse( data2$diagnosis_rasheed == 'SSNS', 0, ifelse( data2$diagnosis_rasheed == 'SRNS', 1, NA ) )
