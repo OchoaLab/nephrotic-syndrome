@@ -37,7 +37,7 @@ y[ y == 0 ] <- NA # in plink format, zeros are missing, translate appropriately 
 PCs <- read_eigenvec( name_data )$eigenvec
 
 # names of cases to score in testing data
-names <- paste0( '-ldpred2-', c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' ) )
+names <- paste0( '-ldpred2-', c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best', 'ct-best', 'ct-stacked' ) )
 
 # process preexisting results
 for ( name in names ) {

@@ -53,7 +53,7 @@ for name in ssns_ctrl ssns_srns; do
     ln -s {../../$name/,}mac20.fam
     # don't need GRM and PCs, but we could link them too otherwise
     # link summary stats too
-    ln -s {../../$name/,}mac20-glmm-score.txt
+    ln -s {../../$name/,}mac20-glmm-score.txt # GMMAT
     # go back down
     cd ..
 done
@@ -172,12 +172,12 @@ time Rscript prs-new-06-sumstats-match.R base-ssns_srns base-ssns_srns
 time Rscript prs-new-06-sumstats-match.R base-ssns_ctrl train-curegn
 # 672,362 variants to be matched.
 # 0 ambiguous SNPs have been removed.
-# 512,349 variants have been matched; 308 were flipped and 881 were reversed.
+# 511,666 variants have been matched; 307 were flipped and 881 were reversed.
 # 1m25.818s DCC
 time Rscript prs-new-06-sumstats-match.R base-ssns_srns train-curegn
 # 635,789 variants to be matched.
 # 0 ambiguous SNPs have been removed.
-# 511,666 variants have been matched; 307 were flipped and 881 were reversed.
+# 510,987 variants have been matched; 306 were flipped and 881 were reversed.
 # 1m25.505s DCC
 
 # calculate LD matrix
@@ -195,14 +195,14 @@ time Rscript prs-new-08-match-train-test.R base train test
 # 466,208 variants have been matched; 0 were flipped and 0 were reversed.
 # 1m32.168s DCC
 time Rscript prs-new-08-match-train-test.R base-ssns_ctrl train-curegn test
-# 512,349 variants to be matched.
-# 0 ambiguous SNPs have been removed.
-# 470,424 variants have been matched; 213 were flipped and 853 were reversed.
-# 1m32.108s DCC
-time Rscript prs-new-08-match-train-test.R base-ssns_srns train-curegn test
 # 511,666 variants to be matched.
 # 0 ambiguous SNPs have been removed.
-# 469,868 variants have been matched; 212 were flipped and 853 were reversed.
+# 470,299 variants have been matched; 213 were flipped and 853 were reversed.
+# 1m32.108s DCC
+time Rscript prs-new-08-match-train-test.R base-ssns_srns train-curegn test
+# 510,987 variants to be matched.
+# 0 ambiguous SNPs have been removed.
+# 469,744 variants have been matched; 212 were flipped and 853 were reversed.
 # 1m27.549s DCC
 
 # then run ldpred-inf version, test a grid of heritabilities to determine quickly what is more promising
@@ -268,6 +268,24 @@ base=base-ssns_ctrl; train=train-curegn; sbatch -J ldpred-07-lassosum-fit-$base-
 # 1m55.754s DCC
 base=base-ssns_srns; train=train-curegn; sbatch -J ldpred-07-lassosum-fit-$base-$train -o ldpred-07-lassosum-fit-$base-$train.out --export=base=$base,train=$train ldpred-07-lassosum-fit.q
 # 2m2.664s DCC
+
+# run regular and "stacked" CT (clump and threshold)
+# clumping step is base-only (uses LD information)
+base=base; sbatch -J ldpred-10-clump-$base -o ldpred-10-clump-$base.out --export=base=$base ldpred-10-clump.q
+# 175m35.322s/1136m5.780s DCC
+base=base-ssns_ctrl; sbatch -J ldpred-10-clump-$base -o ldpred-10-clump-$base.out --export=base=$base ldpred-10-clump.q
+# 168m35.544s/1185m57.806s DCC
+base=base-ssns_srns; sbatch -J ldpred-10-clump-$base -o ldpred-10-clump-$base.out --export=base=$base ldpred-10-clump.q
+# 60m52.564s/301m33.480s DCC
+
+# actual training happens now
+base=base; train=train; sbatch -J ldpred-11-ct-fit-$base-$train -o ldpred-11-ct-fit-$base-$train.out --export=base=$base,train=$train ldpred-11-ct-fit.q
+# ran interactively, not timed
+base=base-ssns_ctrl; train=train-curegn; sbatch -J ldpred-11-ct-fit-$base-$train -o ldpred-11-ct-fit-$base-$train.out --export=base=$base,train=$train ldpred-11-ct-fit.q
+# 5m28.166s DCC
+base=base-ssns_srns; train=train-curegn; sbatch -J ldpred-11-ct-fit-$base-$train -o ldpred-11-ct-fit-$base-$train.out --export=base=$base,train=$train ldpred-11-ct-fit.q
+# 5m38.348s DCC
+
 
 # get correlation values that actually reveal which value was best
 base=base; train=train; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q

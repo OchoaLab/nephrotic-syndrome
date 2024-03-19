@@ -5,7 +5,7 @@ library(ochoalabtools)
 
 # names of cases to score in testing data
 # also plot order
-names_short <- c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' )
+names_short <- c( 'ct-best', 'ct-stacked', 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' )
 # for plot, and combines with names_short to make names_long
 name_out <- 'ldpred2'
 

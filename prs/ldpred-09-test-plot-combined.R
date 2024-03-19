@@ -4,7 +4,7 @@ library(ochoalabtools)
 # constants
 # names of cases to score in testing data
 # also plot order
-names_short <- c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' )
+names_short <- c( 'ct-best', 'ct-stacked', 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' )
 # hardcode values to process
 # only use main test data (Bristol)
 test <- 'test'
