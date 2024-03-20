@@ -54,6 +54,7 @@ for name in ssns_ctrl ssns_srns; do
     # don't need GRM and PCs, but we could link them too otherwise
     # link summary stats too
     ln -s {../../$name/,}mac20-glmm-score.txt # GMMAT
+    ln -s {../../../saige/$name/,}saige_output.txt # SAIGE
     # go back down
     cd ..
 done
@@ -286,6 +287,19 @@ base=base-ssns_ctrl; train=train-curegn; sbatch -J ldpred-11-ct-fit-$base-$train
 base=base-ssns_srns; train=train-curegn; sbatch -J ldpred-11-ct-fit-$base-$train -o ldpred-11-ct-fit-$base-$train.out --export=base=$base,train=$train ldpred-11-ct-fit.q
 # 5m38.348s DCC
 
+# construct CT-specific report of best nonzero betas
+# allows us to count predictor SNPs and determine where they're located
+time Rscript ldpred-12-ct-fit-info.R base train
+# 0m7.177s DCC
+time Rscript ldpred-12-ct-fit-info.R base-ssns_ctrl train-curegn
+# 0m9.549s DCC
+time Rscript ldpred-12-ct-fit-info.R base-ssns_srns train-curegn
+# 0m9.371s DCC
+
+# another quick way to get number of non-zero betas for CT outputs:
+zgrep -c -v '^0$' train/betas-base-ldpred2-ct-best.txt.gz # 31
+zgrep -c -v '^0$' train-curegn/betas-base-ssns_ctrl-ldpred2-ct-best.txt.gz # 8
+zgrep -c -v '^0$' train-curegn/betas-base-ssns_srns-ldpred2-ct-best.txt.gz # 15
 
 # get correlation values that actually reveal which value was best
 base=base; train=train; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
@@ -305,3 +319,4 @@ time Rscript ldpred-08-test-plot.R base-ssns_srns train-curegn test
 
 # makes a single plot combining the data from the previous three
 time Rscript ldpred-09-test-plot-combined.R
+

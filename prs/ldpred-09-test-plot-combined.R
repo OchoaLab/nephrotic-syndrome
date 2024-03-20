@@ -5,6 +5,7 @@ library(ochoalabtools)
 # names of cases to score in testing data
 # also plot order
 names_short <- c( 'ct-best', 'ct-stacked', 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best' )
+names_plot <- c( 'CT', 'CT stacked', 'Inf', 'Grid', 'Auto', 'LASSO' )
 # hardcode values to process
 # only use main test data (Bristol)
 test <- 'test'
@@ -22,6 +23,7 @@ data <- NULL
 
 # process preexisting results
 for ( name_short in names_short ) {
+    name_plot <- names_plot[ names_short == name_short ]
     for ( type_in in types_in ) {
         name_long <- paste0( 'cor-', type_in, '-ldpred2-', name_short )
         # load PRS calculated previously
@@ -37,7 +39,7 @@ for ( name_short in names_short ) {
 
         # reorganize as needed
         data_name <- tibble(
-            model = name_short,
+            model = name_plot,
             type = types_short[ type_in == types_in ],
             R2 = cor[1],
             lower = cor[2],
@@ -50,7 +52,7 @@ for ( name_short in names_short ) {
 }
 
 # manually order models for consistency:
-data$model <- factor( data$model, names_short )
+data$model <- factor( data$model, names_plot )
 data$type <- factor( data$type, types_short )
 
 # http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/
