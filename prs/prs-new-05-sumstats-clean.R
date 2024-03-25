@@ -1,49 +1,49 @@
 library(bigsnpr)
 library(genio)
 library(ochoalabtools)
-library(readr)
+library(tidyverse)
 
 # script does several things:
-# - transforms score statistics into coefficient estimates
 # - replaces sample size with harmonic mean estimate (ought to be more appropriate for case/control data)
 # - subsets to array SNPs (to reduce total numbers)
 # - renames columns
 
 # constants
 # each base has only one base dataset:
-file_sumstats <- 'mac20-glmm-score.txt.gz'
-file_out <- 'mac20-glmm-score-clean.txt.gz'
+file_sumstats <- 'saige_output.txt'
+file_out <- 'saige_output_clean.txt.gz'
 
 base <- args_cli()[1]
 if ( is.na( base ) )
     stop( 'Usage: <base>' )
 
-# work in desired subdirectory (usually base, train, or test)
+# work in desired subdirectory
 setwd( base )
-
-# one tiny hiccup is some of these cases are uncompressed...
-if ( !file.exists( file_sumstats ) )
-    file_sumstats <- 'mac20-glmm-score.txt'
-
-# get sample size a different way
-fam <- read_fam( 'mac20' )
-counts <- table( fam$pheno - 1 ) # counts zeros and ones
 
 # load summary statistics (big file because it's from imputed data)
 message( 'Reading: ', file_sumstats )
 sumstats <- bigreadr::fread2( file_sumstats )
 
-message( 'Updating beta, beta_se, n_eff' )
+message( 'Updating n_eff' )
 
-# apply Debo's transformation
-sumstats$beta <- sumstats$SCORE / sumstats$VAR
-sumstats$beta_se <- 1 / sqrt( sumstats$VAR )
-# exclude "MISSRATE" (there's no missingness here), SCORE, VAR
-stopifnot( all( sumstats$MISSRATE == 0 ) )
-sumstats <- setNames( sumstats[ -c(7, 9, 10) ], c('rsid', 'chr', 'pos', 'a0', 'a1', 'n_eff', 'af', 'p', 'beta', 'beta_se') )
+# calculate better effective sample size
+sumstats <- sumstats %>% mutate( n_eff = 4 / ( 1 / N_case + 1 / N_ctrl ) )
 
-# calculate better effective sample size, overwrite old value
-sumstats$n_eff <- 4 / ( 1 / counts[[ '0' ]] + 1 / counts[[ '1' ]] )
+message( 'Selecting columns' )
+
+# select and rename a smaller set of desired columns
+sumstats <- sumstats %>% select(
+                             rsid = MarkerID,
+                             chr = CHR,
+                             pos = POS,
+                             a0 = Allele1,
+                             a1 = Allele2,
+                             af = AF_Allele2,
+                             p = p.value,
+                             beta = BETA,
+                             beta_se = SE,
+                             n_eff
+                         )
 
 # if using ssns-srns, reverse signs!  (ssns-ctrl was fine though)
 if ( grepl( 'ssns_srns', base ) )

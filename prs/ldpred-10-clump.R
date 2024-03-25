@@ -42,7 +42,7 @@ all_keep <- snp_grid_clumping(
     CHR,
     POS,
     lpS = lpvals,
-    exclude = which(is.na(lpval)),
+    exclude = which(is.na(lpvals)),
     ncores = NCORES
 )
 

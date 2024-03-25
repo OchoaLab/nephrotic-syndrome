@@ -16,7 +16,7 @@ if ( is.na( train ) )
 
 # load precalculated data
 # this one is always in base only
-file_sumstats_clean <- paste0( '../', base, '/mac20-glmm-score-clean.txt.gz' )
+file_sumstats_clean <- paste0( '../', base, '/saige_output_clean.txt.gz' )
 
 # work in desired training subdirectory
 setwd( train )

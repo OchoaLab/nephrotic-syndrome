@@ -92,12 +92,8 @@ dir=train; sbatch -J grm-$dir -o grm-$dir.out --export=dir=$dir prs-new-02-grm.q
 dir=test;  sbatch -J grm-$dir -o grm-$dir.out --export=dir=$dir prs-new-02-grm.q
 # 0m56.275s DCC
 
-# runs GMMAT on new "base" only
-sbatch prs-new-03-gmmat.q
-# 1721m16.303s/1699m25.061s DCC glmmkin and GDS parts
-# 953m41.492s/18874m47.095s DCC glmm.score part
-# compress output
-gzip base/mac20-glmm-score.txt
+# Tiffany ran SAIGE on "base" using this code:
+sbatch saige.q
 
 # add posg to bim, helps set accurate/dynamic window sizes for LD calculations
 # (really only required for training data, but could add to all of them for completeness)
@@ -129,31 +125,32 @@ time Rscript prs-new-04-make-rds.R base-ssns_srns/mac20
 time Rscript prs-new-04-make-rds.R train-curegn/mac20
 # 1m33.345s DCC
 
-# clean summary stats (convert scores to betas, subset to array)
+# clean summary stats (subset to array)
 time Rscript prs-new-05-sumstats-clean.R base
 # Array has these many variants: 761366
 # 20,511,795 variants to be matched.
 # 82,354 ambiguous SNPs have been removed.
 # 672,360 variants have been matched; 0 were flipped and 0 were reversed.
-# 2m10.932s DCC
+# 2m2.685s DCC
 time Rscript prs-new-05-sumstats-clean.R base-ssns_ctrl
 # Array has these many variants: 761366
 # 20,838,869 variants to be matched.
 # 82,356 ambiguous SNPs have been removed.
 # 672,362 variants have been matched; 0 were flipped and 0 were reversed.
-# 2m28.642s DCC
+# 2m5.272s DCC
 time Rscript prs-new-05-sumstats-clean.R base-ssns_srns
 # Array has these many variants: 761366
 # 12,274,557 variants to be matched.
 # 76,584 ambiguous SNPs have been removed.
 # 635,789 variants have been matched; 0 were flipped and 0 were reversed.
-# 1m25.307s DCC
+# 1m26.980s DCC
 
 # subset again to match to training data, and to self-base in all cases to get LD in base
 time Rscript prs-new-06-sumstats-match.R base train
 # 672,360 variants to be matched.
 # 0 ambiguous SNPs have been removed.
 # 528,964 variants have been matched; 0 were flipped and 0 were reversed.
+# 1m36.754s DCC
 time Rscript prs-new-06-sumstats-match.R base base
 # 672,360 variants to be matched.
 # 0 ambiguous SNPs have been removed.
@@ -224,11 +221,11 @@ time Rscript ldpred-01-inf-fit.R base-ssns_srns train-curegn
 
 # run grid version, which is more computationally intensive
 base=base; sbatch -J ldpred-03-grid-$base -o ldpred-03-grid-$base.out --export=base=$base ldpred-03-grid.q
-# 34m41.436s DCC
+# 44m53.794s DCC
 base=base-ssns_ctrl; sbatch -J ldpred-03-grid-$base -o ldpred-03-grid-$base.out --export=base=$base ldpred-03-grid.q
-# 35m23.125s DCC
+# 46m2.997s DCC
 base=base-ssns_srns; sbatch -J ldpred-03-grid-$base -o ldpred-03-grid-$base.out --export=base=$base ldpred-03-grid.q
-# 31m46.973s DCC
+# 44m3.382s DCC
 
 # fit parameters using training data (grid version)
 time Rscript ldpred-04-grid-fit.R base train
@@ -240,11 +237,11 @@ time Rscript ldpred-04-grid-fit.R base-ssns_srns train-curegn
 
 # run auto version
 base=base; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out --export=base=$base ldpred-05-auto.q
-# 8m8.392s DCC
+# 15m28.283s DCC
 base=base-ssns_ctrl; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out --export=base=$base ldpred-05-auto.q
-# 7m58.486s DCC
+# 15m57.995s DCC
 base=base-ssns_srns; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out --export=base=$base ldpred-05-auto.q
-# 6m53.674s DCC
+# 8m49.049s DCC
 
 # base version needs one more step to map data to training SNOs
 time Rscript ldpred-05-auto-map-base-to-train.R base train
@@ -256,11 +253,11 @@ time Rscript ldpred-05-auto-map-base-to-train.R base-ssns_srns train-curegn
 
 # run lassosum version
 base=base; sbatch -J ldpred-06-lassosum-$base -o ldpred-06-lassosum-$base.out --export=base=$base ldpred-06-lassosum.q
-# 4m3.944s DCC
+# 5m49.648s DCC
 base=base-ssns_ctrl; sbatch -J ldpred-06-lassosum-$base -o ldpred-06-lassosum-$base.out --export=base=$base ldpred-06-lassosum.q
-# 3m41.389s DCC
+# 5m1.334s DCC
 base=base-ssns_srns; sbatch -J ldpred-06-lassosum-$base -o ldpred-06-lassosum-$base.out --export=base=$base ldpred-06-lassosum.q
-# 5m3.267s DCC
+# 6m46.425s DCC
 
 # fit parameters using training data (lassosum version)
 base=base; train=train; sbatch -J ldpred-07-lassosum-fit-$base-$train -o ldpred-07-lassosum-fit-$base-$train.out --export=base=$base,train=$train ldpred-07-lassosum-fit.q
@@ -273,19 +270,19 @@ base=base-ssns_srns; train=train-curegn; sbatch -J ldpred-07-lassosum-fit-$base-
 # run regular and "stacked" CT (clump and threshold)
 # clumping step is base-only (uses LD information)
 base=base; sbatch -J ldpred-10-clump-$base -o ldpred-10-clump-$base.out --export=base=$base ldpred-10-clump.q
-# 175m35.322s/1136m5.780s DCC
+# 162m37.282s/1164m7.533s DCC
 base=base-ssns_ctrl; sbatch -J ldpred-10-clump-$base -o ldpred-10-clump-$base.out --export=base=$base ldpred-10-clump.q
-# 168m35.544s/1185m57.806s DCC
+# 171m58.583s/1213m16.160s DCC
 base=base-ssns_srns; sbatch -J ldpred-10-clump-$base -o ldpred-10-clump-$base.out --export=base=$base ldpred-10-clump.q
-# 60m52.564s/301m33.480s DCC
+# 65m48.709s/336m46.577s DCC
 
 # actual training happens now
 base=base; train=train; sbatch -J ldpred-11-ct-fit-$base-$train -o ldpred-11-ct-fit-$base-$train.out --export=base=$base,train=$train ldpred-11-ct-fit.q
-# ran interactively, not timed
+# 14m13.541s DCC
 base=base-ssns_ctrl; train=train-curegn; sbatch -J ldpred-11-ct-fit-$base-$train -o ldpred-11-ct-fit-$base-$train.out --export=base=$base,train=$train ldpred-11-ct-fit.q
-# 5m28.166s DCC
+# 14m6.112s DCC
 base=base-ssns_srns; train=train-curegn; sbatch -J ldpred-11-ct-fit-$base-$train -o ldpred-11-ct-fit-$base-$train.out --export=base=$base,train=$train ldpred-11-ct-fit.q
-# 5m38.348s DCC
+# 14m11.926s DCC
 
 # construct CT-specific report of best nonzero betas
 # allows us to count predictor SNPs and determine where they're located
@@ -297,17 +294,17 @@ time Rscript ldpred-12-ct-fit-info.R base-ssns_srns train-curegn
 # 0m9.371s DCC
 
 # another quick way to get number of non-zero betas for CT outputs:
-zgrep -c -v '^0$' train/betas-base-ldpred2-ct-best.txt.gz # 31
-zgrep -c -v '^0$' train-curegn/betas-base-ssns_ctrl-ldpred2-ct-best.txt.gz # 8
-zgrep -c -v '^0$' train-curegn/betas-base-ssns_srns-ldpred2-ct-best.txt.gz # 15
+zgrep -c -v '^0$' train/betas-base-ldpred2-ct-best.txt.gz # 8
+zgrep -c -v '^0$' train-curegn/betas-base-ssns_ctrl-ldpred2-ct-best.txt.gz # 6
+zgrep -c -v '^0$' train-curegn/betas-base-ssns_srns-ldpred2-ct-best.txt.gz # 12
 
 # get correlation values that actually reveal which value was best
 base=base; train=train; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
-# 1m1.389s DCC
+# 2m0.160s DCC
 base=base-ssns_ctrl; train=train-curegn; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
-# 1m28.522s DCC
+# 1m59.392s DCC
 base=base-ssns_srns; train=train-curegn; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
-# 1m2.556s DCC
+# 2m0.686s DCC
 
 # make nice plot that summarize testing results
 time Rscript ldpred-08-test-plot.R base train test
@@ -319,4 +316,5 @@ time Rscript ldpred-08-test-plot.R base-ssns_srns train-curegn test
 
 # makes a single plot combining the data from the previous three
 time Rscript ldpred-09-test-plot-combined.R
+# 0m14.429s DCC
 
