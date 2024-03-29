@@ -59,7 +59,7 @@ for name in ssns_ctrl ssns_srns; do
     cd ..
 done
 
-# the same for curegn as a training dataset
+# the same for curegn as a training dataset, and later also testing in a non-overlapping case
 mkdir train-curegn
 cd train-curegn
 # link genotype data and PCs
@@ -124,6 +124,18 @@ time Rscript prs-new-04-make-rds.R base-ssns_srns/mac20
 # 3m15.834s DCC
 time Rscript prs-new-04-make-rds.R train-curegn/mac20
 # 1m33.345s DCC
+
+# now is a good time to link curegn test and train versions
+# NOTES: do after imputing genotypes and creating RDS!  Also inherits posg, though that is unimportant
+mkdir test-curegn
+cd test-curegn
+ln -s {../train-curegn/,}mac20.bed
+ln -s {../train-curegn/,}mac20.bim
+ln -s {../train-curegn/,}mac20.fam
+ln -s {../train-curegn/,}mac20.eigenvec
+ln -s {../train-curegn/,}mac20.bk
+ln -s {../train-curegn/,}mac20.rds
+cd ..
 
 # clean summary stats (subset to array)
 time Rscript prs-new-05-sumstats-clean.R base
@@ -192,6 +204,11 @@ time Rscript prs-new-08-match-train-test.R base train test
 # 0 ambiguous SNPs have been removed.
 # 466,208 variants have been matched; 0 were flipped and 0 were reversed.
 # 1m32.168s DCC
+time Rscript prs-new-08-match-train-test.R base train test-curegn
+# 528,964 variants to be matched.
+# 0 ambiguous SNPs have been removed.
+# 491,349 variants have been matched; 292 were flipped and 872 were reversed.
+# 1m41.491s DCC
 time Rscript prs-new-08-match-train-test.R base-ssns_ctrl train-curegn test
 # 511,666 variants to be matched.
 # 0 ambiguous SNPs have been removed.
@@ -301,6 +318,8 @@ zgrep -c -v '^0$' train-curegn/betas-base-ssns_srns-ldpred2-ct-best.txt.gz # 12
 # get correlation values that actually reveal which value was best
 base=base; train=train; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
 # 2m0.160s DCC
+base=base; train=train; test=test-curegn; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
+# 0m59.692s DCC
 base=base-ssns_ctrl; train=train-curegn; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
 # 1m59.392s DCC
 base=base-ssns_srns; train=train-curegn; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
@@ -309,6 +328,8 @@ base=base-ssns_srns; train=train-curegn; test=test; sbatch -J ldpred-02-score-$b
 # make nice plot that summarize testing results
 time Rscript ldpred-08-test-plot.R base train test
 # 0m8.598s DCC
+time Rscript ldpred-08-test-plot.R base train test-curegn
+# 0m12.047s DCC
 time Rscript ldpred-08-test-plot.R base-ssns_ctrl train-curegn test
 # 0m14.383s DCC
 time Rscript ldpred-08-test-plot.R base-ssns_srns train-curegn test

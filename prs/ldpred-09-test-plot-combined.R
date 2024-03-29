@@ -9,22 +9,18 @@ names_plot <- c( 'CT', 'CT stacked', 'Inf', 'Grid', 'Auto', 'LASSO' )
 # hardcode values to process
 # only use main test data (Bristol)
 test <- 'test'
+# actually no, in one hacky case can use curegn as testing dataset
+test_curegn <- 'test-curegn'
 # consider these combinations of base and training datasets
 types_in <- c('base-train', 'base-ssns_ctrl-train-curegn', 'base-ssns_srns-train-curegn')
 types_short <- c('SC-DDB', 'SC-DCB', 'SR-DCB')
 # in all cases, output name will match inputs in saying it's about correlations
 name_out <- 'cor-ALL-ldpred2'
 
-# all processing happens in subdirectory
-setwd( test )
-
-# output tibble
-data <- NULL
-
-# process preexisting results
-for ( name_short in names_short ) {
-    name_plot <- names_plot[ names_short == name_short ]
-    for ( type_in in types_in ) {
+# processing function for all methods, for each type
+load_all_names <- function( data, type_in, test ) {
+    for ( name_short in names_short ) {
+        name_plot <- names_plot[ names_short == name_short ]
         name_long <- paste0( 'cor-', type_in, '-ldpred2-', name_short )
         # load PRS calculated previously
         file_in <- paste0( name_long, '.txt.gz' )
@@ -41,6 +37,7 @@ for ( name_short in names_short ) {
         data_name <- tibble(
             model = name_plot,
             type = types_short[ type_in == types_in ],
+            test = test,
             R2 = cor[1],
             lower = cor[2],
             upper = cor[3]
@@ -49,7 +46,32 @@ for ( name_short in names_short ) {
         # append to tibble
         data <- bind_rows( data, data_name )
     }
+    # return updated data
+    return( data )
 }
+
+# output tibble
+data <- NULL
+
+# start with a hack, where curegn is used as test, but we can only properly use it if it isn't also used to train (only first type)
+setwd( test_curegn )
+data <- load_all_names( data, types_in[1], test_curegn )
+setwd( '..' )
+
+# all processing happens in subdirectory
+setwd( test )
+
+# process preexisting results
+for ( type_in in types_in ) {
+    data <- load_all_names( data, type_in, test )
+}
+
+# continue test-curegn hack, so far the data shouldn't overlap because testing dataset is distinguished, but it won't plot correctly as-is because type does overlap with test-bristol's, for now
+indexes <- data$test == test_curegn
+stopifnot( all( data$type[ indexes ] == 'SC-DDB' ) )
+data$type[ indexes ] <- 'SC-DDC' # label this test=C instead, which partly solves our problems
+# decide which order to plot the new type.  Do last for now
+types_short <- c( types_short, 'SC-DDC' )
 
 # manually order models for consistency:
 data$model <- factor( data$model, names_plot )
