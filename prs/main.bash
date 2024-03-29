@@ -13,6 +13,8 @@ module load Plink/2.00a3LM
 # define subsets to split Discovery mainly, but also cleans up Bristol minimally
 # (lists of individuals in each set, */ids.txt below)
 time Rscript prs-new-00-create-subsets.R
+# create a second curegn subset for testing that uses all MCD/FSGS regardless of age (the pediatric cases are the main/first curegn)
+time Rscript prs-new-00-create-subsets-curegn2.R
 
 # actually create data
 cd /datacommons/ochoalab/ssns_gwas/imputed/prs-new
@@ -23,18 +25,23 @@ time plink2 --bfile ../mac20 --keep train/ids.txt --mac 20 --make-bed --out trai
 # only testing data comes from Bristol, which is in a totally different, awkward path
 time plink2 --bfile ../../replication/bristol_data/imputation/post_imp/bristol_impute_mac20 --keep test/ids.txt --mac 20 --make-bed --out test/mac20
 # 0m13.507s DCC
+# and second CureGN, which also needs an additional missingness filter (geno)
+time plink2 --bfile ../../../curegn/curegn-autosomes-snps-mac20-geno-hg38 --keep test-curegn2/ids.txt --mac 20 --geno --make-bed --out test-curegn2/mac20
 
 # confirm dimensions
 wc -l */ids.txt
 # 4085 base/ids.txt
+#  891 test-curegn2/ids.txt
 #  519 test/ids.txt
 #  386 train/ids.txt
  
 wc -l */*.{bim,fam}
 # 20511795 base/mac20.bim
+# 10655741 test-curegn2/mac20.bim
 #  8043559 test/mac20.bim
 #  9549985 train/mac20.bim
 #     4085 base/mac20.fam
+#      891 test-curegn2/mac20.fam
 #      514 test/mac20.fam
 #      386 train/mac20.fam
 
@@ -74,14 +81,11 @@ ln -s {${curegn},}mac20.eigenvec
 # plink2 --bfile mac20 --freq --out mac20
 cd ..
 
-# since cureGN has low amounts of missingness, as a hack, apply some semi-random imputation (based on global AFs, but unlikely to matter)
-time Rscript impute-dumb.R train-curegn/mac20
-# 7m42.698s DCC
-# NOTE: we will use original PCs estimated from data with missingnes, which is better; nothing else is affected in this case (we're not calculating LD for CureGN)
-
 # add phenotype and sex to fam files (otherwise blank), which will simplify PRS trait handling later
 time Rscript prs-new-01-fix-pheno-fam.R
 # 0m10.434s DCC
+time Rscript prs-new-01-fix-pheno-fam-curegn2.R
+# didn't time
 
 # calculate GRMs and PCs for every new dataset
 # (PCs can be used to adjust correlations)
@@ -91,6 +95,8 @@ dir=train; sbatch -J grm-$dir -o grm-$dir.out --export=dir=$dir prs-new-02-grm.q
 # 0m46.235s DCC
 dir=test;  sbatch -J grm-$dir -o grm-$dir.out --export=dir=$dir prs-new-02-grm.q
 # 0m56.275s DCC
+dir=test-curegn2; sbatch -J grm-$dir -o grm-$dir.out --export=dir=$dir prs-new-02-grm.q
+# 3m12.489s DCC
 
 # Tiffany ran SAIGE on "base" using this code:
 sbatch saige.q
@@ -109,13 +115,22 @@ time Rscript bim-add-posg.R base-ssns_srns/mac20 38
 # 1m53.496s DCC
 time Rscript bim-add-posg.R train-curegn/mac20 38
 # 1m14.851s DCC
+time Rscript bim-add-posg.R test-curegn2/mac20 38
+# 1m38.700s DCC
 
-# create RDS versions of train and test (needed for both)
+# since cureGN has low amounts of missingness, as a hack, apply some semi-random imputation (based on global AFs, but unlikely to matter)
+time Rscript impute-dumb.R train-curegn/mac20
+# 7m42.698s DCC
+# this one is larger, required more memory: 64G!
+time Rscript impute-dumb.R test-curegn2/mac20
+# 20m58.547s DCC
+# NOTE: in both cases we will use original PCs estimated from data with missingnes, which is better; nothing else is affected in this case (we're not calculating LD for CureGN)
+
+# create RDS versions of all data
 time Rscript prs-new-04-make-rds.R train/mac20
 # 1m42.520s DCC
 time Rscript prs-new-04-make-rds.R test/mac20
 # 1m38.067s DCC
-# do base too, to calculate LD in it
 time Rscript prs-new-04-make-rds.R base/mac20
 # 16m13.505s DCC
 time Rscript prs-new-04-make-rds.R base-ssns_ctrl/mac20
@@ -124,8 +139,10 @@ time Rscript prs-new-04-make-rds.R base-ssns_srns/mac20
 # 3m15.834s DCC
 time Rscript prs-new-04-make-rds.R train-curegn/mac20
 # 1m33.345s DCC
+time Rscript prs-new-04-make-rds.R test-curegn2/mac20
+# 2m37.923s DCC
 
-# now is a good time to link curegn test and train versions
+# now is a good time to link (first) curegn test and train versions
 # NOTES: do after imputing genotypes and creating RDS!  Also inherits posg, though that is unimportant
 mkdir test-curegn
 cd test-curegn
@@ -209,6 +226,11 @@ time Rscript prs-new-08-match-train-test.R base train test-curegn
 # 0 ambiguous SNPs have been removed.
 # 491,349 variants have been matched; 292 were flipped and 872 were reversed.
 # 1m41.491s DCC
+time Rscript prs-new-08-match-train-test.R base train test-curegn2
+# 528,964 variants to be matched.
+# 0 ambiguous SNPs have been removed.
+# 516,892 variants have been matched; 312 were flipped and 885 were reversed.
+# 1m33.968s DCC
 time Rscript prs-new-08-match-train-test.R base-ssns_ctrl train-curegn test
 # 511,666 variants to be matched.
 # 0 ambiguous SNPs have been removed.
@@ -320,6 +342,8 @@ base=base; train=train; test=test; sbatch -J ldpred-02-score-$base-$train-$test 
 # 2m0.160s DCC
 base=base; train=train; test=test-curegn; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
 # 0m59.692s DCC
+base=base; train=train; test=test-curegn2; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
+# 1m16.298s DCC
 base=base-ssns_ctrl; train=train-curegn; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
 # 1m59.392s DCC
 base=base-ssns_srns; train=train-curegn; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
@@ -330,6 +354,8 @@ time Rscript ldpred-08-test-plot.R base train test
 # 0m8.598s DCC
 time Rscript ldpred-08-test-plot.R base train test-curegn
 # 0m12.047s DCC
+time Rscript ldpred-08-test-plot.R base train test-curegn2
+# 0m10.965s DCC
 time Rscript ldpred-08-test-plot.R base-ssns_ctrl train-curegn test
 # 0m14.383s DCC
 time Rscript ldpred-08-test-plot.R base-ssns_srns train-curegn test
