@@ -10,6 +10,9 @@ srun --mem 16G -p ochoalab --account ochoalab --pty bash -i
 module load R/4.1.1-rhel8 
 module load Plink/2.00a3LM
 
+# location of data and scripts
+cd /datacommons/ochoalab/ssns_gwas/imputed/prs-new
+
 # define subsets to split Discovery mainly, but also cleans up Bristol minimally
 # (lists of individuals in each set, */ids.txt below)
 time Rscript prs-new-00-create-subsets.R
@@ -17,7 +20,6 @@ time Rscript prs-new-00-create-subsets.R
 time Rscript prs-new-00-create-subsets-curegn2.R
 
 # actually create data
-cd /datacommons/ochoalab/ssns_gwas/imputed/prs-new
 time plink2 --bfile ../mac20 --keep base/ids.txt --mac 20 --make-bed --out base/mac20
 # 2m11.571s DCC
 time plink2 --bfile ../mac20 --keep train/ids.txt --mac 20 --make-bed --out train/mac20
@@ -364,4 +366,22 @@ time Rscript ldpred-08-test-plot.R base-ssns_srns train-curegn test
 # makes a single plot combining the data from the previous three
 time Rscript ldpred-09-test-plot-combined.R
 # 0m14.429s DCC
+
+# perform ancestry subanalyses too!
+time Rscript ldpred-02-score-anc.R base train test
+# 1m8.761s DCC
+time Rscript ldpred-02-score-anc.R base-ssns_ctrl train-curegn test
+# 1m16.066s DCC
+time Rscript ldpred-02-score-anc.R base-ssns_srns train-curegn test
+# 1m9.333s DCC
+time Rscript ldpred-02-score-anc.R base train test-curegn
+# untimed
+time Rscript ldpred-02-score-anc.R base train test-curegn2
+# untimed
+
+# plot for ancestry subanalysis, for a single method
+time Rscript ldpred-13-test-plot-combined-anc.R grid-h0.1-best
+# 0m7.819s DCC
+time Rscript ldpred-13-test-plot-combined-anc.R ct-best
+# 0m7.013s DCC
 
