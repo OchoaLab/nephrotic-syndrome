@@ -339,17 +339,17 @@ zgrep -c -v '^0$' train/betas-base-ldpred2-ct-best.txt.gz # 8
 zgrep -c -v '^0$' train-curegn/betas-base-ssns_ctrl-ldpred2-ct-best.txt.gz # 6
 zgrep -c -v '^0$' train-curegn/betas-base-ssns_srns-ldpred2-ct-best.txt.gz # 12
 
-# get correlation values that actually reveal which value was best
+# get PRSs and correlation values that actually reveal which model was best
 base=base; train=train; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
-# 2m0.160s DCC
+# 1m19.138s DCC
 base=base; train=train; test=test-curegn; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
-# 0m59.692s DCC
+# 1m40.356s DCC
 base=base; train=train; test=test-curegn2; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
-# 1m16.298s DCC
+# 2m47.350s DCC
 base=base-ssns_ctrl; train=train-curegn; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
-# 1m59.392s DCC
+# 1m11.484s DCC
 base=base-ssns_srns; train=train-curegn; test=test; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test ldpred-02-score.q
-# 2m0.686s DCC
+# 1m10.048s DCC
 
 # make nice plot that summarize testing results
 time Rscript ldpred-08-test-plot.R base train test
@@ -385,3 +385,14 @@ time Rscript ldpred-13-test-plot-combined-anc.R grid-h0.1-best
 time Rscript ldpred-13-test-plot-combined-anc.R ct-best
 # 0m7.013s DCC
 
+# look in more detail at scores by themselves, and as predictors (binned into quantiles)
+time Rscript ldpred-14-prs-or-quantiles.R test base-train-ldpred2-grid-h0.1-best
+# not timed
+time Rscript ldpred-14-prs-or-quantiles.R test base-ssns_ctrl-train-curegn-ldpred2-grid-h0.1-best
+# 0m21.026s DCC
+time Rscript ldpred-14-prs-or-quantiles.R test base-ssns_srns-train-curegn-ldpred2-grid-h0.1-best
+# 0m21.497s DCC
+time Rscript ldpred-14-prs-or-quantiles.R test-curegn base-train-ldpred2-grid-h0.1-best
+# 0m21.301s DCC
+time Rscript ldpred-14-prs-or-quantiles.R test-curegn2 base-train-ldpred2-grid-h0.1-best
+# 0m20.305s DCC

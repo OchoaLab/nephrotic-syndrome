@@ -45,9 +45,10 @@ for ( name in names ) {
     # location of PRSs is training!
     file_in <- paste0( '../', train, '/betas-', base, name, '.txt.gz' )
     file_out <- paste0( 'cor-', base_train, name, '.txt.gz' )
+    file_prs <- paste0( 'prs-', base_train, name, '.txt.gz' )
     
-    # skip costly calculations if output already exists!
-    if ( file.exists( file_out ) ) next
+    # skip costly calculations if both outputs already exist!
+    if ( file.exists( file_out ) && file.exists( file_prs ) ) next
     # skip silently if input is missing
     if ( !file.exists( file_in ) ) next
     # report what is being processed right now
@@ -61,6 +62,10 @@ for ( name in names ) {
     
     # calculate PRS for test individuals now
     preds <- big_prodVec( G, betas, ind.col = df_beta[["_NUM_ID_"]] )
+
+    # save PRS to analyze further outside this script
+    write_lines( preds, file_prs )
+    
     # calculate and save only correlation coefficient to truth, adjusting for PCs
     cor <- pcor( preds, y, PCs )
     write_lines( cor, file_out )
