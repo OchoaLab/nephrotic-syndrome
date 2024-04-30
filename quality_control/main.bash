@@ -19,9 +19,20 @@ phenotype_excel_merge.Rmd
 
 ### REMOVE BRISTOL ###
 
+# size of rawest data, including Bristol
+wc -l ../raw/*.{fam,bim}
+#    2656 nephrotic.syndrome.gwas.all.b38.n2656.R2.fam
+# 1748250 nephrotic.syndrome.gwas.all.b38.n2656.R2.bim
+
+# and list of individuals to remove
+wc -l ids-bristol.txt 
+# 590 ids-bristol.txt
+
 # remove bristol samples, create new bim/bed/fam files
 plink2 --bfile ../raw/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove ids-bristol.txt --make-bed --out ssns_remove_B
 # creates ssns_remove_B.{bed,bim,fam}
+
+# so output should have had the same number of SNPs, and 2066 individuals!
 
 
 ### REMOVE DUPLICATE INDIVIDUALS, QC ###
@@ -129,11 +140,9 @@ plink --keep-allele-order --bfile array-clean3 --bmerge TGP-subset2 --out ssns_t
 # cleanup
 rm array-clean{2,3}.* TGP-subset{,2}.??? 
 
-wc -l ssns_tgp_merge.{bim,fam} old/ssns_tpg_merge.{bim,fam}
+wc -l ssns_tgp_merge.{bim,fam}
 # 762629 ssns_tgp_merge.bim # one more than expected!
 #   4485 ssns_tgp_merge.fam
-# 833047 old/ssns_tpg_merge.bim # 70418 more
-#   4485 old/ssns_tpg_merge.fam
 
 
 ### ALLELE FREQUENCY TEST ###
@@ -156,6 +165,10 @@ time plink \
   --make-bed --out ssns_tgp_merge_clean
 # cleanup
 rm ssns_tgp_merge_clean.nosex
+
+wc -l ssns_tgp_merge_clean.{bim,fam}
+# 761366 ssns_tgp_merge_clean.bim
+#   4485 ssns_tgp_merge_clean.fam
 
 # redo allele frequency calculations to confirm alignment succeeded
 mkdir allele_freq2
