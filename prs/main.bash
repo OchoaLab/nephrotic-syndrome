@@ -396,3 +396,13 @@ time Rscript ldpred-14-prs-or-quantiles.R test-curegn base-train-ldpred2-grid-h0
 # 0m21.301s DCC
 time Rscript ldpred-14-prs-or-quantiles.R test-curegn2 base-train-ldpred2-grid-h0.1-best
 # 0m20.305s DCC
+
+# do some for the CT method, hopefully it is similar qualitatively
+# do only these two, which are the most relevant cases
+# scale is different but results otherwise sort of similar
+time Rscript ldpred-14-prs-or-quantiles.R test base-train-ldpred2-ct-best
+time Rscript ldpred-14-prs-or-quantiles.R test-curegn base-train-ldpred2-ct-best
+
+# version that combines test (bristol) and test-curegn, for larger sample sizes, now that we know that they were both similar when looked at separately
+time Rscript ldpred-15-prs-or-quantiles-combined.R base-train-ldpred2-grid-h0.1-best
+time Rscript ldpred-15-prs-or-quantiles-combined.R base-train-ldpred2-ct-best
