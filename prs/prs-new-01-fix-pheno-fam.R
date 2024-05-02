@@ -4,7 +4,7 @@ library(genio)
 # constants
 name <- 'mac20'
 # datasets to process
-datasets <- c('train-curegn') #, 'base-ssns_ctrl', 'base-ssns_srns', 'base', 'train', 'test')
+datasets <- c('base-ssns_ctrl', 'base-ssns_srns', 'base', 'train', 'train-curegn', 'test')
 # these are based on ssns_ctrl trait
 datasets_ssns_ctrl <- c('base-ssns_ctrl', 'base')
 

@@ -18,7 +18,7 @@ data_bri <- read_tsv( '../array/patient-data.txt.gz', show_col_types = FALSE )
 # start with Bristol (easiest), immediately filter to its cases only (exclude unclassified NS)
 data_bri <- data_bri %>% filter( bristol, grepl( 'S[SR]NS', diagnosis ) )
 # in Bristol, p=0.3 is SRNS, 0.7 is SSNS
-# mean( data_bri$diagnosis == 'SRNS' ) # [1] 0.2909441
+# mean( data_bri$diagnosis == 'SRNS' ) # [1] 0.3314176
 # this is the list of IDs we want for the Bristol test (same as Bristol otherwise, just explicitly exclude unclassified NS)
 ids_test <- data_bri$id
 

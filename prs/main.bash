@@ -34,21 +34,21 @@ time plink2 --bfile ../../../curegn/curegn-autosomes-snps-mac20-geno-hg38 --keep
 wc -l */ids.txt
 # 4085 base/ids.txt
 #  891 test-curegn2/ids.txt
-#  519 test/ids.txt
+#  522 test/ids.txt
 #  386 train/ids.txt
  
 wc -l */*.{bim,fam}
 # 20511795 base/mac20.bim
 # 10655741 test-curegn2/mac20.bim
-#  8043559 test/mac20.bim
+#  8053402 test/mac20.bim
 #  9549985 train/mac20.bim
 #     4085 base/mac20.fam
 #      891 test-curegn2/mac20.fam
-#      514 test/mac20.fam
+#      517 test/mac20.fam
 #      386 train/mac20.fam
 
 # NOTES:
-# - only testing (Bristol) lost individuals (5 total), is it because my rawer list hadn't been de-duped yet?  This is fine.
+# - only testing (Bristol) lost individuals (5 total), because my rawer list had duplicates and high-missingness individuals.  This is fine.
 
 # alternatively, make working copies of the original base data (not split in this weird way)
 # make a copy because we edit positions, calculate LD, create other temp files
@@ -102,6 +102,7 @@ dir=test-curegn2; sbatch -J grm-$dir -o grm-$dir.out --export=dir=$dir prs-new-0
 
 # Tiffany ran SAIGE on "base" using this code:
 sbatch saige.q
+
 
 # add posg to bim, helps set accurate/dynamic window sizes for LD calculations
 # (really only required for training data, but could add to all of them for completeness)
@@ -221,7 +222,7 @@ base=base-ssns_srns; sbatch -J ld-$base -o ld-$base.out --export=base=$base prs-
 time Rscript prs-new-08-match-train-test.R base train test
 # 528,964 variants to be matched.
 # 0 ambiguous SNPs have been removed.
-# 466,208 variants have been matched; 0 were flipped and 0 were reversed.
+# 466,359 variants have been matched; 0 were flipped and 0 were reversed.
 # 1m32.168s DCC
 time Rscript prs-new-08-match-train-test.R base train test-curegn
 # 528,964 variants to be matched.
@@ -236,12 +237,12 @@ time Rscript prs-new-08-match-train-test.R base train test-curegn2
 time Rscript prs-new-08-match-train-test.R base-ssns_ctrl train-curegn test
 # 511,666 variants to be matched.
 # 0 ambiguous SNPs have been removed.
-# 470,299 variants have been matched; 213 were flipped and 853 were reversed.
+# 470,468 variants have been matched; 213 were flipped and 853 were reversed.
 # 1m32.108s DCC
 time Rscript prs-new-08-match-train-test.R base-ssns_srns train-curegn test
 # 510,987 variants to be matched.
 # 0 ambiguous SNPs have been removed.
-# 469,744 variants have been matched; 212 were flipped and 853 were reversed.
+# 469,912 variants have been matched; 212 were flipped and 853 were reversed.
 # 1m27.549s DCC
 
 # then run ldpred-inf version, test a grid of heritabilities to determine quickly what is more promising
