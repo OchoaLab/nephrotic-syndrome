@@ -11,10 +11,10 @@ module load R/4.0.0
 cd /datacommons/ochoalab/ssns_gwas/array
 
 
-# reads 2022-02-25_2PhenotypeDatafirstDataSets.xlsx, PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx, and original fam table
+# reads 2022-02-25_2PhenotypeDatafirstDataSets.xlsx, PHENOTYPEDATASECONDSETOFPLATES2021_2022.xlsx, 2023-02-08_pheno_Bristol_updated.xlsx, and original fam table
 # creates patient-data.txt.gz (formerly pheno_excelmerge.csv), includes Bristol!
 # creates ids-bristol.txt too
-phenotype_excel_merge.Rmd
+time Rscript phenotype_excel_merge.R
 
 
 ### REMOVE BRISTOL ###
