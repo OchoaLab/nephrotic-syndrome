@@ -171,6 +171,10 @@ cd ..
 # creates patient-data.txt.gz and indiv-rm-round2.txt
 time Rscript 01-covars.R
 
+# get stats for paper
+time Rscript 02-pediatric-mcd-fsgs-stats.R
+
+
 #####################
 ### FINAL CLEANUP ###
 #####################
