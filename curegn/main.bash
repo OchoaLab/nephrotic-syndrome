@@ -223,3 +223,10 @@ wc -l $name.{bim,fam}
 wc -l $name-mac20.{bim,fam}
 # 12,978,623 curegn-autosomes-snps-mac20.bim
 #      1,850 curegn-autosomes-snps-mac20.fam
+
+    
+### EXTRAS ###
+
+# after Tiffany's admixture analysis, we can infer less admixed individuals to include in AF tests and subanalyses
+# this reports stats for paper:
+time Rscript 03-admix-stats.R
