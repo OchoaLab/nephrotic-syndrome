@@ -172,3 +172,9 @@ time Rscript 02-cleanup.R gmmat_ssns_ctr_all_random1000.txt gnomad-3-genome-null
 # 2 chr4    2396433 G      A     chr4:2396433:G:A        
 # 3 chr12 108308483 GCCTGT G     chr12:108308483:GCCTGT:G
 # 4 chr19    133886 T      A     chr19:133886:T:A        
+
+
+### EXTRAS ###
+
+# After Tiffany's admixture analysis, run this to get final numbers for each primary ancestry
+time Rscript 03-admixture-stats.R
