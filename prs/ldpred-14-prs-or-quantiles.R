@@ -2,6 +2,7 @@ library(tidyverse)
 library(genio)
 library(ochoalabtools)
 library(epitools)
+source('prs_quant.R')
 
 # constants
 name_data <- 'mac20'
@@ -63,45 +64,8 @@ ggplot( data, aes( x = PC1, y = PC2, color = PRS ) ) +
     theme_classic()
 fig_end()
 
-# the hardest plot is left, calculating and plotting ORs for each quantile
-# the data just has to be made the hard way
-# try quartiles, which is what Debo suggested given our sample sizes
-n_groups <- 4
-# first get quantiles
-breaks <- quantile( data$PRS, probs = ( 0 : n_groups ) / n_groups )
-# now "cut" data
-data$Quantile <- cut( data$PRS, breaks, include.lowest = TRUE )
-
-# functions that reorganize data as needed
-# get unique quantiles
-quants <- levels( data$Quantile )
-# make parallel data
-ORs <- vector('numeric', length( quants ) )
-Ls <- vector('numeric', length( quants ) )
-Us <- vector('numeric', length( quants ) )
-Ps <- vector('numeric', length( quants ) )
-for ( quant in quants ) {
-    i <- which( quant == quants )
-    # this produces the input table we desire!
-    x <- table( data$Type, data$Quantile == quant )
-    # this is the report
-    obj <- oddsratio.wald( x )
-    # store the data of interest
-    ORs[i] <- obj$measure['SSNS', 'estimate']
-    Ls[i] <- obj$measure['SSNS', 'lower']
-    Us[i] <- obj$measure['SSNS', 'upper']
-    Ps[i] <- obj$p.value['SSNS', 'fisher.exact']
-}
-
-# gather into tibble
-data_quant <- tibble(
-    Quantile = quants,
-    OR = ORs,
-    lower = Ls,
-    upper = Us,
-    pvalue = Ps
-)
-data_quant$Quantile <- factor( data_quant$Quantile, levels = quants )
+# this function does the magic to calculate ORs for every PRS quartile
+data_quant <- prs_quant( data )
 
 # finally, plot!
 fig_start( paste0( 'prs-', name, '-or' ), width = 4 )

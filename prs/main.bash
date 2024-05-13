@@ -62,7 +62,6 @@ for name in ssns_ctrl ssns_srns; do
     ln -s {../../$name/,}mac20.fam
     # don't need GRM and PCs, but we could link them too otherwise
     # link summary stats too
-    ln -s {../../$name/,}mac20-glmm-score.txt # GMMAT
     ln -s {../../../saige/$name/,}saige_output.txt # SAIGE
     # go back down
     cd ..
@@ -407,3 +406,9 @@ time Rscript ldpred-14-prs-or-quantiles.R test-curegn base-train-ldpred2-ct-best
 # version that combines test (bristol) and test-curegn, for larger sample sizes, now that we know that they were both similar when looked at separately
 time Rscript ldpred-15-prs-or-quantiles-combined.R base-train-ldpred2-grid-h0.1-best
 time Rscript ldpred-15-prs-or-quantiles-combined.R base-train-ldpred2-ct-best
+
+# paper figures, with multiple panels, combining best of earlier scripts (14-15)
+time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-grid-h0.1-best
+# 0m5.551s DCC
+time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-ct-best
+# 0m4.619s DCC
