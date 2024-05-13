@@ -42,6 +42,13 @@ ggplot( data, aes( x = PRS, y= after_stat( density ), fill = Type ) ) +
     theme_classic()
 fig_end()
 
+# Debo strongly prefers kernely density estimates, make those
+fig_start( paste0( 'prs-', name, '-density' ), width = 4 )
+ggplot( data, aes( x = PRS, y = after_stat( density ), color = Type ) ) +
+    geom_density() +
+    theme_classic()
+fig_end()
+
 # now overlay true trait and PRS over PCs
 # (for trait, name isn't relevant here, it's the same for all methods and sources of base and train data)
 fig_start( 'prs-pca-trait', width = 4 )

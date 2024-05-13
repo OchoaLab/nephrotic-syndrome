@@ -44,6 +44,13 @@ ggplot( data, aes( x = PRS, y= after_stat( density ), fill = Type ) ) +
     theme_classic()
 fig_end()
 
+# Debo strongly prefers kernely density estimates, make those
+fig_start( paste0( 'prs-ALL-', name, '-density' ), width = 4 )
+ggplot( data, aes( x = PRS, y = after_stat( density ), color = Type ) ) +
+    geom_density() +
+    theme_classic()
+fig_end()
+
 # the hardest plot is left, calculating and plotting ORs for each quantile
 # the data just has to be made the hard way
 # try quartiles, which is what Debo suggested given our sample sizes
