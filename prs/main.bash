@@ -412,3 +412,13 @@ time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-grid-h
 # 0m5.551s DCC
 time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-ct-best
 # 0m4.619s DCC
+
+
+#######################
+### PROPOSAL PRELIM ###
+#######################
+
+# this shows age is predictive of SSNS vs SRNS
+# looked at pediatric cases only
+time Rscript age-vs-steroid-response.R
+
