@@ -422,3 +422,6 @@ time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-ct-bes
 # looked at pediatric cases only
 time Rscript age-vs-steroid-response.R
 
+# creates clean XLSX for Rasheed, with all discovery and Bristol samples that should have ages of onset (most do but some are too high), sorted by age
+time Rscript age-02-make-xlsx.R
+
