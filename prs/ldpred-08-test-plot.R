@@ -43,9 +43,9 @@ for ( name_short in names_short ) {
     # reorganize as needed
     data_name <- tibble(
         model = name_short,
-        R2 = cor[1],
-        lower = cor[2],
-        upper = cor[3]
+        cor = cor[1],
+        cor_lower = cor[2],
+        cor_upper = cor[3]
     )
 
     # append to tibble
@@ -59,10 +59,10 @@ data$model <- factor( data$model, names_short )
 # but mostly copied earlier code from /home/viiia/docs/ochoalab/popdiff/scripts/sim-05-boxplots-all-pi0.R
 
 fig_start( name_out, width = 6 )
-ggplot( data, aes( x = model, y = R2 ) ) + 
-    geom_errorbar( aes( ymin = lower, ymax = upper ), width = .5 ) +
+ggplot( data, aes( x = model, y = cor ) ) + 
+    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .5 ) +
     geom_point( ) +
     expand_limits( y = 0 ) + 
-    theme_classic()+
-    labs( x = 'Model', y = "Correlation to trait" )
+    theme_classic() +
+    labs( x = 'Model', y = expression(R^2 * " to trait") )
 fig_end()

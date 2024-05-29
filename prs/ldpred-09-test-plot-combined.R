@@ -38,9 +38,9 @@ load_all_names <- function( data, type_in, test ) {
             model = name_plot,
             type = types_short[ type_in == types_in ],
             test = test,
-            R2 = cor[1],
-            lower = cor[2],
-            upper = cor[3]
+            cor = cor[1],
+            cor_lower = cor[2],
+            cor_upper = cor[3]
         )
 
         # append to tibble
@@ -91,10 +91,10 @@ data$type <- factor( data$type, types_short )
 pd <- position_dodge( 0.5 ) # move them .05 to the left and right
 
 fig_start( name_out, width = 6 )
-ggplot( data, aes( x = model, y = R2, col = type ) ) + 
-    geom_errorbar( aes( ymin = lower, ymax = upper ), width = .5, position = pd ) +
+ggplot( data, aes( x = model, y = cor, col = type ) ) + 
+    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .5, position = pd ) +
     geom_point( position = pd ) +
     expand_limits( y = 0 ) + 
     theme_classic() +
-    labs( x = 'Model', y = "Correlation to trait" )
+    labs( x = 'Model', y = expression(R^2 * " to trait") )
 fig_end()

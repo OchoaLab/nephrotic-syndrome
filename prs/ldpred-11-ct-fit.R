@@ -127,12 +127,12 @@ s <- nrow(params)
 
 # use training individuals to score grid values using correlation, adjusting for PCs, determine which is best
 # (apparently a.FUN in big_apply doesn't see any global variables, have to pass everything explicitly)
-params$cor <- big_apply(
+data <- big_apply(
     pred_grid,
     # this setup sums over all chromosomes, for the same C+T parameters
     a.FUN = function( x, ind, s, y, n_chr, PCs, pcor ) {
         xs <- rowSums( x[, ind + s * (0:(n_chr-1))] )
-        pcor( xs, y, PCs )[1]
+        pcor( xs, y, PCs )
     },
     ind = 1 : s,
     s = s,
@@ -140,10 +140,13 @@ params$cor <- big_apply(
     n_chr = n_chr,
     PCs = PCs,
     pcor = pcor,
-    a.combine = 'c',
+    a.combine = 'rbind',
     block.size = 1,
     ncores = NCORES
 )
+# incorporate back into tibble
+colnames( data ) <- c('cor', 'cor_lower', 'cor_upper')
+params <- bind_cols( params, as_tibble( data ) )
 
 # sort by correlation
 params <- params %>%
@@ -160,7 +163,9 @@ ggplot( params, aes( x = 10^(-thr.lp), y = cor, color = as.factor( thr.r2 ) ) ) 
     geom_point() +
     geom_line() +
     scale_x_log10() +
-    labs( x = 'P-value threshold', y = "Correlation to trait", color = expression( paste( R^2, " threshold" ) ) )
+    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .5 ) +
+    expand_limits( y = 0 ) + 
+    labs( x = 'P-value threshold', y = expression(R^2 * " to trait"), color = "LD threshold" )
 fig_end()
 
 # pick out the best set of parameters, to use and score out of sample later!

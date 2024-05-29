@@ -48,7 +48,10 @@ PCs <- read_eigenvec( name_data )$eigenvec
 pred_grid <- big_prodMat( G, betas_grid, ind.col = df_beta[["_NUM_ID_"]] )
 
 # use training individuals to score grid values using correlation, adjusting for PCs, determine which is best
-params$cor <- apply( pred_grid, 2, function( x ) pcor( x, y, PCs )[1] )
+data <- t( apply( pred_grid, 2, function( x ) pcor( x, y, PCs ) ) )
+# incorporate back into tibble
+colnames( data ) <- c('cor', 'cor_lower', 'cor_upper')
+params <- bind_cols( params, as_tibble( data ) )
 
 # add more info, sort by correlation
 params <- params %>%
@@ -72,6 +75,8 @@ ggplot( params, aes( x = lambda, y = cor, color = as.factor( delta ) ) ) +
     theme_classic() +
     geom_point() +
     geom_line() +
+    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .1 ) +
+    expand_limits( y = 0 ) +
     scale_x_log10() +
-    labs( x = 'LASSO lambda', y = "Correlation to trait", color = "delta" )
+    labs( x = 'LASSO lambda', y = expression(R^2 * " to trait"), color = "delta" )
 fig_end()

@@ -259,6 +259,9 @@ time Rscript ldpred-01-inf-fit.R base-ssns_ctrl train-curegn
 # 1m14.105s DCC
 time Rscript ldpred-01-inf-fit.R base-ssns_srns train-curegn
 # 1m18.862s DCC
+# plot that combines results from all three fits, for paper
+time Rscript ldpred-01-inf-fit-all.R
+# 0m4.767s DCC
 
 # run grid version, which is more computationally intensive
 base=base; sbatch -J ldpred-03-grid-$base -o ldpred-03-grid-$base.out --export=base=$base ldpred-03-grid.q
@@ -275,6 +278,8 @@ time Rscript ldpred-04-grid-fit.R base-ssns_ctrl train-curegn
 # 2m58.704s DCC
 time Rscript ldpred-04-grid-fit.R base-ssns_srns train-curegn
 # 2m52.887s DCC
+# plot that combines results from all three fits, for paper
+time Rscript ldpred-04-grid-fit-all.R
 
 # run auto version
 base=base; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out --export=base=$base ldpred-05-auto.q
@@ -307,6 +312,8 @@ base=base-ssns_ctrl; train=train-curegn; sbatch -J ldpred-07-lassosum-fit-$base-
 # 1m55.754s DCC
 base=base-ssns_srns; train=train-curegn; sbatch -J ldpred-07-lassosum-fit-$base-$train -o ldpred-07-lassosum-fit-$base-$train.out --export=base=$base,train=$train ldpred-07-lassosum-fit.q
 # 2m2.664s DCC
+# make combined figure
+time Rscript ldpred-07-lassosum-fit-all.R
 
 # run regular and "stacked" CT (clump and threshold)
 # clumping step is base-only (uses LD information)
@@ -324,6 +331,8 @@ base=base-ssns_ctrl; train=train-curegn; sbatch -J ldpred-11-ct-fit-$base-$train
 # 14m6.112s DCC
 base=base-ssns_srns; train=train-curegn; sbatch -J ldpred-11-ct-fit-$base-$train -o ldpred-11-ct-fit-$base-$train.out --export=base=$base,train=$train ldpred-11-ct-fit.q
 # 14m11.926s DCC
+# make combined figure
+time Rscript ldpred-11-ct-fit-all.R
 
 # construct CT-specific report of best nonzero betas
 # allows us to count predictor SNPs and determine where they're located
@@ -362,6 +371,8 @@ time Rscript ldpred-08-test-plot.R base-ssns_ctrl train-curegn test
 # 0m14.383s DCC
 time Rscript ldpred-08-test-plot.R base-ssns_srns train-curegn test
 # 0m6.913s DCC
+
+############# TODOTODO
 
 # makes a single plot combining the data from the previous three
 time Rscript ldpred-09-test-plot-combined.R
@@ -412,6 +423,26 @@ time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-grid-h
 # 0m5.551s DCC
 time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-ct-best
 # 0m4.619s DCC
+
+#######################
+### LDPRED2 CLEANUP ###
+#######################
+
+# remove bulky file-backed matrices and things of that sort that are redundant with rawer data and easy to regenerate if needed
+# these are huge and satisfies the above:
+rm */mac20.{rds,bk}
+# remove less complete copies of bim/fam
+# some of these are softlinks (that didn't take up any space), but others were big files, especially BIM
+rm */mac20.bim~
+rm */mac20_ORIG.fam
+# these are only used as precursors of PCs, not used at all afterwards
+rm */mac20.grm.*
+# this was just an experiment, not bad but not used in paper either
+rm -r test-curegn2
+# this we want to keep, but we'll compress for now (only this one isn't a softlink).  Will have to fix path if we want to use it later again in the same script
+gzip base/saige_output.txt
+# boring pca logs
+rm */mac20.log
 
 
 #######################
