@@ -38,14 +38,14 @@ for ( name_short in names_short ) {
     message( name_long )
 
     # load vector of numbers
-    cor <- as.numeric( read_lines( file_in ) )
+    cors <- as.numeric( read_lines( file_in ) )
 
     # reorganize as needed
     data_name <- tibble(
         model = name_short,
-        cor = cor[1],
-        cor_lower = cor[2],
-        cor_upper = cor[3]
+        cor = cors[1],
+        cor_lower = cors[2],
+        cor_upper = cors[3]
     )
 
     # append to tibble

@@ -361,6 +361,7 @@ base=base-ssns_srns; train=train-curegn; test=test; sbatch -J ldpred-02-score-$b
 # 1m10.048s DCC
 
 # make nice plot that summarize testing results
+# (these are less polished in many ways though)
 time Rscript ldpred-08-test-plot.R base train test
 # 0m8.598s DCC
 time Rscript ldpred-08-test-plot.R base train test-curegn
@@ -372,11 +373,14 @@ time Rscript ldpred-08-test-plot.R base-ssns_ctrl train-curegn test
 time Rscript ldpred-08-test-plot.R base-ssns_srns train-curegn test
 # 0m6.913s DCC
 
-############# TODOTODO
+# combine correlation data across both test datasets, which involves some non-trivial calculations
+mkdir test-bristol-curegn
+time Rscript ldpred-17-combine-pcor.R
+# 0m3.821s DCC
 
-# makes a single plot combining the data from the previous three
+# makes a single plot combining the data from all the previous cases
 time Rscript ldpred-09-test-plot-combined.R
-# 0m14.429s DCC
+# 0m5.039s DCC
 
 # perform ancestry subanalyses too!
 time Rscript ldpred-02-score-anc.R base train test
