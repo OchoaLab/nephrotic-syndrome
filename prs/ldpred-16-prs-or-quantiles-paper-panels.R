@@ -70,6 +70,7 @@ for ( dataset in datasets ) {
 }
 data_quant$Dataset <- factor( data_quant$Dataset, levels = datasets )
 # NOTE: levels for quantiles are a bit awkward because they're all different, but they work for this plot!
+write_tsv( data_quant, paste0( 'or-quarts-ALL-panels-', name, '.txt.gz' ) )
 
 ### PLOT ###
 
