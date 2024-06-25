@@ -1,0 +1,186 @@
+```{r}
+#install.packages("SeuratObject")
+library(tidyverse)
+library(ggplot2)
+library(SeuratObject)
+library(Seurat)
+```
+
+```{r}
+# load data received from the core:
+annotations <- readRDS("/datacommons/ochoalab/ssns_gwas/seurat/Gbadegesin_annotations_1.rds")
+#subset samples of interest (remove sample1 and sample2)
+Idents(annotations) <- annotations@meta.data$orig.ident
+annotations_subset <- subset(annotations, idents=c("sample3","sample4","sample5","sample6"))
+
+```
+
+QC
+```{r fig.width = 10, fig.height = 6}
+#QC
+VlnPlot(annotations_subset, c("nCount_RNA","nFeature_RNA"))
+length(colnames(annotations_subset)) # cell count # 35582
+head(colnames(annotations_subset)) # bar code
+table(annotations_subset$orig.ident) # cell count per sample
+
+# qc subset by quantile 
+## Get filtering parameters
+count.max <- round(mean(annotations_subset$nCount_RNA) + 2 * sd(annotations_subset$nCount_RNA), digits = -2)
+count.min <- round(mean(annotations_subset$nCount_RNA) - 2 * sd(annotations_subset$nCount_RNA), digits = -2)
+feat.max <- round(mean(annotations_subset$nFeature_RNA) + 2 * sd(annotations_subset$nFeature_RNA), digits = -2)
+feat.min <- round(mean(annotations_subset$nFeature_RNA) - 2 * sd(annotations_subset$nFeature_RNA), digits = -2)
+
+annotations_subset_qc <- subset(annotations_subset, 
+                                subset = nCount_RNA >= count.min & nCount_RNA <= count.max & 
+                                  nFeature_RNA >= feat.min & nFeature_RNA <= feat.max)
+length(colnames(annotations_subset_qc)) # 51049
+
+#mitocondria
+annotations_subset_qc[["percent.mt"]] <- PercentageFeatureSet(annotations_subset_qc, pattern = "^MT-")
+VlnPlot(annotations_subset_qc,"percent.mt", y.max = 15)
+mt.max <- mean(annotations_subset_qc$percent.mt) + 2 * sd(annotations_subset_qc$percent.mt)
+annotations_subset_qc<-subset(annotations_subset_qc, subset = percent.mt <= mt.max)
+length(colnames(annotations_subset_qc)) #31817
+
+#Normalization of the data (within cell)
+annotations_subset_qc <- NormalizeData(annotations_subset_qc, normalization.method = "LogNormalize", 
+                                       scale.factor = 10000)
+#Scale (global)
+annotations_subset_qc <- ScaleData(annotations_subset_qc,verbose=FALSE)
+
+#Find Variable Features (~2000 genes variably expressed)
+annotations_subset_qc <- FindVariableFeatures(annotations_subset_qc, selection.method = "vst", nfeatures = 2000)
+top10 <- head(VariableFeatures(annotations_subset_qc), 10)
+plot1 <- VariableFeaturePlot(annotations_subset_qc)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1 + plot2
+#Scale data
+all.genes <- rownames(annotations_subset_qc)
+annotations_subset_qc <- ScaleData(annotations_subset_qc, features = all.genes)
+#Run PCA
+annotations_subset_qc <-RunPCA(annotations_subset_qc,
+                               features=VariableFeatures(annotations_subset_qc),
+                               nfeatures.print = 10)
+
+DimPlot(annotations_subset_qc, reduction = "pca", group.by = "orig.ident")
+ElbowPlot(annotations_subset_qc, ndims = 50)
+```
+
+Various visualizations
+```{r fig.width = 10, fig.height = 6}
+annotations_subset_qc<-FindNeighbors(annotations_subset_qc, dims = 1:30)
+annotations_subset_qc<-RunUMAP(annotations_subset_qc, dims = 1:30)
+annotations_subset_qc<-FindClusters(annotations_subset_qc, resolution = 0.8) # start off with low res (0.5-1.5)
+Idents(annotations_subset_qc) <- annotations_subset_qc$seurat_clusters
+DimPlot(annotations_subset_qc, label = T)
+DimPlot(annotations_subset_qc, label = T, group.by = "orig.ident")
+```
+
+batch effect correction
+```{r  fig.width = 10, fig.height = 6}
+# count transformation (sctransform)
+annotations_subset_qc <- SCTransform(annotations_subset_qc, vst.flavor = "v2")
+DefaultAssay(annotations_subset_qc) <- "SCT"
+annotations_subset_qc <- RunPCA(annotations_subset_qc, assay = "SCT", npcs = 50)
+
+library(harmony)
+harmonized_seurat <- RunHarmony(annotations_subset_qc, 
+				group.by.vars = "orig.ident", 
+				reduction = "pca", assay.use = "SCT", reduction.save = "harmony")
+save(harmonized_seurat, file = "/datacommons/ochoalab/ssns_gwas/seurat/harmonized_seurat_3_4_5_6.RData")
+harmonized_seurat <- RunUMAP(harmonized_seurat, reduction = "harmony", assay = "SCT", dims = 1:30)
+harmonized_seurat <- FindNeighbors(object = harmonized_seurat, reduction = "harmony")
+harmonized_seurat <- FindClusters(harmonized_seurat, resolution = 0.4)
+DimPlot(harmonized_seurat, label = T, group.by = "orig.ident", reduction = "umap")
+
+FeaturePlot(harmonized_seurat, c("ISG15", "S100A11", "FCER1G", "KLRC2", "IFIT2", "IFI44", "BCL2A1", "S100A9", "GZMB"))
+
+
+#subset samples (remove sample1 and sample2)
+# Idents(harmonized_seurat) <- harmonized_seurat@meta.data$orig.ident
+# harmonized_seurat_subset <- subset(harmonized_seurat, idents=c("sample3","sample4","sample5","sample6"))
+# DimPlot(harmonized_seurat_subset, label = T, group.by = "seurat_clusters", reduction = "umap")
+
+########################################################################
+# cell cycle regression # decided to drop this analysis
+# annotations_subset_qc_cc <- SCTransform(annotations_subset_qc, vars.to.regress = c("S.Score","G2M.Score"), vst.flavor = "v2")
+# DefaultAssay(annotations_subset_qc_cc) <- "SCT"
+# annotations_subset_qc_cc <- RunPCA(annotations_subset_qc_cc, assay = "SCT", npcs = 50)
+# 
+# library(harmony)
+# harmonized_seurat_cc <- RunHarmony(annotations_subset_qc_cc, 
+# 				group.by.vars = "orig.ident", 
+# 				reduction = "pca", assay.use = "SCT", reduction.save = "harmony")
+# save(harmonized_seurat_cc, file = "/datacommons/ochoalab/ssns_gwas/seurat/harmonized_seurat_3_4_5_6_cc.RData")
+# 
+# harmonized_seurat_cc <- RunUMAP(harmonized_seurat_cc, reduction = "harmony", assay = "SCT", dims = 1:30)
+# harmonized_seurat_cc <- FindNeighbors(object = harmonized_seurat_cc, reduction = "harmony")
+# harmonized_seurat_cc <- FindClusters(harmonized_seurat_cc, resolution = 1.6)
+# DimPlot(harmonized_seurat_cc, label = T, group.by = "SCT_snn_res.1.", reduction = "umap")
+
+#subset samples (remove sample1 and sample2)
+# Idents(harmonized_seurat_cc) <- harmonized_seurat_cc@meta.data$orig.ident
+# harmonized_seurat_cc <- subset(harmonized_seurat_cc, idents=c("sample3","sample4","sample5","sample6"))
+# DimPlot(harmonized_seurat_cc, label = T, group.by = "orig.ident", reduction = "umap")
+
+```
+
+
+Create Volcano Plots
+```{r fig.width = 14, fig.height = 11}
+load("/datacommons/ochoalab/ssns_gwas/seurat/paired_samples_markers_3_4_5_6.RData") 
+# paired comparison run by submitting slurm job marker.R, might take a few hours 
+library(EnhancedVolcano)
+EnhancedVolcano(paired_samples_markers, lab = rownames(paired_samples_markers),
+                x = 'avg_log2FC',y = 'p_val_adj', FCcutoff = 0.5,
+                legendLabels = c("Non-significant", expression(Log[2] ~ FC), "p-value", expression(p - value ~ and
+    ~ log[2] ~ FC)))
+```
+
+Write UMAP markers into excel file for manual validation
+```{r}
+options(java.parameters = "-Xmx2048m")  #for the while loop
+install.packages("xlsx")
+library(xlsx)
+
+load("/datacommons/ochoalab/ssns_gwas/seurat/umap_markers_onset_remission_res04.RData")
+Markers = Markers %>% select(-cluster, everything()) %>% 
+  arrange(abs(avg_log2FC))
+i <- 0
+while (i %in% Markers$cluster){
+  filter(Markers, cluster==i) %>%
+   write.xlsx2(file="/datacommons/ochoalab/ssns_gwas/seurat/clustermarkers.xlsx", sheetName= paste0('cluster', as.character(i)),  append=TRUE, row.names = FALSE)
+   as.numeric(i)  
+   i=i+1
+}
+```
+
+GPT Celltype
+```{r}
+# install.packages("openai")
+# remotes::install_github("Winnie09/GPTCelltype")
+library(GPTCelltype)
+library(openai)
+
+# must create an unique key
+Sys.setenv(OPENAI_API_KEY = '')
+res <- gptcelltype(Markers, 
+            tissuename = 'human PBMC', 
+            model = 'gpt-3.5-turbo'
+)
+
+```
+visualize on UMAP
+```{r  fig.width = 18, fig.height = 11}
+load("/datacommons/ochoalab/ssns_gwas/seurat/harmonized_seurat_3_4_5_6.RData")
+# original UMAP
+harmonized_seurat <- RunUMAP(harmonized_seurat, reduction = "harmony", assay = "SCT", dims = 1:30)
+harmonized_seurat <- FindNeighbors(object = harmonized_seurat, reduction = "harmony")
+harmonized_seurat <- FindClusters(harmonized_seurat, resolution = 0.4)
+DimPlot(harmonized_seurat, label = T,  reduction = "umap")
+
+# new umap with cell type annotations
+harmonized_seurat@meta.data$celltype <- as.factor(res[as.character(Idents(harmonized_seurat))])
+DimPlot(harmonized_seurat,group.by='celltype')
+```
+
