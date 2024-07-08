@@ -460,3 +460,6 @@ time Rscript age-vs-steroid-response.R
 # creates clean XLSX for Rasheed, with all discovery and Bristol samples that should have ages of onset (most do but some are too high), sorted by age
 time Rscript age-02-make-xlsx.R
 
+# look at dominance at top loci
+# creates figures for each locus and a table with p-values and coefficients (with all loci together)
+time Rscript dominance.R
