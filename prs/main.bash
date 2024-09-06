@@ -447,6 +447,8 @@ rm -r test-curegn2
 gzip base/saige_output.txt
 # boring pca logs
 rm */mac20.log
+# LD stuff too, it can be slow to regenerate but not extremely so, and it is quite huge
+rm */ld*.{sbk,RData}
 
 
 #######################
@@ -463,3 +465,46 @@ time Rscript age-02-make-xlsx.R
 # look at dominance at top loci
 # creates figures for each locus and a table with p-values and coefficients (with all loci together)
 time Rscript dominance.R
+
+#########################
+### PRS for discovery ###
+#########################
+
+# apply trained PRS to discovery individuals, for testing out some ideas
+
+# first use LDPred2 to calculate them, reusing our previous pipeline as much as possible!
+
+# the existing sets don't work if we want scores for absolutely everybody, so let's start all over here
+mkdir discovery
+cd discovery
+# link the most complete discovery ns_ctrl data, still excludes Bristol but meh
+ln -s ../../mac20.bed .
+ln -s ../../mac20.bim .
+ln -s ../../mac20.fam .
+cd ..
+
+# match trained scores to discovery
+# this is exactly what we want!  Just treat discovery as a testing set
+time Rscript prs-new-08-match-train-test.R base train discovery
+# 528,964 variants to be matched.
+# 0 ambiguous SNPs have been removed.
+# 528,964 variants have been matched; 0 were flipped and 0 were reversed.
+# 2m30.370s DCC
+
+# make RDS just before scoring
+time Rscript prs-new-04-make-rds.R discovery/mac20
+# 17m9.991s DCC
+
+# finally, get PRS ("scores") but skip correlations (so also don't need true traits or PCs), only here that case makes sense
+base=base; train=train; test=discovery; just_score=1; sbatch -J ldpred-02-score-$base-$train-$test -o ldpred-02-score-$base-$train-$test.out --export=base=$base,train=$train,test=$test,just_score=$just_score ldpred-02-score.q
+# 38m45.241s/2m7.509s DCC (there's something weird about how slow this was, but oh well)
+
+# now merge data of interest into simple table for myself and collaborators!
+time Rscript ldpred-18-report-prs.R
+
+# cleanup
+cd discovery
+rm mac20.{bk,rds}
+
+# locally validate by contrasting PRS to diagnosis labels
+time Rscript ldpred-19-report-prs-validate.R

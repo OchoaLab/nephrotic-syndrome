@@ -10,8 +10,9 @@ args <- args_cli()
 base <- args[1]
 train <- args[2]
 test <- args[3]
+just_score <- !is.na( args[4] )
 if ( is.na( test ) )
-    stop( 'Usage: <base> <train> <test>' )
+    stop( 'Usage: <base> <train> <test> [<just_score>]' )
 
 # all processing happens in subdirectory
 setwd( test )
@@ -31,10 +32,13 @@ df_beta <- read_tsv( file_df_beta, show_col_types = FALSE )
 # Attach the "bigSNP" object in R session
 obj.bigSNP <- snp_attach( paste0( name_data, '.rds' ) )
 G <- obj.bigSNP$genotypes
-y <- obj.bigSNP$fam$affection
-y[ y == 0 ] <- NA # in plink format, zeros are missing, translate appropriately here!
-# load PCs, to condition on when scoring with R2
-PCs <- read_eigenvec( name_data )$eigenvec
+# skip these steps if we just want PRS and not correlations (best for "discovery" case)
+if ( !just_score ) {
+    y <- obj.bigSNP$fam$affection
+    y[ y == 0 ] <- NA # in plink format, zeros are missing, translate appropriately here!
+    # load PCs, to condition on when scoring with R2
+    PCs <- read_eigenvec( name_data )$eigenvec
+}
 
 # names of cases to score in testing data
 names <- paste0( '-ldpred2-', c( 'inf-best', 'grid-h0.1-best', 'auto-h0.1', 'lassosum-best', 'ct-best', 'ct-stacked' ) )
@@ -66,7 +70,10 @@ for ( name in names ) {
     # save PRS to analyze further outside this script
     write_lines( preds, file_prs )
     
-    # calculate and save only correlation coefficient to truth, adjusting for PCs
-    cor <- pcor( preds, y, PCs )
-    write_lines( cor, file_out )
+    # skip these steps if we just want PRS and not correlations (best for "discovery" case)
+    if ( !just_score ) {
+        # calculate and save only correlation coefficient to truth, adjusting for PCs
+        cor <- pcor( preds, y, PCs )
+        write_lines( cor, file_out )
+    }
 }
