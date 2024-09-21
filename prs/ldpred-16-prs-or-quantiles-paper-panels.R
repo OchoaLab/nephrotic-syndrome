@@ -74,6 +74,9 @@ write_tsv( data_quant, paste0( 'or-quarts-ALL-panels-', name, '.txt.gz' ) )
 
 ### PLOT ###
 
+# for plot, makes a text version combining a lot of this data
+data_quant <- data_quant %>% mutate( lab = paste0( Quantile, "\nOR ", round( OR, 2 ), "\n[", round( lower, 2 ), '-', round( upper, 2 ), ']' ) )
+
 # finally, combined plot!
 wh <- fig_scale( 4/3 )
 fig_start( paste0( 'prs-ALL-panels-', name ), width = wh[1], height = wh[2] )
@@ -82,7 +85,7 @@ p1 <- ggplot( data, aes( x = PRS, y = after_stat( density ), color = Type ) ) +
     theme_classic() +
     labs( y = "Density" ) +
     facet_wrap( vars( Dataset ) )
-p2 <- ggplot( data_quant, aes( x = Quantile, y = OR ) ) + 
+p2 <- ggplot( data_quant, aes( x = lab, y = OR ) ) + 
     geom_errorbar( aes( ymin = lower, ymax = upper ), width = .5 ) +
     geom_point() +
     scale_y_log10() +
@@ -90,6 +93,6 @@ p2 <- ggplot( data_quant, aes( x = Quantile, y = OR ) ) +
     theme_classic() +
     labs( x = 'PRS Quantiles', y = "OR for SSNS vs SRNS" ) +
     facet_wrap( vars( Dataset ), scales = "free_x" ) +
-    theme( axis.text.x = element_text( angle = 90, vjust = 0.5, hjust = 1 ) )
-ggarrange( p1, p2, ncol = 1, align = "v", labels = c('A', 'B'), heights = c(1, 1.3) )
+    theme( axis.text.x = element_text( size = rel( 0.9 ) ) )
+ggarrange( p1, p2, ncol = 1, align = "v", labels = c('A', 'B'), heights = c(1, 1.1) )
 fig_end()
