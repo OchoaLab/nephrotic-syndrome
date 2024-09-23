@@ -224,7 +224,38 @@ wc -l $name-mac20.{bim,fam}
 # 12,978,623 curegn-autosomes-snps-mac20.bim
 #      1,850 curegn-autosomes-snps-mac20.fam
 
-    
+#####################
+### HG38 LIFTOVER ###
+#####################
+
+# Tiffany performed this step following my previous scripts for other cases (old TGP?)
+# here I just record the final dimensions of this data
+wc -l $name-mac20-geno-hg38.{bim,fam}
+# 12,969,909 curegn-autosomes-snps-mac20-geno-hg38.bim
+#      1,850 curegn-autosomes-snps-mac20-geno-hg38.fam
+
+#################################
+### NS, SSNS/SRNS SUBANALYSES ###
+#################################
+
+# the data we actually used was subset to "NS" cases:
+wc -l subanalysis/curegn_ns_mac20.{bim,fam}
+# 10,655,741 subanalysis/curegn_ns_mac20.bim
+#        891 subanalysis/curegn_ns_mac20.fam
+
+# Tiffany: this is the main data used for filtering/replication AF:
+wc -l imputed/clean/curegn_ns_mac20_clean.{bim,fam}
+# 11,189,576 imputed/clean/curegn_ns_mac20_clean.bim
+#        893 imputed/clean/curegn_ns_mac20_clean.fam
+
+# these used definitions of SSNS and SRNS that include age thresholds, so they actually match the GWAS/PRS paper
+# However, they no longer exist in this location
+# a more annotated copy is in my PRS data: /datacommons/ochoalab/ssns_gwas/imputed/prs-new/train-curegn/
+wc -l imputed/clean/curegn_ssns_srns_mac20.{bim,fam}
+# 8,331,142 mac20.bim
+#       419 mac20.fam
+
+
 ### EXTRAS ###
 
 # after Tiffany's admixture analysis, we can infer less admixed individuals to include in AF tests and subanalyses
