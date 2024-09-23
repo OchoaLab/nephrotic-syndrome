@@ -16,6 +16,10 @@ cd /datacommons/ochoalab/ssns_gwas/array
 # creates ids-bristol.txt too
 time Rscript phenotype_excel_merge.R
 
+# number of genotyped patients with info, Discovery + Bristol
+zcat patient-data.txt.gz |wc -l
+# 2656
+
 
 ### REMOVE BRISTOL ###
 
@@ -25,8 +29,7 @@ wc -l ../raw/*.{fam,bim}
 # 1748250 nephrotic.syndrome.gwas.all.b38.n2656.R2.bim
 
 # and list of individuals to remove
-wc -l ids-bristol.txt 
-# 590 ids-bristol.txt
+wc -l ids-bristol.txt # 590
 
 # remove bristol samples, create new bim/bed/fam files
 plink2 --bfile ../raw/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove ids-bristol.txt --make-bed --out ssns_remove_B
@@ -40,14 +43,25 @@ plink2 --bfile ../raw/nephrotic.syndrome.gwas.all.b38.n2656.R2 --remove ids-bris
 # identify individuals that are likely duplicated (extreme kinship like that of twins)
 plink2 --bfile ssns_remove_B --king-table-filter 0.354 --make-king-table --out duplicated_related
 # creates duplicated_related.kin0
-  
-# calculate missingness
+
+# count includes a header, so theres 62 pairs of individuals here
+# below, missingness_kin.Rmd finds one of these pairs is an individual missing from patient-data.txt.tgz, and which has high missiness anyway (both in pair), so that pair of individuals is removed later instead (not counted as a duplicate), so really 61 are the pairs we have to analyze later
+wc -l duplicated_related.kin0 # 63
+
+# this identifies the IDs marked as intentional duplicates
+# I manually confirmed all have the expected IDs except the last one, but meh
+grep d duplicated_related.kin0|wc -l # 18
+
+# calculate missingness for all Discovery individuals
 plink2 --bfile ssns_remove_B --missing sample-only --out duplicate_sample_all_missingness
 # creates duplicate_sample_all_missingness.smiss
   
 # combine dups with missingness, demographics, to decide who to remove
 missingness_kin.Rmd
 # output: duplicate_remove.txt
+# main text reports that 9 pairs were entirely removed (both, so 18 individuals), and for the rest of the 52 pairs we removed the one in each pair with the most missingness (so total 52+18=70 removals, and accounting for all 52+9=61 rows of the input kinship pair table (again, excluding header and one individual without demographics and with high missinenss)
+
+wc -l duplicate_remove.txt # 70
 
 # remove individuals from duplicate_remove.txt and run various filtering steps
 time plink2 \
@@ -61,6 +75,15 @@ time plink2 \
      --hwe 0.0001 \
      --maf 0.01 \
      --make-bed --out ssns_gwas_maf
+# info from plink2 log:
+# input: n=2,066, m=1,748,250
+# m=1,618,472 after some filtering? (could be any of --autosome --snps-only just-acgt --max-alleles 2 --min-alleles 2)
+# n=1,996 after --remove (70 removed)
+# n=1,981 (final) after --mind (15 removed)
+# m: --geno (3,224 removed)
+# m: --hwe (172,833 removed)
+# m: --maf (609,356 removed)
+# m=833,059 final
 
 # cleanup: separate files/logs about individual dups
 mkdir dedup-inds
