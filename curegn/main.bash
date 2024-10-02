@@ -4,6 +4,7 @@
 # start interactive shell
 # some of these steps need more than the default 1G memory!
 srun -p ochoalab --account ochoalab --mem 16G --pty bash -i
+module load R/4.1.1-rhel8 
 
 # load plink on DCC
 #module load Plink/2.00a3LM
@@ -261,3 +262,20 @@ wc -l imputed/clean/curegn_ssns_srns_mac20.{bim,fam}
 # after Tiffany's admixture analysis, we can infer less admixed individuals to include in AF tests and subanalyses
 # this reports stats for paper:
 time Rscript 03-admix-stats.R
+
+# this makes the nice admixture plot for the paper
+cd /datacommons/ochoalab/curegn/merge_tgp/admixture
+time Rscript admixture_figures.R
+# A) n = 4354
+# CureGN    TGP 
+#   1850   2504 
+# B) n = 891
+#   AFR   AFR_admix Asian_admix         EAS         EUR   EUR_admix 
+#   110          78           8          28         495          78 
+# Other         SAS 
+#    73          21 
+# C) n = 419
+#   AFR   AFR_admix Asian_admix         EAS         EUR   EUR_admix 
+#    64          34           2           9         218          38 
+# Other         SAS 
+#    44          10 
