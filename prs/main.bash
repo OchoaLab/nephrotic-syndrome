@@ -424,8 +424,14 @@ time Rscript ldpred-15-prs-or-quantiles-combined.R base-train-ldpred2-ct-best
 
 # paper figures, with multiple panels, combining best of earlier scripts (14-15)
 time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-grid-h0.1-best
+# AUC values
+#   Bristol         CureGN Bristol+CureGN 
+# 0.6264282      0.6496568      0.6382799 
 # 0m5.551s DCC
 time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-ct-best
+# AUC values
+#   Bristol         CureGN Bristol+CureGN 
+# 0.6265045      0.6302012      0.6282716 
 # 0m4.619s DCC
 
 #######################

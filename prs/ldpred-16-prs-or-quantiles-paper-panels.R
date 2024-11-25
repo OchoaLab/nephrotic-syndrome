@@ -3,6 +3,7 @@ library(ggpubr)
 library(genio)
 library(ochoalabtools)
 library(epitools)
+library(PRROC)
 source('prs_quant.R')
 
 # combines test (bristol) and test-curegn for larger sample sizes, since results were similar in the separate datasets
@@ -96,3 +97,38 @@ p2 <- ggplot( data_quant, aes( x = lab, y = OR ) ) +
     theme( axis.text.x = element_text( size = rel( 0.9 ) ) )
 ggarrange( p1, p2, ncol = 1, align = "v", labels = c('A', 'B'), heights = c(1, 1.1) )
 fig_end()
+
+### ROC ###
+
+# calculate and gather data
+auc_roc <- vector( 'numeric', length( datasets ) )
+names( auc_roc ) <- datasets
+data_roc <- NULL
+for ( dataset in datasets ) {
+    data_i <- data %>% filter( Dataset == dataset )
+    # positive, negative classes
+    # or scores.class0 are all scores, weights.class0 are class labels
+    roc <- roc.curve( data_i$PRS, weights.class0 = data_i$y, curve = TRUE )
+    # store AUC value to report later
+    auc_roc[ datasets == dataset ] <- roc$auc
+    # store curve info in a tibble
+    data_roc_i <- roc$curve
+    colnames( data_roc_i ) <- c( 'FPR', 'TPR', 'PRS' )
+    data_roc_i <- as_tibble( data_roc_i )
+    data_roc_i$Dataset <- dataset
+    data_roc <- bind_rows( data_roc, data_roc_i )
+}
+data_roc$Dataset <- factor( data_roc$Dataset, levels = datasets )
+
+# make a nice ggplot
+wh <- fig_scale( 3 )
+fig_start( paste0( 'prs-roc-ALL-panels-', name ), width = wh[1], height = wh[2] )
+ggplot( data_roc, aes( x = FPR, y = TPR ) ) +
+    geom_abline( slope = 1, intercept = 0, linetype = 'dashed', color = 'gray' ) +
+    geom_line() +
+    theme_classic() +
+    facet_wrap( ~Dataset )
+fig_end()
+
+# just report AUCs to store elsewhere
+print( auc_roc )
