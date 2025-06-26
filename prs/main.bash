@@ -289,7 +289,7 @@ base=base-ssns_ctrl; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out 
 base=base-ssns_srns; sbatch -J ldpred-05-auto-$base -o ldpred-05-auto-$base.out --export=base=$base ldpred-05-auto.q
 # 8m49.049s DCC
 
-# base version needs one more step to map data to training SNOs
+# base version needs one more step to map data to training SNPs
 time Rscript ldpred-05-auto-map-base-to-train.R base train
 # 0m12.843s DCC
 time Rscript ldpred-05-auto-map-base-to-train.R base-ssns_ctrl train-curegn
@@ -433,6 +433,17 @@ time Rscript ldpred-16-prs-or-quantiles-paper-panels.R base-train-ldpred2-ct-bes
 #   Bristol         CureGN Bristol+CureGN 
 # 0.6265045      0.6302012      0.6282716 
 # 0m4.619s DCC
+
+# create "score" files to share, easy to use with plink2
+time Rscript ldpred-20-prs-betas-plink-score.R base train
+# confirm that scores using plink2 match (scaled versions anyway) of the ldpred numbers
+method=ct; time plink2 --bfile test/mac20 --score train/betas-base-ldpred2-$method-best-plink-score.txt header --out test/prs-base-train-ldpred2-$method-best-plink
+# 0m6.421s DCC
+method=grid-h0.1; time plink2 --bfile test/mac20 --score train/betas-base-ldpred2-$method-best-plink-score.txt header --out test/prs-base-train-ldpred2-$method-best-plink
+# 0m20.160s DCC
+# confirms that plink and ldpred scores match!  (they are not negatively correlated, for example)
+time Rscript ldpred-21-prs-betas-plink-score-validate.R base train test
+
 
 #######################
 ### LDPRED2 CLEANUP ###
