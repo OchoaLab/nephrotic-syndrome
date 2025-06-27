@@ -1,0 +1,356 @@
+---
+title: "replication plots"
+output: html_document
+date: "2023-10-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(karyoploteR)
+```
+
+Bristol: ns vs control (all age)
+```{r}
+# create input for karyoploteR package
+bristol_anno = read.table("/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/replication_pvals_ns_ctrl.txt",
+                        stringsAsFactors=FALSE, header = TRUE, sep = "\t")
+results_bristol = bristol_anno %>% select(chr = Chromosome, BP = Position, P = pvals_b, A1 , A2 ) %>% drop_na(P) %>% 
+  mutate(chr = paste0("chr", chr))
+GR_input = results_bristol %>% mutate(start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+bristol_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+results_bristol %>% arrange(P)
+-log10(3.266475e-36	) #36
+discovery_anno = read.csv("/datacommons/ochoalab/ssns_gwas/saige/annotated/ns_ctrl.csv",  stringsAsFactors=FALSE)
+results_dis = discovery_anno %>% select(SNP = rsid, CHR = Chromosome, BP = Position, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = results_dis %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+disc_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+results_dis %>% arrange(P)
+-log10(7.725724e-40) # 40
+```
+
+
+
+```{r fig.width=8.5, fig.height=4}
+png( '/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/plots/ns_ctrl_rep.png', 
+     width=18.5, height=10, res=1000, units = 'in')
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, labels.plotter = NULL,
+                    chromosomes = chr_plot, main = "Replication Analysis: NS vs Control", cex=1.5, plot.params = pp)
+
+kpPlotManhattan(kp, data = bristol_gr, points.col="2blues", r0=autotrack(1,2, margin = 0.15),genomewideline = -log10(0.05/142),
+                genomewide.col = "red", suggestive.col = "white", suggestiveline = 0, ymax = 36)
+kpAddLabels(kp, labels = "Bristol vs UKBB", srt=90, pos=3, r0=autotrack(1,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=36, r0=autotrack(1,2, margin = 0.15))
+
+kpPlotManhattan(kp, data = disc_gr, points.col="2blues", r0=autotrack(2,2, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue", ymax = 40,
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Discovery set", srt=90, pos=3, r0=autotrack(2,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=40, r0=autotrack(2,2, margin = 0.15))
+kpAddChromosomeNames(kp, srt=45, cex = 1)
+invisible( dev.off() )
+```
+
+Bristol: ns vs control (eur)
+```{r}
+# create input for karyoploteR package
+bristol_anno = read.table("/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/replication_pvals_ns_ctrl_eur.txt",
+                        stringsAsFactors=FALSE, header = TRUE, sep = "\t")
+results_bristol = bristol_anno %>% select(chr = Chromosome, BP = Position, P = pvals_b, A1 , A2 ) %>% drop_na(P) %>% 
+  mutate(chr = paste0("chr", chr))
+GR_input = results_bristol %>% mutate(start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+bristol_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+results_bristol %>% arrange(P)
+-log10(1.155262e-35) #35
+discovery_anno = read.csv("/datacommons/ochoalab/ssns_gwas/saige/annotated/ns_ctrl_eur.csv",  stringsAsFactors=FALSE)
+results_dis = discovery_anno %>% select(SNP = rsid, CHR = Chromosome, BP = Position, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = results_dis %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+disc_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+results_dis %>% arrange(P)
+-log10(4.302516e-13) # 13
+```
+
+```{r fig.width=8.5, fig.height=4}
+png( '/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/plots/ns_ctrl_eur_rep.png', 
+     width=18.5, height=10, res=1000, units = 'in')
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, labels.plotter = NULL,
+                    chromosomes = chr_plot, main = "Replication Analysis: NS vs Control (EUR)", cex=1.5, plot.params = pp)
+
+kpPlotManhattan(kp, data = bristol_gr, points.col="2blues", r0=autotrack(1,2, margin = 0.15),genomewideline = -log10(0.05/24),
+                genomewide.col = "red", suggestive.col = "white", suggestiveline = 0, ymax = 35)
+kpAddLabels(kp, labels = "Bristol vs UKBB", srt=90, pos=3, r0=autotrack(1,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=35, r0=autotrack(1,2, margin = 0.15))
+
+kpPlotManhattan(kp, data = disc_gr, points.col="2blues", r0=autotrack(2,2, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue", ymax = 13,
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Discovery set", srt=90, pos=3, r0=autotrack(2,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=13, r0=autotrack(2,2, margin = 0.15))
+kpAddChromosomeNames(kp, srt=45, cex = 1)
+invisible( dev.off() )
+```
+
+Bristol: ns vs control (sas)
+```{r}
+# create input for karyoploteR package
+bristol_anno = read.table("/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/replication_pvals_ns_ctrl_sas.txt",
+                        stringsAsFactors=FALSE, header = TRUE, sep = "\t")
+results_bristol = bristol_anno %>% select(chr = Chromosome, BP = Position, P = pvals_b, A1 , A2 ) %>% drop_na(P) %>% 
+  mutate(chr = paste0("chr", chr))
+GR_input = results_bristol %>% mutate(start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+bristol_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+results_bristol %>% arrange(P)
+-log10(1.530948e-08) #8
+discovery_anno = read.csv("/datacommons/ochoalab/ssns_gwas/saige/annotated/ns_ctrl_sas.csv",  stringsAsFactors=FALSE)
+results_dis = discovery_anno %>% select(SNP = rsid, CHR = Chromosome, BP = Position, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = results_dis %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+disc_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+results_dis %>% arrange(P)
+-log10(1.763497e-11	) # 11
+```
+
+```{r fig.width=8.5, fig.height=4}
+png( '/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/plots/ns_ctrl_sas_rep.png', 
+     width=18.5, height=10, res=1000, units = 'in')
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, labels.plotter = NULL,
+                    chromosomes = chr_plot, main = "Replication Analysis: NS vs Control (SAS)", cex=1.5, plot.params = pp)
+
+kpPlotManhattan(kp, data = bristol_gr, points.col="2blues", r0=autotrack(1,2, margin = 0.15),genomewideline = -log10(0.05/31),
+                genomewide.col = "red", suggestive.col = "white", suggestiveline = 0, ymax = 8)
+kpAddLabels(kp, labels = "Bristol vs UKBB", srt=90, pos=3, r0=autotrack(1,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=8, r0=autotrack(1,2, margin = 0.15))
+
+kpPlotManhattan(kp, data = disc_gr, points.col="2blues", r0=autotrack(2,2, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue", ymax = 11,
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Discovery set", srt=90, pos=3, r0=autotrack(2,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=11, r0=autotrack(2,2, margin = 0.15))
+kpAddChromosomeNames(kp, srt=45, cex = 1)
+invisible( dev.off() )
+```
+
+Bristol: ssns vs control (all age)
+```{r}
+# create input for karyoploteR package
+bristol_anno = read.table("/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/replication_pvals_ssns_ctrl.txt",
+                        stringsAsFactors=FALSE, header = TRUE, sep = "\t")
+results_bristol = bristol_anno %>% select(chr = Chromosome, BP = Position, P = pvals_b, A1 , A2 ) %>% drop_na(P) %>% 
+  mutate(chr = paste0("chr", chr))
+GR_input = results_bristol %>% mutate(start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+bristol_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+results_bristol %>% arrange(P)
+-log10(2.554542e-36) #36
+discovery_anno = read.csv("/datacommons/ochoalab/ssns_gwas/saige/annotated/ssns_ctrl.csv",  stringsAsFactors=FALSE)
+results_dis = discovery_anno %>% select(SNP = rsid, CHR = Chromosome, BP = Position, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = results_dis %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+disc_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+results_dis %>% arrange(P)
+-log10(2.822286e-43) # 43
+```
+
+```{r fig.width=8.5, fig.height=4}
+png( '/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/plots/ssns_ctrl_rep.png', 
+     width=18.5, height=10, res=1000, units = 'in')
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, labels.plotter = NULL,
+                    chromosomes = chr_plot, main = "Replication Analysis: SSNS vs Control", cex=1.5, plot.params = pp)
+
+kpPlotManhattan(kp, data = bristol_gr, points.col="2blues", r0=autotrack(1,2, margin = 0.15),genomewideline = -log10(0.05/163),
+                genomewide.col = "red", suggestive.col = "white", suggestiveline = 0, ymax = 36)
+kpAddLabels(kp, labels = "Bristol vs UKBB", srt=90, pos=3, r0=autotrack(1,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=36, r0=autotrack(1,2, margin = 0.15))
+
+kpPlotManhattan(kp, data = disc_gr, points.col="2blues", r0=autotrack(2,2, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue", ymax = 43,
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Discovery set", srt=90, pos=3, r0=autotrack(2,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=43, r0=autotrack(2,2, margin = 0.15))
+kpAddChromosomeNames(kp, srt=45, cex = 1)
+invisible( dev.off() )
+```
+
+Bristol: ssns vs control (eur)
+```{r}
+# create input for karyoploteR package
+bristol_anno = read.table("/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/replication_pvals_ssns_ctrl_eur.txt",
+                        stringsAsFactors=FALSE, header = TRUE, sep = "\t")
+results_bristol = bristol_anno %>% select(chr = Chromosome, BP = Position, P = pvals_b, A1 , A2 ) %>% drop_na(P) %>% 
+  mutate(chr = paste0("chr", chr))
+GR_input = results_bristol %>% mutate(start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+bristol_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+results_bristol %>% arrange(P)
+-log10(8.647394e-36) #35
+discovery_anno = read.csv("/datacommons/ochoalab/ssns_gwas/saige/annotated/ssns_ctrl_eur.csv",  stringsAsFactors=FALSE)
+results_dis = discovery_anno %>% select(SNP = rsid, CHR = Chromosome, BP = Position, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = results_dis %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+disc_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+results_dis %>% arrange(P)
+-log10(3.634290e-16) # 16
+```
+```{r fig.width=8.5, fig.height=4}
+png( '/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/plots/ssns_ctrl_eur_rep.png', 
+     width=18.5, height=10, res=1000, units = 'in')
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, labels.plotter = NULL,
+                    chromosomes = chr_plot, main = "Replication Analysis: SSNS vs Control (EUR)", cex=1.5, plot.params = pp)
+
+kpPlotManhattan(kp, data = bristol_gr, points.col="2blues", r0=autotrack(1,2, margin = 0.15),genomewideline = -log10(0.05/35),
+                genomewide.col = "red", suggestive.col = "white", suggestiveline = 0, ymax = 35)
+kpAddLabels(kp, labels = "Bristol vs UKBB", srt=90, pos=3, r0=autotrack(1,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=35, r0=autotrack(1,2, margin = 0.15))
+
+kpPlotManhattan(kp, data = disc_gr, points.col="2blues", r0=autotrack(2,2, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue", ymax = 16,
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Discovery set", srt=90, pos=3, r0=autotrack(2,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=16, r0=autotrack(2,2, margin = 0.15))
+kpAddChromosomeNames(kp, srt=45, cex = 1)
+invisible( dev.off() )
+```
+
+Bristol: ssns vs control (sas)
+```{r}
+# create input for karyoploteR package
+bristol_anno = read.table("/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/replication_pvals_ssns_ctrl_sas.txt",
+                        stringsAsFactors=FALSE, header = TRUE, sep = "\t")
+results_bristol = bristol_anno %>% select(chr = Chromosome, BP = Position, P = pvals_b, A1 , A2 ) %>% drop_na(P) %>% 
+  mutate(chr = paste0("chr", chr))
+GR_input = results_bristol %>% mutate(start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+bristol_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+results_bristol %>% arrange(P)
+-log10(1.024924e-07) #7
+discovery_anno = read.csv("/datacommons/ochoalab/ssns_gwas/saige/annotated/ssns_ctrl_sas.csv",  stringsAsFactors=FALSE)
+results_dis = discovery_anno %>% select(SNP = rsid, CHR = Chromosome, BP = Position, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = results_dis %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+disc_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+results_dis %>% arrange(P)
+-log10(4.113417e-12	) # 12
+```
+
+```{r fig.width=8.5, fig.height=4}
+png( '/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/plots/ssns_ctrl_sas_rep.png', 
+     width=18.5, height=10, res=1000, units = 'in')
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, labels.plotter = NULL,
+                    chromosomes = chr_plot, main = "Replication Analysis: SSNS vs Control (SAS)", cex=1.5, plot.params = pp)
+
+kpPlotManhattan(kp, data = bristol_gr, points.col="2blues", r0=autotrack(1,2, margin = 0.15),genomewideline = -log10(0.05/37),
+                genomewide.col = "red", suggestive.col = "white", suggestiveline = 0, ymax = 7)
+kpAddLabels(kp, labels = "Bristol vs UKBB", srt=90, pos=3, r0=autotrack(1,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=7, r0=autotrack(1,2, margin = 0.15))
+
+kpPlotManhattan(kp, data = disc_gr, points.col="2blues", r0=autotrack(2,2, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue", ymax = 12,
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Discovery set", srt=90, pos=3, r0=autotrack(2,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=12, r0=autotrack(2,2, margin = 0.15))
+kpAddChromosomeNames(kp, srt=45, cex = 1)
+invisible( dev.off() )
+```
+
+Bristol: srns vs control (all)
+```{r}
+# create input for karyoploteR package
+bristol_anno = read.table("/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/replication_pvals_srns_ctrl.txt",
+                        stringsAsFactors=FALSE, header = TRUE, sep = "\t")
+results_bristol = bristol_anno %>% select( chr = Chromosome, BP = Position, P = pvals_b, A1 , A2 ) %>% drop_na(P) %>% 
+  mutate(chr = paste0("chr", chr))
+GR_input = results_bristol %>% mutate(start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+bristol_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+results_bristol %>% arrange(P)
+-log10(0.02406653) # 1.6
+discovery_anno = read.csv("/datacommons/ochoalab/ssns_gwas/saige/annotated/srns_ctrl.csv",  stringsAsFactors=FALSE)
+results_dis = discovery_anno %>% select(SNP = rsid, CHR = Chromosome, BP = Position, P = PVAL, A1, A2) %>% drop_na(P)
+GR_input = results_dis %>% mutate(chr = paste0("chr", CHR), start = BP, end = BP) %>% select(chr, start, end, A1, A2, P)
+disc_gr = makeGRangesFromDataFrame(data.frame(GR_input), keep.extra.columns = TRUE)
+
+results_dis %>% arrange(P)
+-log10(2.429159e-07) # 7
+```
+
+```{r fig.width=8.5, fig.height=4}
+png( '/datacommons/ochoalab/ssns_gwas/replication/saige_results/bristol/AF/annotated_results/plots/srns_ctrl_rep.png', 
+     width=18.5, height=10, res=1000, units = 'in')
+chr_plot = c("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", 
+             "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22")
+
+pp <- getDefaultPlotParams(plot.type=4)
+pp$ideogramlateralmargin = 0 
+pp$ideogramheight = 0
+pp$data1inmargin = -7
+
+plot.new()
+kp <- plotKaryotype("hg38", plot.type=4, ideogram.plotter = NULL, labels.plotter = NULL,
+                    chromosomes = chr_plot, main = "Replication Analysis: SRNS vs Control", cex=1.5, plot.params = pp)
+
+kpPlotManhattan(kp, data = bristol_gr, points.col="2blues", r0=autotrack(1,2, margin = 0.15),genomewideline = -log10(0.05/16),
+                genomewide.col = "red", suggestive.col = "white", suggestiveline = 0, ymax = 6)
+kpAddLabels(kp, labels = "Bristol vs UKBB", srt=90, pos=3, r0=autotrack(1,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=6, r0=autotrack(1,2, margin = 0.15))
+
+kpPlotManhattan(kp, data = disc_gr, points.col="2blues", r0=autotrack(2,2, margin = 0.15), genomewideline = -log10(5e-8),
+                suggestiveline = -log10(1e-5), , suggestive.col = "blue", ymax = -log10(5e-8),
+                genomewide.col = "red")
+kpAddLabels(kp, labels = "Discovery set", srt=90, pos=3, r0=autotrack(2,2, margin = 0.15), cex=1.5, label.margin = 0.035)
+kpAxis(kp, ymin=0, ymax=-log10(5e-8), r0=autotrack(2,2, margin = 0.15))
+kpAddChromosomeNames(kp, srt=45, cex = 1)
+invisible( dev.off() )
+```
+
