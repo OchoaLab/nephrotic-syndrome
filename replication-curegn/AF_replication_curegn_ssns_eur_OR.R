@@ -8,7 +8,6 @@ setwd( dir )
 #############################
 disease_subtype = "ssns_ctrl"
 ancestry = "eur"
-#dir = '/datacommons/ochoalab/ssns_gwas/imputed/ssns_ctrl/'
 #############################
 
 # step 1: extract gnomad SNP id's
@@ -22,7 +21,7 @@ cases_vs_control = merge(gnomad_AC, eur_ac_clean %>% mutate(CHROM = paste0("chr"
 
 # LRT on curegn vs Gnomad (case vs control)
 # define function input
-# x1/n1: bistrol; x2/n2: gnomad
+# x1/n1: curegn; x2/n2: gnomad
 x1 <- cbind(cases_vs_control$curegn_AC_eur)
 n1 <- cbind(cases_vs_control$curegn_AN_eur)
 x2 <- cbind(cases_vs_control$AC_nfe)

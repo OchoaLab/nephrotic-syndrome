@@ -9,7 +9,6 @@ setwd( dir )
 disease_subtype = "srns_ctrl"
 ancestry = "all"
 
-
 # step 1: extract gnomad SNP id's
 gnomad_AC <- read.table(paste0(dir, "gnomad/outfile/gnomad-genome_", disease_subtype, "_clean.txt"), sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
 curegn_AC <- read.table(paste0(dir, "curegn/AF/srns/curegn_AC_srns.txt"), header = TRUE) 
@@ -17,7 +16,7 @@ cases_vs_control = merge(gnomad_AC, curegn_AC %>% mutate(CHROM = paste0("chr", C
 
 # LRT on curegn vs Gnomad (case vs control)
 # define function input
-# x1/n1: bistrol; x2/n2: gnomad
+# x1/n1: curegn; x2/n2: gnomad
 x1 <- cbind(cases_vs_control$curegn_AC_eur, cases_vs_control$curegn_AC_afr)
 n1 <- cbind(cases_vs_control$curegn_AN_eur, cases_vs_control$curegn_AN_afr)
 x2 <- cbind(cases_vs_control$AC_nfe, cases_vs_control$AC_afr)

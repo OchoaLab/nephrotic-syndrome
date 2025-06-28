@@ -6,62 +6,73 @@ dir = '/datacommons/ochoalab/ssns_gwas/replication/saige_results/'
 setwd( dir )
 
 #############################
-disease_subtype = "ns_ctrl"
-ancestry = "eur"
-#############################
+disease_subtype = "srns_ctrl"
+ancestry = "all"
+
+curegn_covar = read.table("/datacommons/ochoalab/curegn/curegn_covar.txt", header = TRUE) %>% filter(srns == TRUE)
+table(curegn_covar$ancestry)
 
 # step 1: extract gnomad SNP id's
-gnomad_AC <- read.table(paste0(dir, "gnomad/outfile/gnomad-genome_ns_ctrl_eur_clean.txt"), sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+gnomad_AC <- read.table(paste0(dir, "gnomad/outfile/gnomad-genome_", disease_subtype, "_clean.txt"), sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
 gnomad_snp = gnomad_AC %>% mutate(SNP = paste0(CHROM, ":", POS)) %>% mutate(SNP = str_remove(SNP, "chr")) %>% select(SNP)
-write.table(gnomad_snp, paste0(dir, "curegn/AF/ns/eur/gnomad_snp_id.txt"),
+write.table(gnomad_snp, paste0(dir, "curegn/AF/srns/gnomad_snp_id.txt"),
             row.names=FALSE, quote=FALSE, col.names = FALSE)
-
-# test = read_bim("/datacommons/ochoalab/curegn/merge_tgp/admixture/curegn_NS_afr.bim")
 # curegn only has cases, no controls, so skip step 2 of removing imputation biased snps from control vs control
 # run LRT on CureGN cases vs Gnomad controls
 # run allele_freq_curegn.q, process outfiles
 
-eur_ac <- read.table(paste0(dir, "curegn/AF/ns/eur/curegnAC_eur_sub.acount")) 
+eur_ac <- read.table(paste0(dir, "curegn/AF/srns/curegnAC_eur.acount")) 
 colnames(eur_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
 eur_ac_clean = eur_ac  %>%
-  separate(ID, c("CHROM", "POS"))  %>% dplyr::rename(curegn_AC_eur = ALT_FREQS, curegn_AN_eur = OBS_CT)
+  separate(ID, c("CHR", "POS")) %>% select(-CHROM)  %>% dplyr::rename(curegn_AC_eur = ALT_FREQS, curegn_AN_eur = OBS_CT)
 
-cases_vs_control = merge(gnomad_AC, eur_ac_clean %>% mutate(CHROM = paste0("chr", CHROM)), by = c("CHROM", "POS", "REF", "ALT"))
+afr_ac <- read.table(paste0(dir, "curegn/AF/srns/curegnAC_afr.acount")) 
+colnames(afr_ac) = c("CHROM", "ID", "REF", "ALT", "ALT_FREQS", "OBS_CT")
+afr_ac_clean = afr_ac  %>%
+  separate(ID, c("CHR", "POS")) %>% select(-CHROM)  %>% dplyr::rename(curegn_AC_afr = ALT_FREQS, curegn_AN_afr = OBS_CT)
+
+merge1 = merge(afr_ac_clean, eur_ac_clean, by = c("CHR", "POS", "REF", "ALT"), all = TRUE)
+
+write.table(merge1, paste0(dir, "curegn/AF/srns/curegn_AC_srns.txt"),
+            row.names=FALSE, quote=FALSE, col.names = TRUE)
+
+curegn_AC <- read.table(paste0(dir, "curegn/AF/srns/curegn_AC_srns.txt"), header = TRUE) 
+cases_vs_control = merge(gnomad_AC, curegn_AC %>% mutate(CHROM = paste0("chr", CHR)), by = c("CHROM", "POS", "REF", "ALT")) 
 
 # LRT on curegn vs Gnomad (case vs control)
 # define function input
 # x1/n1: curegn; x2/n2: gnomad
-x1 <- cbind(cases_vs_control$curegn_AC_eur)
-n1 <- cbind(cases_vs_control$curegn_AN_eur)
-x2 <- cbind(cases_vs_control$AC_nfe)
-n2 <- cbind(cases_vs_control$AN_nfe)
+x1 <- cbind(cases_vs_control$curegn_AC_eur, cases_vs_control$curegn_AC_afr)
+n1 <- cbind(cases_vs_control$curegn_AN_eur, cases_vs_control$curegn_AN_afr)
+x2 <- cbind(cases_vs_control$AC_nfe, cases_vs_control$AC_afr)
+n2 <- cbind(cases_vs_control$AN_nfe, cases_vs_control$AN_afr)
 # p-values for forward alignment (only alignment for non-revcomp SNPs)
 pvals_b <- af_test( x1, n1, x2, n2 )$pval
 # define p-value threshold
 samplesize = length(pvals_b)
 pcut = 0.05/samplesize
-cases_vs_control_test = cbind(cases_vs_control, pvals_b) %>% arrange(pvals_b) %>% 
-  dplyr::rename(CHR = CHROM, BP = POS, P = pvals_b) %>% mutate(CHR = as.numeric(str_remove(CHR, "chr")), SNP = paste0(CHR, ":", BP)) %>% 
+cases_vs_control_test = cbind(cases_vs_control, pvals_b) %>% arrange(pvals_b) %>% select(-CHR) %>% 
+  dplyr::rename(CHR = CHROM, BP = POS, P = pvals_b) %>% #mutate(CHR = as.numeric(str_remove(CHR, "chr")), SNP = paste0(CHR, ":", BP)) %>% 
   arrange(CHR, BP) %>% mutate(sig = ifelse(P < pcut, TRUE, FALSE))
 
 output_plot = cbind(cases_vs_control, pvals_b)
-write.table(output_plot, paste0(dir, "curegn/AF/annotated_results/replication_pvals_", disease_subtype,"_eur.txt"), 
+write.table(output_plot, paste0(dir, "curegn/AF/annotated_results/replication_pvals_", disease_subtype,".txt"), 
             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
 
 # define p-value threshold
 unclumped_sig = cbind(cases_vs_control, pvals_b) %>% arrange(pvals_b) %>% filter(pvals_b < pcut) 
 nrow(unclumped_sig)
 
-hist(pvals_b, breaks = 50, main = "curegn NS vs gnomad controls: EUR")
-qq(pvals_b, main = "curegn NS vs gnomad controls: EUR")
+hist(pvals_b, breaks = 50, main = "curegn SRNS vs gnomad controls")
+qq(pvals_b, main = "curegn SRNS vs gnomad controls")
 
-### write file for LD clump
+### write file for LD clump 
 curegn_snps = cbind(cases_vs_control, pvals_b) %>% arrange(pvals_b) %>% mutate(CHROM = str_remove(CHROM, "chr")) %>% 
-  mutate(SNP = paste0(CHROM, ":", POS)) %>% select(SNP, P = pvals_b)
-write.table(curegn_snps, paste0(dir, "curegn/AF/ns/eur/replication_unclump_curegn_snps_eur.txt"), 
+  mutate(SNP = paste0(CHROM, ":", POS)) %>% select(SNP, P = pvals_b) %>% distinct()
+write.table(curegn_snps, paste0(dir, "curegn/AF/srns/replication_unclump_curegn_snps.txt"), 
             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
 ### clump p-values to get effective number of tests
-clump_curegn <- read.table(paste0(dir,  "curegn/AF/ns/eur/clump_curegn_1371.clumped"), header = TRUE) 
+clump_curegn <- read.table(paste0(dir,  "curegn/AF/srns/clump_curegn_112.clumped"), header = TRUE) 
 nrow(clump_curegn)
 
 # apply new p-value threshold
@@ -75,23 +86,24 @@ independent_regions = pval_filter %>% filter(SNP %in% intersect_list) %>% select
 
 
 # include summary stats in output
-ancestry_all = read.table(paste0("/datacommons/ochoalab/ssns_gwas/saige/ns_ctrl/eur/saige_output.txt" ),  sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
+ancestry_all = read.table("/datacommons/ochoalab/ssns_gwas/saige/srns_ctrl/saige_output.txt" ,  sep = "\t", stringsAsFactors=FALSE, quote = "", header = TRUE)
 # annotate snps according to ld clumped number of independent snps
 
 cases_vs_control_pval = cases_vs_control_test %>% mutate(sig = ifelse(P < (0.05/nrow(clump_curegn)), TRUE, FALSE))
 table(cases_vs_control_pval$sig)
-
-ns_repli_table = cases_vs_control_test %>% filter(ID == "rs9394106")
-
-SNP_nexus = cases_vs_control_pval %>% filter(sig == TRUE) %>% 
-  select(CHR, BP, REF, ALT, ID, SNP, P) %>% 
+# rsid_list = c("rs17843604", "rs114032596", "rs12925642", "rs3129713", "rs113688927")
+# 
+# ssns_repli_table = cases_vs_control_test %>% filter(ID %in% rsid_list) %>% select(ID, P, sig)
+# gnomad_AC %>% filter(ID == "rs113688927")
+SNP_nexus = cases_vs_control_pval %>% filter(sig == TRUE) %>% select(CHR, BP, REF, ALT, ID, P) %>% 
+  mutate(CHR = str_remove(CHR, "chr")) %>% 
   mutate(type = "Chromosome", Strand = 1) %>% 
   select(type, Id = CHR, Position = BP, Allele1 = REF, Allele2 = ALT, Strand) %>% distinct()
-write.table(SNP_nexus, paste0(dir,"curegn/AF/ns/eur/curegn_snp_nexus_allsig_eur.txt"), 
+write.table(SNP_nexus, paste0(dir,"curegn/AF/srns/curegn_snp_nexus_allsig.txt"), 
             row.names=FALSE, quote=FALSE, col.names = FALSE, sep = "\t")
 
-neargens = read.table(paste0(dir,"curegn/AF/ns/eur/near_gens.txt"), header = TRUE, sep = "\t") %>% select(-Chromosome, -Position)
-gencoord = read.table(paste0(dir, "curegn/AF/ns/eur/gen_coords.txt"), header = TRUE, sep = "\t") %>% 
+neargens = read.table(paste0(dir,"curegn/AF/srns/near_gens.txt"), header = TRUE, sep = "\t") %>% select(-Chromosome, -Position)
+gencoord = read.table(paste0(dir, "curegn/AF/srns/gen_coords.txt"), header = TRUE, sep = "\t") %>% 
   select(Variation.ID, Chromosome, Position, A1 = REF.Allele, A2 = ALT.Allele..IUPAC., rsid = dbSNP)
 merge_nexus = merge(gencoord, neargens, by = "Variation.ID") %>% select(-Variation.ID)
 
@@ -108,5 +120,5 @@ allsnps_merge = merge(all_snps, sumstat_filter,
 allsnps_merge_anno = merge(allsnps_merge, merge_nexus, by = c("Chromosome", "Position", "A1", "A2", "rsid"), all.x = TRUE) %>% 
   select(Chromosome, Position, A1, A2, rsid, everything()) %>% arrange(original_PVAL) %>% distinct()
 
-write.table(allsnps_merge_anno, paste0(dir, "curegn/AF/annotated_results/curegn_replication_ns_eur.txt"), 
+write.table(allsnps_merge_anno, paste0(dir, "curegn/AF/annotated_results/curegn_replication_srns_allsig.txt"), 
             row.names=FALSE, quote=FALSE, col.names = TRUE, sep = "\t")
