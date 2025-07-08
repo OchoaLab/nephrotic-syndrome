@@ -80,6 +80,10 @@ ln -s {${curegn},}mac20.eigenvec
 # plink2 --bfile mac20 --missing --out mac20
 # # look at AFs, to consider dumb imputation schemes
 # plink2 --bfile mac20 --freq --out mac20
+
+# recently source files got moved or disappeared for weird reasons; bed/bim/fam are fine (were processed and overwritten), just eigenvec file needed regenerating, do that here!
+time plink2 --bfile mac20 --pca --out mac20
+# 2m28.241s DCC
 cd ..
 
 # add phenotype and sex to fam files (otherwise blank), which will simplify PRS trait handling later
@@ -98,6 +102,16 @@ dir=test;  sbatch -J grm-$dir -o grm-$dir.out --export=dir=$dir prs-new-02-grm.q
 # 0m56.275s DCC
 dir=test-curegn2; sbatch -J grm-$dir -o grm-$dir.out --export=dir=$dir prs-new-02-grm.q
 # 3m12.489s DCC
+
+# more recently I needed PCs again and had to normalize the format, so redid eigenvec with plink2 instead of using GCTA as above
+cd test
+# keep the original files just in case
+mv mac20.eigenval mac20-gcta.eigenval
+mv mac20.eigenvec mac20-gcta.eigenvec
+# make new version as above
+time plink2 --bfile mac20 --pca --out mac20
+# 2m58.211s DCC
+cd ..
 
 # Tiffany ran SAIGE on "base" using this code:
 sbatch saige.q
@@ -443,6 +457,9 @@ method=grid-h0.1; time plink2 --bfile test/mac20 --score train/betas-base-ldpred
 # 0m20.160s DCC
 # confirms that plink and ldpred scores match!  (they are not negatively correlated, for example)
 time Rscript ldpred-21-prs-betas-plink-score-validate.R base train test
+
+# make a big table with info for Debo to evaulate his diagnistic test
+time Rscript ldpred-22-mk-table-for-debo.R
 
 
 #######################
