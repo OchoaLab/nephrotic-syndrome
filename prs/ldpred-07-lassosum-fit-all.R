@@ -33,14 +33,19 @@ params <- bind_rows( params, params2 )
 # make sure Dataset is ordered as desired
 params$Dataset <- factor( params$Dataset, levels = datasets )
 
+# set all negatives to zero
+params$cor[ params$cor < 0 ] <- 0
+params$cor_lower[ params$cor_lower < 0 ] <- 0
+params$cor_upper[ params$cor_upper < 0 ] <- 0
+
 # plot results
 wh <- fig_scale( 3 )
 fig_start( 'eval-ALL-ldpred2-lassosum', width = wh[1], height = wh[2] )
-ggplot( params, aes( x = lambda, y = cor, color = as.factor( delta ) ) ) +
+ggplot( params, aes( x = lambda, y = cor^2, color = as.factor( delta ) ) ) +
     theme_classic() +
     geom_point() +
     geom_line() +
-    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .1 ) +
+    geom_errorbar( aes( ymin = cor_lower^2, ymax = cor_upper^2 ), width = .1 ) +
     expand_limits( y = 0 ) +
     scale_x_log10() +
     facet_wrap( vars( Dataset ) ) +

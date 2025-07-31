@@ -38,14 +38,18 @@ params$Dataset <- factor( params$Dataset, levels = datasets )
 # make sparsity more verbose for strip text to be more human-readable
 params <- params %>% mutate( sparse = ifelse( sparse, 'Sparse', 'Dense' ) )
 
+# before squaring, confirm all correlations are positive
+stopifnot( all( params$cor > 0 ) )
+stopifnot( all( params$cor_lower > 0 ) )
+
 # plot results
 wh <- fig_scale( 3/2 )
 fig_start( paste0( 'eval-ALL-ldpred2-grid-h', h2_est ), width = wh[1], height = wh[2] )
-ggplot( params, aes( x = p, y = cor, color = as.factor( h2 ) ) ) +
+ggplot( params, aes( x = p, y = cor^2, color = as.factor( h2 ) ) ) +
     theme_classic() +
     geom_point() +
     geom_line() +
-    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .03 ) +
+    geom_errorbar( aes( ymin = cor_lower^2, ymax = cor_upper^2 ), width = .03 ) +
     expand_limits( y = 0 ) +
     scale_x_log10() +
     facet_grid( sparse ~ Dataset ) +

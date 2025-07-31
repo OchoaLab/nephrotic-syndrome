@@ -58,9 +58,13 @@ data$model <- factor( data$model, names_short )
 # http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/
 # but mostly copied earlier code from /home/viiia/docs/ochoalab/popdiff/scripts/sim-05-boxplots-all-pi0.R
 
+# before squaring, confirm all correlations are positive
+stopifnot( all( data$cor > 0 ) )
+stopifnot( all( data$cor_lower > 0 ) )
+
 fig_start( name_out, width = 6 )
-ggplot( data, aes( x = model, y = cor ) ) + 
-    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .5 ) +
+ggplot( data, aes( x = model, y = cor^2 ) ) + 
+    geom_errorbar( aes( ymin = cor_lower^2, ymax = cor_upper^2 ), width = .5 ) +
     geom_point( ) +
     expand_limits( y = 0 ) + 
     theme_classic() +

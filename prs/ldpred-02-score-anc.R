@@ -112,9 +112,6 @@ data <- data[ indexes, ]
 ## ## test-curegn
 ## AFR   EUR Other
 ##  64   218   137
-## ## test-curegn2
-## AFR   EUR Other 
-## 110   495   286 
 
 # process preexisting results
 for ( name in names ) {

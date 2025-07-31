@@ -18,8 +18,8 @@ name_plot <- names_plot[ names_short == name_short ]
 # hardcode values to process
 # only use main test data (Bristol)
 test <- 'test'
-# actually no, use two variants of curegn as testing dataset
-tests_curegn <- c('test-curegn', 'test-curegn2')
+# actually no, use curegn too
+test_curegn <- 'test-curegn'
 # consider these combinations of base and training datasets
 types_in <- c('base-train', 'base-ssns_ctrl-train-curegn', 'base-ssns_srns-train-curegn')
 types_short <- c('SC-DDB', 'SC-DCB', 'SR-DCB')
@@ -63,11 +63,9 @@ load_all_ancs <- function( data, type_in, test ) {
 data <- NULL
 
 # start with hacks where curegn is used as test, but we can only properly use it if it isn't also used to train (only first type)
-for ( test_curegn in tests_curegn ) {
-    setwd( test_curegn )
-    data <- load_all_ancs( data, types_in[1], test_curegn )
-    setwd( '..' )
-}
+setwd( test_curegn )
+data <- load_all_ancs( data, types_in[1], test_curegn )
+setwd( '..' )
 
 # all processing happens in subdirectory
 setwd( test )
@@ -78,16 +76,14 @@ for ( type_in in types_in ) {
 }
 
 # continue test-curegn hack
-for ( test_curegn in tests_curegn ) {
-    # so far the data shouldn't overlap because testing dataset is distinguished, but it won't plot correctly as-is because type does overlap with test-bristol's, for now
-    indexes <- data$test == test_curegn
-    stopifnot( all( data$type[ indexes ] == 'SC-DDB' ) )
-    # label this test=C instead, which partly solves our problems (and mark second version with a "2" only)
-    type_new <- if ( test_curegn == tests_curegn[1] ) 'SC-DDC' else 'SC-DDC2'
-    data$type[ indexes ] <- type_new
-    # decide which order to plot the new type.  Do last for now
-    types_short <- c( types_short, type_new )
-}
+# so far the data shouldn't overlap because testing dataset is distinguished, but it won't plot correctly as-is because type does overlap with test-bristol's, for now
+indexes <- data$test == test_curegn
+stopifnot( all( data$type[ indexes ] == 'SC-DDB' ) )
+# label this test=C instead, which partly solves our problems
+type_new <- 'SC-DDC'
+data$type[ indexes ] <- type_new
+# decide which order to plot the new type.  Do last for now
+types_short <- c( types_short, type_new )
 
 # manually order models for consistency:
 data$anc <- factor( data$anc, ancs )
@@ -99,9 +95,14 @@ data$type <- factor( data$type, types_short )
 # The errorbars overlapped, so use position_dodge to move them horizontally
 pd <- position_dodge( 0.5 ) # move them .05 to the left and right
 
+# set all negatives to zero
+data$cor[ data$cor < 0 ] <- 0
+data$cor_lower[ data$cor_lower < 0 ] <- 0
+data$cor_upper[ data$cor_upper < 0 ] <- 0
+
 fig_start( name_out, width = 6 )
-ggplot( data, aes( x = type, y = cor, col = anc ) ) + 
-    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .5, position = pd ) +
+ggplot( data, aes( x = type, y = cor^2, col = anc ) ) + 
+    geom_errorbar( aes( ymin = cor_lower^2, ymax = cor_upper^2 ), width = .5, position = pd ) +
     geom_point( position = pd ) +
     expand_limits( y = 0 ) + 
     theme_classic() +

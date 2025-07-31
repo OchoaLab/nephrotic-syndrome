@@ -33,14 +33,18 @@ params <- bind_rows( params, params2 )
 # make sure Dataset is ordered as desired
 params$Dataset <- factor( params$Dataset, levels = datasets )
 
+# before squaring, confirm all correlations are positive
+stopifnot( all( params$cor > 0 ) )
+stopifnot( all( params$cor_lower > 0 ) )
+
 # plot results
 wh <- fig_scale( 3 )
 fig_start( 'eval-ALL-ldpred2-inf', width = wh[1], height = wh[2] )
-ggplot( params, aes( x = h2, y = cor ) ) +
+ggplot( params, aes( x = h2, y = cor^2 ) ) +
     theme_classic() +
     geom_point() +
     geom_line() +
-    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .03 ) +
+    geom_errorbar( aes( ymin = cor_lower^2, ymax = cor_upper^2 ), width = .03 ) +
     expand_limits( y = 0 ) + 
     labs( x = 'Heritability', y = expression(R^2 * " to trait") ) +
     facet_wrap( vars( Dataset ) ) +

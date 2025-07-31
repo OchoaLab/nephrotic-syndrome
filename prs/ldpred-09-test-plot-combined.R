@@ -98,6 +98,12 @@ data$var <- factor( data$var, unique( vars ) )
 data1 <- data %>% filter( panel == panels[1] )
 data2 <- data %>% filter( panel != panels[1] )
 
+# before squaring, confirm all correlations are positive
+stopifnot( all( data1$cor > 0 ) )
+stopifnot( all( data1$cor_lower > 0 ) )
+stopifnot( all( data2$cor > 0 ) )
+stopifnot( all( data2$cor_lower > 0 ) )
+
 # http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/
 # but mostly copied earlier code from /home/viiia/docs/ochoalab/popdiff/scripts/sim-05-boxplots-all-pi0.R
 
@@ -105,14 +111,14 @@ data2 <- data %>% filter( panel != panels[1] )
 pd <- position_dodge( 0.5 ) # move them .05 to the left and right
 
 fig_start( name_out, width = 6, height = 6 )
-p1 <- ggplot( data1, aes( x = model, y = cor, col = var ) ) + 
-    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .5, position = pd ) +
+p1 <- ggplot( data1, aes( x = model, y = cor^2, col = var ) ) + 
+    geom_errorbar( aes( ymin = cor_lower^2, ymax = cor_upper^2 ), width = .5, position = pd ) +
     geom_point( position = pd ) +
     expand_limits( y = 0 ) + 
     theme_classic() +
     labs( x = 'Model', y = expression(R^2 * " to trait"), col = 'Base dataset' )
-p2 <- ggplot( data2, aes( x = model, y = cor, col = var ) ) + 
-    geom_errorbar( aes( ymin = cor_lower, ymax = cor_upper ), width = .5, position = pd ) +
+p2 <- ggplot( data2, aes( x = model, y = cor^2, col = var ) ) + 
+    geom_errorbar( aes( ymin = cor_lower^2, ymax = cor_upper^2 ), width = .5, position = pd ) +
     geom_point( position = pd ) +
     expand_limits( y = 0 ) + 
     theme_classic() +
