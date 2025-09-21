@@ -497,6 +497,30 @@ prelim-30-disc-epistasis-top.R
 # using top hla types, also see some significant interactions!
 prelim-31-disc-epistasis-hla-types.R
 
+# make alternative PRS based on more fine-mapped (conditional) effects
+# make a crude PRS using the top 4 loci, "trained" using all discovery (base+train)
+time Rscript prelim-50-top4-prs.R
+# make scores from this model for each test dataset
+cd test
+time plink2 --bfile mac20 --score ../train/top4-plink-score.txt header --out prs-top4-plink
+# 0m5.823s DCC
+cd ../test-curegn/
+# have to edit here a bit because IDs are different
+time plink2 --bfile mac20 --score ../train/top4-plink-score-ids-simpler.txt header --out prs-top4-plink
+# 0m2.784s DCC
+
+# calculate correlations with plink scores!
+time Rscript prelim-51-score-plink.R test
+# 0m7.071s DCC
+time Rscript prelim-51-score-plink.R test-curegn
+# 0m7.119s DCC
+# combine them now!
+time Rscript prelim-52-top4-combine-pcor.R 
+# 0m4.242s DCC
+# make plot! (combined only)
+time Rscript prelim-53-pcor-plot.R test-bristol-curegn
+# 0m11.587s DCC
+
 # apply domrec to the old base data
 cd base
 time domrec mac20 mac20-rec rec
@@ -526,6 +550,8 @@ name=mac20-dom; sbatch -J saige-$name -o saige-$name.out --export=name=$name sai
 # are top p-values better?  are the top loci different?
 # add vs rec: add is better practically always, but there are 3 loci outside chr6 where rec is much better
 prelim-40-saige-domrec.R
+
+# TODO: look at non-genetic covariates, get p-values, visualize distributions; test for ascertainment effects or not
 
 
 #########################
