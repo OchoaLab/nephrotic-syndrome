@@ -456,6 +456,8 @@ rm */ld*.{sbk,RData}
 ### PROPOSAL PRELIM ###
 #######################
 
+### U01 2024-05
+
 # this shows age is predictive of SSNS vs SRNS
 # looked at pediatric cases only
 time Rscript age-vs-steroid-response.R
@@ -466,6 +468,44 @@ time Rscript age-02-make-xlsx.R
 # look at dominance at top loci
 # creates figures for each locus and a table with p-values and coefficients (with all loci together)
 time Rscript dominance.R
+
+### 2025-10 PRS grant
+
+# manually ran this analysis, converted 8 C+T loci (picked under additive model) to dom or rec, but R2 are worse for those resulting PRS (refitting coeffs on Bristol)
+prelim-00-rec-ct.R
+# repeat for 4 top loci in paper; sadly though the results are better (higher R2), additive > dom > rec again.
+prelim-01-rec-top.R
+# repeated for top HLA haplotype; more of the same, though this model is worst overall
+prelim-02-hla-top-haplotype.R
+# repeat with HLA types (singles); still, the same
+prelim-03-hla-types.R
+
+# limited test of epistasis, using top loci again
+prelim-10-epistasis-top.R
+
+# apply domrec to the old base data
+cd base
+time domrec mac20 mac20-rec rec
+# 23m53.931s DCC
+ln -s mac20.fam mac20-rec.fam
+ln -s mac20.bim mac20-rec.bim
+time domrec mac20 mac20-dom dom
+# 23m58.953s DCC
+ln -s mac20.fam mac20-dom.fam
+ln -s mac20.bim mac20-dom.bim
+
+# to run SAIGE, need to link covariates file
+# (use same additive PCs for dom/rec, it'd be confusing to change them)
+ln -s ../../../saige/ssns_ctrl/covar_ssns_ctrl.txt .
+
+# done at submission, not totally sure if needed or not
+source /hpc/group/ochoalab/tt207/miniconda3/etc/profile.d/conda.sh
+conda activate RSAIGE
+
+# submit job!
+name=mac20-rec; sbatch -J saige-$name -o saige-$name.out --export=name=$name saige-alex.q ########## RUNNING
+name=mac20-dom; sbatch -J saige-$name -o saige-$name.out --export=name=$name saige-alex.q ########## NOT YET RUNNING
+
 
 #########################
 ### PRS for discovery ###
