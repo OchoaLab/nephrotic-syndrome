@@ -483,6 +483,20 @@ prelim-03-hla-types.R
 # limited test of epistasis, using top loci again
 prelim-10-epistasis-top.R
 
+# repeat non-prs(trained models) tests on discovery data! (Bristol is much too small)
+# same patterns as in Bristol (additive > dom > rec)
+prelim-20-disc-rec-top.R
+# VICTORY!  For top haplotype, dom > add > rec!  Difference is small though, but significant
+prelim-21-disc-hla-top-haplotype.R
+# DITTO!  For all 5 types, dom > add > rec, and significantly so for 3/5
+prelim-22-disc-hla-types.R
+
+# epistasis on discovery data
+# using top loci, we see significant interactions!
+prelim-30-disc-epistasis-top.R
+# using top hla types, also see some significant interactions!
+prelim-31-disc-epistasis-hla-types.R
+
 # apply domrec to the old base data
 cd base
 time domrec mac20 mac20-rec rec
@@ -498,13 +512,20 @@ ln -s mac20.bim mac20-dom.bim
 # (use same additive PCs for dom/rec, it'd be confusing to change them)
 ln -s ../../../saige/ssns_ctrl/covar_ssns_ctrl.txt .
 
-# done at submission, not totally sure if needed or not
-source /hpc/group/ochoalab/tt207/miniconda3/etc/profile.d/conda.sh
-conda activate RSAIGE
+# done at first submission, not totally sure if needed or not; subsequent submissions were ok without this
+# source /hpc/group/ochoalab/tt207/miniconda3/etc/profile.d/conda.sh
+# conda activate RSAIGE
 
 # submit job!
-name=mac20-rec; sbatch -J saige-$name -o saige-$name.out --export=name=$name saige-alex.q ########## RUNNING
-name=mac20-dom; sbatch -J saige-$name -o saige-$name.out --export=name=$name saige-alex.q ########## NOT YET RUNNING
+name=mac20-rec; sbatch -J saige-$name -o saige-$name.out --export=name=$name saige-alex.q
+# 364m24.425s/8222m19.559s DCC step 1
+# 247m25.098s DCC step 2
+name=mac20-dom; sbatch -J saige-$name -o saige-$name.out --export=name=$name saige-alex.q
+########## RUNNING
+
+# are top p-values better?  are the top loci different?
+# add vs rec: add is better practically always, but there are 3 loci outside chr6 where rec is much better
+prelim-40-saige-domrec.R
 
 
 #########################
