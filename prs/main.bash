@@ -521,6 +521,14 @@ time Rscript prelim-52-top4-combine-pcor.R
 time Rscript prelim-53-pcor-plot.R test-bristol-curegn
 # 0m11.587s DCC
 
+# look at non-genetic covariates, get p-values, visualize distributions; test for ascertainment effects or not
+# this produces a single, harmonized table to make plots out of
+time Rscript prelim-60-covars.R
+# make plots that go with this data!
+time Rscript prelim-61-covars-plots.R
+
+### LDpred2 domrec
+
 # apply domrec to the old base data
 cd base
 time domrec mac20 mac20-rec rec
@@ -545,13 +553,38 @@ name=mac20-rec; sbatch -J saige-$name -o saige-$name.out --export=name=$name sai
 # 364m24.425s/8222m19.559s DCC step 1
 # 247m25.098s DCC step 2
 name=mac20-dom; sbatch -J saige-$name -o saige-$name.out --export=name=$name saige-alex.q
-########## RUNNING
+# 317m21.361s/7036m21.286s DCC step 1
+# 274m1.504s DCC step 2
 
 # are top p-values better?  are the top loci different?
 # add vs rec: add is better practically always, but there are 3 loci outside chr6 where rec is much better
+# dom vs add: small differences
 prelim-40-saige-domrec.R
+# makes crude manhattan plots to compare all 3 versions
+prelim-41-saige-domrec-manhattan.R
 
-# TODO: look at non-genetic covariates, get p-values, visualize distributions; test for ascertainment effects or not
+# we can reuse a lot of the previous data, keep the additive LD for example (I don't expect huge differences)
+
+# subset gwas data to array, other data massaging
+time Rscript prelim-42-sumstats-clean.R base dom
+# 672,360 variants have been matched; 0 were flipped and 0 were reversed.
+# 1m5.570s/2m39.530s duke-ochoa
+time Rscript prelim-42-sumstats-clean.R base rec
+# 651,449 variants have been matched; 0 were flipped and 0 were reversed.
+# 0m48.014s/1m56.042s duke-ochoa
+
+# match to training data
+time Rscript prelim-43-sumstats-match.R base train dom
+# 528,964 variants have been matched; 0 were flipped and 0 were reversed.
+# 1m38.736s DCC
+time Rscript prelim-43-sumstats-match.R base train rec
+# 527,911 variants have been matched; 0 were flipped and 0 were reversed.
+# 1m31.062s DCC
+
+# had to redo this because I had deleted base's LD estimate
+# (ok to use add data, because dom is same SNPs, rec is a subset of SNPs)
+time Rscript prs-new-04-make-rds.R base/mac20
+time Rscript prs-new-07-ld-matched-snps.R base 
 
 
 #########################

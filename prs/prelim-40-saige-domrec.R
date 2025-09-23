@@ -12,22 +12,28 @@ setwd( 'base' )
 # load results from all models
 add <- read_tsv( "saige_output.txt.gz", show_col_types = FALSE )
 rec <- read_tsv( "mac20-rec_saige.txt.gz", show_col_types = FALSE )
-#dom <- read_tsv( "mac20-dom_saige.txt.gz", show_col_types = FALSE )
+dom <- read_tsv( "mac20-dom_saige.txt.gz", show_col_types = FALSE )
 
-# rec has more fixed cases, which don't produce outputs
-nrow( add ) # [1] 20511795
-nrow( rec ) # [1] 15074085
+# rec has more fixed cases, which don't produce outputs; dom has same snps as add!
+nrow( add ) # 20511795
+nrow( rec ) # 15074085
+nrow( dom ) # 20511795
 
 add_i <- which.min( add$p.value )
 rec_i <- which.min( rec$p.value )
+dom_i <- which.min( dom$p.value )
 
 # top locus is exactly the same for add and rec, but it is less significant for rec
+# It's a different locus for dom, but sadly significance is also not greater overall (they are close though)
 add[ add_i, ] %>% select( MarkerID, BETA, p.value )
 ##   MarkerID           BETA  p.value
 ## 1 chr6:32652506:C:T 0.927 1.32e-32
 rec[ rec_i, ] %>% select( MarkerID, BETA, p.value )
 ##   MarkerID           BETA  p.value
 ## 1 chr6:32652506:C:T 0.644 1.30e-30
+dom[ dom_i, ] %>% select( MarkerID, BETA, p.value )
+##   MarkerID           BETA  p.value
+## 1 chr6:32714062:A:G 0.644 6.18e-30
 
 ##################
 ### ADD vs REC ###
@@ -72,3 +78,49 @@ ars_rb %>% filter( !grepl( 'chr6', id ) )
 # conclusions: additive is a better fit than recessive for chr6 and everywhere else, except 3 weirdo loci (one in chr15, two neighbors in chr9)
 # their significance can be re-assessed later with conditional analyses or looking at genes/annotations
 
+##################
+### ADD vs DOM ###
+##################
+
+# make a merged version to make better statements about all other significant loci
+# yey these are already perfectly aligned!
+stopifnot( all( add$MarkerID == dom$MarkerID ) )
+# lazy merge for this special case
+ad <- bind_cols(
+    add %>% select( id = MarkerID, pa = p.value ),
+    dom %>% select( pd = p.value )
+)
+# now look at significant subset (significant in at least one)
+ads <- ad %>% filter( pa < pcut | pd < pcut )
+# overall, how often are p-values smaller in additive?  Unlike recessive, here p-values are comparable in bulk sign
+mean( ads$pa < ads$pd )
+# [1] 0.5118197
+
+# what about the cases where dom is better?
+ads_db <- ads %>% filter( pa > pd )
+ads_db <- ads_db %>% mutate( fac = pa/pd )
+ads_db <- ads_db %>% arrange( desc( fac ) )
+# these seem largely comparable, there's only one chr6 locus that is way more significant under dominance, the rest are not big factors
+##    id                          pa       pd      fac
+##  1 chr6:32634840:C:T 0.0000000554 2.58e-14 2146772.
+##  2 chr6:32632540:T:C 0.0000211    2.80e- 9    7556.
+##  3 chr6:32632818:T:C 0.0000211    2.80e- 9    7525.
+##  4 chr6:32631140:A:C 0.0000210    2.80e- 9    7488.
+##  5 chr6:32631169:T:G 0.0000210    2.80e- 9    7488.
+##  6 chr6:32631403:G:A 0.0000210    2.80e- 9    7488.
+##  7 chr6:32631413:T:A 0.0000210    2.80e- 9    7488.
+##  8 chr6:32631488:G:A 0.0000210    2.80e- 9    7488.
+##  9 chr6:32631708:T:G 0.0000210    2.80e- 9    7488.
+## 10 chr6:32632141:T:C 0.0000210    2.80e- 9    7488.
+
+# only three loci outside chr6 are more significant under the dominant model.  all are on chr10 and appear to be neighbors, so that seems like a good signal!  significance is only marginally better though
+ads_db %>% filter( !grepl( 'chr6', id ) )
+##   id                       pa       pd   fac
+## 1 chr10:28810849:C:T 8.70e-12 4.73e-13 18.4 
+## 2 chr10:28809695:C:T 5.08e- 8 5.06e- 9 10.0 
+## 3 chr10:28815914:C:T 1.59e- 7 2.30e- 8  6.90
+
+# conclusions:
+# - additive is a better fit than recessive for chr6 and everywhere else, except 3 weirdo loci (one in chr15, two neighbors in chr9)
+#   - their significance can be re-assessed later with conditional analyses or looking at genes/annotations
+# - dominant is mostly comparable to additive, at least on this broad view of the data
