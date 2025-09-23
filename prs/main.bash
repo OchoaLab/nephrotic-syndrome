@@ -562,6 +562,8 @@ name=mac20-dom; sbatch -J saige-$name -o saige-$name.out --export=name=$name sai
 prelim-40-saige-domrec.R
 # makes crude manhattan plots to compare all 3 versions
 prelim-41-saige-domrec-manhattan.R
+# chr6 hla version for grant
+prelim-41-saige-domrec-manhattan-chr6-only.R
 
 # we can reuse a lot of the previous data, keep the additive LD for example (I don't expect huge differences)
 
