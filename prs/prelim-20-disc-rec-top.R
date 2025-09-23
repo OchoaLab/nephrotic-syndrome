@@ -58,6 +58,9 @@ r2_2 <- summary( mod2 )$r.squared
 # [1] 0.1604021
 ( r2_2 - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.08347547
+obj <- anova( mod0, mod2 )
+obj$`Pr(>F)`
+# [1]           NA 8.488762e-83
 
 # now try the same with recessive encodings!
 # for simplicity re-encode to have minor alleles only (had one case)
@@ -84,6 +87,9 @@ r2_2r <- summary( mod2r )$r.squared
 # [1] 0.1173503
 ( r2_2r - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.03647912
+obj <- anova( mod0, mod2r )
+obj$`Pr(>F)`
+# [1]          NA 9.07548e-35
 
 # dominant, better than recessive but worse than the original additive one
 mod2d <- lm( y ~ Xd + PCs )
@@ -97,3 +103,35 @@ r2_2d <- summary( mod2d )$r.squared
 # [1] 0.1521916
 ( r2_2d - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.0745127
+obj <- anova( mod0, mod2d )
+obj$`Pr(>F)`
+# [1]           NA 1.977647e-73
+
+# test nested add+dom, then do conditionals
+mod2ad <- lm( y ~ X + Xd + PCs )
+summary( mod2ad )
+##                       Estimate Std. Error t value Pr(>|t|)    
+## Xchr6:32652506:C:T    0.068607   0.012517   5.481 4.46e-08 ***
+## Xchr6:32689478:C:T    0.076431   0.022968   3.328 0.000883 ***
+## Xchr6:31361670:A:G   -0.176827   0.092954  -1.902 0.057196 .  
+## Xchr16:11077745:A:G  -0.057837   0.014673  -3.942 8.22e-05 ***
+## Xdchr6:32652506:C:T  -0.039705   0.010155  -3.910 9.38e-05 ***
+## Xdchr6:32689478:C:T   0.001925   0.013944   0.138 0.890220    
+## Xdchr6:31361670:A:G   0.030508   0.049047   0.622 0.533967    
+## Xdchr16:11077745:A:G  0.013650   0.010560   1.293 0.196225    
+r2_2ad <- summary( mod2ad )$r.squared
+# [1] 0.1636301
+( r2_2ad - r2_0 ) / ( 1 - r2_0 )
+# 0.08699921
+# dom|add
+( r2_2ad - r2_2 ) / ( 1 - r2_2 )
+# [1] 0.003844679
+obj <- anova( mod2, mod2ad )
+obj$`Pr(>F)`
+# [1]          NA 0.001804729
+# add|dom
+( r2_2ad - r2_2d ) / ( 1 - r2_2d )
+# [1] 0.01349183
+obj <- anova( mod2d, mod2ad )
+obj$`Pr(>F)`
+# [1]           NA 2.290622e-12

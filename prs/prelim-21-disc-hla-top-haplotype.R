@@ -53,6 +53,8 @@ r2_2 <- summary( mod2 )$r.squared
 # [1] 0.1390261
 ( r2_2 - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.06014085
+coef( summary( mod2 ) )[ 'dosage', 'Pr(>|t|)' ]
+# [1] 4.262415e-62
 
 # now try the same with recessive encodings!
 # note counted allele is minor (though here it's all multiallelic, all are minor?)
@@ -74,6 +76,8 @@ r2_2r <- summary( mod2r )$r.squared
 # [1] 0.08718001
 ( r2_2r - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.003544505
+coef( summary( mod2r ) )[ 'Xr', 'Pr(>|t|)' ]
+# [1] 6.924936e-05
 
 # dominant, finally something better than both additive and recessive! though difference is small
 mod2d <- lm( y ~ Xd + PCs )
@@ -84,6 +88,8 @@ r2_2d <- summary( mod2d )$r.squared
 # [1] 0.1416196
 ( r2_2d - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.06297198
+coef( summary( mod2d ) )[ 'Xd', 'Pr(>|t|)' ]
+# [1] 4.996445e-65
 
 # here we may as well have a conditional test for dominant over additive, to get its p-value
 # wow, dominant is clearly the stronger signal here!  There's practically no gain to adding both (i.e. making the dominance deviation more flexible)
@@ -96,3 +102,9 @@ r2_2ad <- summary( mod2ad )$r.squared
 # [1] 0.1416776
 ( r2_2ad - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.06303539
+# dom|add
+( r2_2ad - r2_2 ) / ( 1 - r2_2 )
+# [1] 0.003079752
+# add|dom
+( r2_2ad - r2_2d ) / ( 1 - r2_2d )
+# [1] 6.766886e-05
