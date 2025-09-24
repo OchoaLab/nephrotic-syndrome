@@ -6,7 +6,7 @@ library(ochoalabtools)
 # names of cases to score in testing data
 # also plot order
 names_in <- paste0( 'cor-', c( 'top4', 'base-train-ldpred2-grid-h0.1-best', 'base-train-ldpred2-ct-best' ) )
-names_nice <- c( 'Top 4', 'LDpred2', 'C+T' )
+names_nice <- c( 'Top SNPs', 'LDpred2', 'C+T' )
 
 args <- args_cli()
 test <- args[1]
@@ -15,10 +15,6 @@ if ( is.na( test ) )
 
 # all processing happens in subdirectory
 setwd( test )
-
-# in all cases, output name will match inputs in saying it's about correlations
-# also prepend to "names" to denote this alternative origin of data, which from here on is only used in outputs!
-name_out <- 
 
 # output tibble
 data <- NULL

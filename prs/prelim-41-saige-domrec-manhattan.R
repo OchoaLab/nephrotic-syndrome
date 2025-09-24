@@ -10,23 +10,23 @@ pcut <- 5e-8
 setwd( 'base' )
 
 # load results from all models
-add <- read_tsv( "saige_output.txt.gz", show_col_types = FALSE )
-rec <- read_tsv( "mac20-rec_saige.txt.gz", show_col_types = FALSE )
-dom <- read_tsv( "mac20-dom_saige.txt.gz", show_col_types = FALSE )
+add <- read_tsv( "saige_output.txt.gz", show_col_types = FALSE, col_select = c(MarkerID, CHR, POS, p.value) )
+rec <- read_tsv( "mac20-rec_saige.txt.gz", show_col_types = FALSE, col_select = c(MarkerID, p.value) )
+dom <- read_tsv( "mac20-dom_saige.txt.gz", show_col_types = FALSE, col_select = c(MarkerID, p.value) )
 
 # merge all of these 
 # yey these are already perfectly aligned!
 stopifnot( all( add$MarkerID == dom$MarkerID ) )
 # lazy merge for this special case
 data <- bind_cols(
-    add %>% select( chr = CHR, pos = POS, id = MarkerID, pa = p.value ),
+    add %>% rename( chr = CHR, pos = POS, id = MarkerID, pa = p.value ),
     dom %>% select( pd = p.value )
 )
 
 # now merge in recessive data, but keep all SNPs (don't care if they have missing rec)
 data <- full_join(
     data,
-    rec %>% select( id = MarkerID, pr = p.value )
+    rec %>% rename( id = MarkerID, pr = p.value )
 )
 
 # most chromosomes don't have much going on, let's see
@@ -103,31 +103,6 @@ ggplot( data2, aes( x = x, y = -log10( p ), color = model ) ) +
     theme_classic() +
     labs(
         x = 'Chromosome, Position',
-        y = expression(-log[10](p)),
-        color = 'Model'
-    )
-#    facet_wrap( vars( type ), nrow = 4 )
-fig_end()
-
-
-
-
-# another plot zoomed into chr6 HLA region only
-data3 <- data2 %>% filter( chr == 6 & pos >= 2.8e7 & pos <= 3.4e7 )
-#6:28,510,120 to 33,480,577
-
-# actual plot!
-wh <- fig_scale( 3/(2*1.5) )
-fig_start( 'domrec-saige-hla', width = wh[1], height = wh[2]  )
-ggplot( data3, aes( x = x, y = -log10( p ), color = model ) ) +
-    geom_hline(
-        yintercept = -log10( 5e-8 ), color = "grey40",
-        linetype = "dashed"
-    ) +
-    geom_point() +
-    theme_classic() +
-    labs(
-        x = 'Chr 6 Position',
         y = expression(-log[10](p)),
         color = 'Model'
     )

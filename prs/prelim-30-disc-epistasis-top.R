@@ -58,6 +58,9 @@ r2_2 <- summary( mod2 )$r.squared
 # [1] 0.1604021
 ( r2_2 - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.08347547
+obj <- anova( mod0, mod2 )
+obj$`Pr(>F)`
+# [1]           NA 8.488762e-83
 
 # try version with interactions
 # better to name each part
@@ -83,6 +86,17 @@ r2_2i <- summary( mod2i )$r.squared
 # [1] 0.1695736
 ( r2_2i - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.09348727
+obj <- anova( mod0, mod2i )
+obj$`Pr(>F)`
+# [1]           NA 1.144489e-87
+
+# also calculate conditional version: inter|add
+( r2_2i - r2_2 ) / ( 1 - r2_2 )
+# [1] 0.01092366
+obj <- anova( mod2, mod2i )
+obj$`Pr(>F)`
+# [1]           NA 7.808689e-09
+
 
 # now try the same with recessive encodings!
 # for simplicity re-encode to have minor alleles only (had one case)
@@ -102,6 +116,22 @@ hla1r <- Xr[,1]
 hla2r <- Xr[,2]
 hla3r <- Xr[,3]
 clec16ar <- Xr[,4]
+# non-interaction version for comparison/conditioning
+mod2r <- lm( y ~ hla1r + hla2r + hla3r + clec16ar + PCs )
+summary( mod2r )
+##              Estimate Std. Error t value Pr(>|t|)    
+## hla1r       -0.060064   0.005993 -10.022  < 2e-16 ***
+## hla2r        0.064710   0.011353   5.700 1.28e-08 ***
+## hla3r       -0.117536   0.046956  -2.503   0.0123 *  
+## clec16ar    -0.036785   0.007216  -5.098 3.57e-07 ***
+r2_2r <- summary( mod2r )$r.squared
+# 0.1173503
+( r2_2r - r2_0 ) / ( 1 - r2_0 )
+# 0.03647912
+obj <- anova( mod0, mod2r )
+obj$`Pr(>F)`
+# [1]          NA 9.07548e-35
+
 mod2ir <- lm( y ~ (hla1r + hla2r + hla3r + clec16ar)^2 + PCs )
 summary( mod2ir )
 ##                  Estimate Std. Error t value Pr(>|t|)    
@@ -119,12 +149,39 @@ r2_2ir <- summary( mod2ir )$r.squared
 # [1] 0.1188987
 ( r2_2ir - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.03816934
+obj <- anova( mod0, mod2ir )
+obj$`Pr(>F)`
+# [1]           NA 1.233692e-32
+
+# also calculate conditional version: inter|add
+( r2_2ir - r2_2r ) / ( 1 - r2_2r )
+# [1] 0.001754214
+obj <- anova( mod2r, mod2ir )
+obj$`Pr(>F)`
+# [1]        NA 0.1665846
 
 # dominant, better than recessive but worse than the original additive one
 hla1d <- Xd[,1]
 hla2d <- Xd[,2]
 hla3d <- Xd[,3]
 clec16ad <- Xd[,4]
+# non-interaction version for comparison/conditioning
+mod2d <- lm( y ~ hla1d + hla2d + hla3d + clec16ad + PCs )
+summary( mod2d )
+##              Estimate Std. Error t value Pr(>|t|)    
+## hla1d       -0.085261   0.005895 -14.463  < 2e-16 ***
+## hla2d        0.047498   0.005306   8.952  < 2e-16 ***
+## hla3d       -0.057863   0.009471  -6.110 1.08e-09 ***
+## clec16ad    -0.021526   0.005569  -3.865 0.000112 ***
+r2_2d <- summary( mod2d )$r.squared
+# 0.1521916
+( r2_2d - r2_0 ) / ( 1 - r2_0 )
+# 0.0745127
+obj <- anova( mod0, mod2d )
+obj$`Pr(>F)`
+# [1]           NA 1.977647e-73
+
+# dominant with interactions
 mod2id <- lm( y ~ (hla1d + hla2d + hla3d + clec16ad)^2 + PCs )
 summary( mod2id )
 ##                 Estimate Std. Error t value Pr(>|t|)    
@@ -142,5 +199,15 @@ r2_2id <- summary( mod2id )$r.squared
 # [1] 0.1613523
 ( r2_2id - r2_0 ) / ( 1 - r2_0 )
 # [1] 0.08451265
+obj <- anova( mod0, mod2id )
+obj$`Pr(>F)`
+# [1]           NA 2.533478e-78
+
+# also calculate conditional version: inter|add
+( r2_2id - r2_2d ) / ( 1 - r2_2d )
+# 0.01080506
+obj <- anova( mod2d, mod2id )
+obj$`Pr(>F)`
+# [1]           NA 9.984967e-09
 
 # conclusion: currently, interaction model is better under the additive model (for top loci, marginally additive was also better, perhaps circularly so).  Interactions between hla loci are strong, and with clec16 a bit less so but barely there!

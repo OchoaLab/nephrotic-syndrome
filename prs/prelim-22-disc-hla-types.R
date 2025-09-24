@@ -113,8 +113,7 @@ mean( drb1151 )/2 # 0.07915273
 mean( drb1131 )/2 # 0.03812709
 mean( dqb151 )/2 # 0.1124861
 
-# now encode recessive model
-# for completeness do dominant one as well, confirm that it is worse
+# now encode dominant and recessive models
 dom <- function( x ) { x[ x == 1 ] <- 2; x }
 rec <- function( x ) { x[ x == 1 ] <- 0; x }
 dqb121r <- rec( dqb121 )
