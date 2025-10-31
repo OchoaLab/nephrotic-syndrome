@@ -430,6 +430,17 @@ time Rscript ldpred-21-prs-betas-plink-score-validate.R base train test
 # make a big table with info for Debo to evaluate his diagnistic test
 time Rscript ldpred-22-mk-table-for-debo.R
 
+# link HLA info to simplify next script
+cd test
+ln -s ../../../hla/Bristol_hla_haplotypes_by_Subject.txt hla-haplotype.txt
+cd ../test-curegn
+ln -s ../../../hla/CureGN_hla_haplotypes_by_Subject.txt hla-haplotype.txt
+cd ..
+
+# net benefit analysis of PRS, haplotype, and age
+time Rscript ldpred-23-net-benefit.R
+
+
 
 #######################
 ### LDPRED2 CLEANUP ###
