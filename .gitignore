@@ -46,3 +46,6 @@ unpub
 # *.slt[0-9]*
 # *.stc[0-9]*
 .DS_Store
+
+# raw gwas summary statistics, which are on the gwas catalog
+gwas-catalog/*.tsv.gz

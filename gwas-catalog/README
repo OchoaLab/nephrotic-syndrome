@@ -1,0 +1,30 @@
+Citation:
+
+Tu, T., Ochoa, A., Sood, A., Drabik, A., Chryst-Stangl, M., Lane, B., Wu, G., Donovan, F., Harper, U., Chandrasekharappa, S., Esezobor, C., Solarin, A., Hooper, D., Sethna, C., Amaral, S., Kallash, M., Rheault, M., Verghese, P., Dharnidharka, V., Salmon, E., Weng, P., Srivastava, T., Seifert, M.E., Pruette, C., Selewski, D., Gibson, K., Hunley, T., Abeyagunawardena, A., Thalgahagoda, S., Bagga, A., Sinha, A., Webb, N., Greenbaum, L., Gharavi, A., Kiryluk, K., Kretzler, M., Guay-Woodford, L., Sanna-Cherchi, S., Bierzynska, A., Koziell, A., Welsh, G., Saleem, M., Rotimi, C., Chambers, E., Chan, C., CureGN Consortium, PNRC Glomerular disease group, CIBMTR/NMDP Consortium, Jackson, A., Adeyemo, A., Gbadegesin, R., 2025. Polygenic Risk Scores and HLA Class II Variants are Biomarkers of Corticosteroid Response in Childhood Nephrotic Syndrome. medRxiv 2025.08.01.25332825. https://doi.org/10.1101/2025.08.01.25332825
+
+Description of additional columns:
+
+- AF_case: effect_allele_frequency among cases
+- AF_ctrl: effect_allele_frequency among controls
+- N_case: number of individuals in cases
+- N_ctrl: number of individuals in controls
+
+Other information:
+
+- Genotypes were imputed and passed R2 > 0.3
+- Only analyzed MAC >= 20
+- GWAS carried out using the SAIGE logistic mixed model, including as fixed covariates sex, the top 10 PCs, and race/ethnicity except for ancestry subanalyses (where race/ethnicity labels are constant).
+
+Trait explanation:
+
+- NS: nephrotic syndrome
+- SSNS: steroid sensitive NS
+- SRNS: steroid resistant NS
+- Ctrl: controls (individuals without NS)
+
+Ancestry subanalysis codes:
+
+- No suffix: all individuals (any ancestry, including admixed individuals)
+- AFR: African ancestry individuals
+- EUR: European ancestry individuals
+- SAS: South Asian ancestry individuals
