@@ -440,6 +440,9 @@ cd ..
 # net benefit analysis of PRS, haplotype, and age
 time Rscript ldpred-23-net-benefit.R
 
+# and delta-AUC versions
+time Rscript ldpred-24-delta-auc.R
+
 
 
 #######################
