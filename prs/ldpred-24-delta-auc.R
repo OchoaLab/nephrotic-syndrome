@@ -1,7 +1,6 @@
 library(tidyverse)
 library(PRROC)
 library(ochoalabtools)
-#library(ggpubr)
 
 ### DATA: copy of previous net-benefit analysis ###
 
@@ -24,8 +23,8 @@ colnames( haps ) <- c('id', 'hap1', 'hap2')
 haps$dosage <- (haps$hap1 == haplo) + (haps$hap2 == haplo)
 
 # numbers of people are wildly different
-nrow( haps ) #[1] 2434
-nrow( data ) #[1] 936
+## nrow( haps ) #[1] 2434
+## nrow( data ) #[1] 936
 # everybody in data is also in haps, makes sense
 stopifnot( all( data$id %in% haps$id ) )
 # visually, it looks like the majority are extra cureGN samples (probably adults or non-NS)
@@ -66,6 +65,8 @@ mod_hla <- glm( y ~ dosage, data = data, family = binomial() )
 mod_age <- glm( y ~ age, data = data, family = binomial() )
 mod_comb1 <- glm( y ~ prs_ldpred + dosage, data = data, family = binomial() )
 mod_comb2 <- glm( y ~ prs_ldpred + dosage + age, data = data, family = binomial() )
+mod_comb3 <- glm( y ~ prs_ldpred + age, data = data, family = binomial() )
+mod_comb4 <- glm( y ~ dosage + age, data = data, family = binomial() )
 
 # apply calibration here.  this overfits, but right now we don't have a better way!
 data <- data %>% mutate(
@@ -73,7 +74,9 @@ data <- data %>% mutate(
                      prob_hla = broom::augment( mod_hla, type.predict = "response" ) %>% pull( ".fitted" ),
                      prob_age = broom::augment( mod_age, type.predict = "response" ) %>% pull( ".fitted" ),
                      prob_comb1 = broom::augment( mod_comb1, type.predict = "response" ) %>% pull( ".fitted" ),
-                     prob_comb2 = broom::augment( mod_comb2, type.predict = "response" ) %>% pull( ".fitted" )
+                     prob_comb2 = broom::augment( mod_comb2, type.predict = "response" ) %>% pull( ".fitted" ),
+                     prob_comb3 = broom::augment( mod_comb3, type.predict = "response" ) %>% pull( ".fitted" ),
+                     prob_comb4 = broom::augment( mod_comb4, type.predict = "response" ) %>% pull( ".fitted" )
                  )
 
 ### ROC/AUC ###
@@ -86,6 +89,8 @@ labels <- list(
     prob_age = 'Age',
     prob_hla = 'Haplotype',
     prob_ldpred = 'PRS',
+    prob_comb3 = 'PRS + Age',
+    prob_comb4 = 'Haplotype + Age',
     prob_comb1 = 'Haplotype + PRS',
     prob_comb2 = 'Haplotype + PRS + Age'
 )
@@ -111,9 +116,14 @@ for ( name in names( labels ) ) {
 # save AUCs
 aucs <- pivot_longer( as_tibble( aucs ), cols = everything(), names_to = 'model', values_to = 'auc' )
 aucs <- aucs %>% mutate( model = unlist( labels[ model ] ) )
+# order increasing by AUC
+aucs <- aucs %>% arrange( auc )
 write_tsv( aucs, 'delta-auc.txt' )
 
 ### PLOTS ###
+
+# order models by increasing AUC too
+datap$Model <- factor( datap$Model, levels = aucs$model )
 
 wh <- fig_scale( 4/3 )
 fig_start( 'delta-auc', width = wh[1], height = wh[2] )
@@ -124,3 +134,35 @@ ggplot( datap, aes( x = FPR, y = Sensitivity, col = Model ) ) +
     labs( x = '1 - Specificity' )
 fig_end()
 
+# to calculate delta AUCs with p-values and all!
+# some names conflict
+library(clinfun)
+
+# calculate delta AUCs using specialized package that also calculates p-values!
+with( data, deltaAUC( y, age, prs_ldpred ) )
+## $par.full
+## [1]        1 -1963049
+
+## $results
+##             AUCfull AUCreduced statistic p-value
+## Empirical 0.6343624  0.5036577  240.7581   1e-05
+## Smooth    0.6343840  0.4997236  248.0445   1e-05
+
+with( data, deltaAUC( y, prs_ldpred, age ) )
+## $par.full
+## [1]  1.0000000 -0.2045529
+
+## $results
+##             AUCfull AUCreduced statistic p-value
+## Empirical 0.4706970  0.3656324 193.52887   1e-05
+## Smooth    0.5125975  0.4866585  47.77966   1e-05
+
+# this makes no sense, not sure what happened, optimization likely failed
+with( data, deltaAUC( y, age, dosage ) )
+## $par.full
+## [1]   1.0000 130.4294
+
+## $results
+##             AUCfull AUCreduced statistic p-value
+## Empirical 0.3904208  0.5036577 -208.5825       1
+## Smooth    0.3898997  0.4985186 -200.0760       1
